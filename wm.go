@@ -2,7 +2,11 @@
 
 package main
 
-import "github.com/tcolar/termbox-go"
+import (
+	"fmt"
+
+	"github.com/tcolar/termbox-go"
+)
 
 const (
 	Plain uint16 = iota + (1 << 8)
@@ -10,49 +14,87 @@ const (
 	Underlined
 )
 
-type Col struct {
-	X1, X2 int
-	Views  []View
+func (e *Editor) WidgetAt(x, y int) Renderer {
+	_, h := e.Size()
+	if y == 1 {
+		return e.Menubar
+	}
+	if y == h-1 {
+		return e.Statusbar
+	}
+	for _, v := range e.Views {
+		if x >= v.x1 && x <= v.x2 && y >= v.y1 && y <= v.y2 {
+			return &v
+		}
+	}
+	return nil
 }
 
 func (e *Editor) Render() {
 	e.FB(e.Theme.Fg, e.Theme.Bg)
 	termbox.Clear(termbox.Attribute(e.Bg.uint16), termbox.Attribute(e.Bg.uint16))
 
-	for _, c := range e.Cols {
-		e.RenderCol(c)
+	for _, v := range e.Views {
+		v.Render()
 	}
 
-	e.RenderMenu()
-	e.RenderStatus()
+	e.Menubar.Render()
+	e.Statusbar.Render()
+
+	termbox.Flush()
 }
 
-func (e *Editor) RenderMenu() {
-	w, _ := e.Size()
-	e.FB(e.Theme.Menubar.Fg, e.Theme.Menubar.Bg)
-	e.Fill(e.Theme.Menubar.Rune, 0, 0, w, 1)
-	e.FB(e.Theme.MenubarText, e.Theme.Menubar.Bg)
-	e.Str(0, 0, "GoEd 0.0.1")
+type Renderer interface {
+	Bounds() (int, int, int, int)
+	Render()
+	SetBounds(x1, y1, x2, y2 int)
+	Event(*termbox.Event)
 }
 
-func (e *Editor) RenderStatus() {
-	w, h := e.Size()
-	e.FB(e.Theme.Statusbar.Fg, e.Theme.Statusbar.Bg)
-	e.Fill(e.Theme.Statusbar.Rune, 0, h-1, w, 1)
-	e.FB(e.Theme.StatusbarText, e.Theme.Statusbar.Bg)
-	e.Str(0, h-1, "All is good !")
-	e.RenderPos()
+// Widget implements the base of UI widgets
+type Widget struct {
+	x1, x2, y1, y2 int
 }
 
-func (e *Editor) RenderPos() {
-	w, h := e.Size()
-	e.FB(e.Theme.StatusbarText, e.Theme.Statusbar.Bg)
-	pos := "123:59"
-	e.Str(w-len(pos)-1, h-1, pos)
+func (w *Widget) Bounds() (int, int, int, int) {
+	return w.x1, w.y1, w.x2, w.y2
 }
 
-func (e *Editor) RenderCol(c Col) {
-	for _, v := range c.Views {
-		e.RenderView(c, v)
-	}
+func (w *Widget) SetBounds(x1, y1, x2, y2 int) {
+	w.x1 = x1
+	w.x2 = x2
+	w.y1 = y1
+	w.y2 = y2
+}
+
+// Menubar widget
+type Menubar struct {
+	Widget
+}
+
+func (m *Menubar) Render() {
+	Ed.FB(Ed.Theme.Menubar.Fg, Ed.Theme.Menubar.Bg)
+	Ed.Fill(Ed.Theme.Menubar.Rune, m.x1, m.y1, m.x2, m.y2)
+	Ed.FB(Ed.Theme.MenubarText, Ed.Theme.Menubar.Bg)
+	Ed.Str(m.x1, m.y1, "save saveall | cut copy paste | look | new del | newcol delcol | exit")
+
+}
+
+// Statusbar widget
+type Statusbar struct {
+	Widget
+}
+
+func (s *Statusbar) Render() {
+	Ed.FB(Ed.Theme.Statusbar.Fg, Ed.Theme.Statusbar.Bg)
+	Ed.Fill(Ed.Theme.Statusbar.Rune, s.x1, s.y1, s.x2, s.y2)
+	Ed.FB(Ed.Theme.StatusbarText, Ed.Theme.Statusbar.Bg)
+	Ed.Str(s.x1, s.y1, "All is good !")
+	s.RenderPos()
+}
+
+func (s *Statusbar) RenderPos() {
+	Ed.FB(Ed.Theme.StatusbarText, Ed.Theme.Statusbar.Bg)
+	pos := fmt.Sprintf("%d:%d", Ed.CurView.CursorX, Ed.CurView.CursorY)
+	Ed.Str(s.x2-len(pos)-1, s.y1, pos)
 }

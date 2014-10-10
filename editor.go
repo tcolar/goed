@@ -1,11 +1,19 @@
 package main
 
-import "github.com/tcolar/termbox-go"
+import (
+	"bytes"
+	"io/ioutil"
+
+	"github.com/tcolar/termbox-go"
+)
 
 type Editor struct {
-	Cols   []Col
-	Fg, Bg Style
-	Theme  *Theme
+	Menubar   *Menubar
+	Statusbar *Statusbar
+	Views     []View
+	Fg, Bg    Style
+	Theme     *Theme
+	CurView   *View
 }
 
 func (e *Editor) Start() {
@@ -18,65 +26,52 @@ func (e *Editor) Start() {
 	e.Theme = ReadTheme("themes/default.toml")
 	e.Fg = e.Theme.Fg
 	e.Bg = e.Theme.Bg
-	//termbox.SetCursor(ed.cursor_position())
+
 	w, h := e.Size()
-	vs := h * 2 / 3
+	e.Menubar = &Menubar{}
+	e.Menubar.SetBounds(0, 0, w, 0)
+	e.Statusbar = &Statusbar{}
+	e.Statusbar.SetBounds(0, h-1, w, h-1)
 	hs := w * 2 / 3
-	col1 := Col{
-		X1: 0,
-		X2: hs - 1,
-	}
+	vs := (h - 2) * 2 / 3
 	view1 := View{
-		Y1:    0,
-		Y2:    hs + 1,
-		Title: "/home/tcolar/DEV/mesa/Makefile",
-		Dirty: true,
+		Id:     1,
+		Title:  "editor.go",
+		Dirty:  true,
+		Buffer: readFile("editor.go"),
 	}
-	col1.Views = append(col1.Views, view1)
-	col2 := Col{
-		X1: hs,
-		X2: w,
-	}
+	view1.SetBounds(0, 1, hs, h-2)
 	view2 := View{
-		Y1:    0,
-		Y2:    vs - 1,
-		Title: "Test.txt",
+		Id:     2,
+		Title:  "themes/default.toml",
+		Buffer: readFile("themes/default.toml"),
 	}
+	view2.SetBounds(hs+1, 1, w, vs)
 	view3 := View{
-		Y1:    vs,
-		Y2:    h,
-		Title: "dummy_test.go",
+		Id:    3,
+		Title: "@scratch",
 	}
-	col2.Views = append(col2.Views, view2)
-	col2.Views = append(col2.Views, view3)
-	e.Cols = []Col{
-		col1,
-		col2,
-	}
+	view3.SetBounds(hs+1, vs+1, w, h-2)
 
-	e.draw()
-loop:
-	for {
-		switch ev := termbox.PollEvent(); ev.Type {
-		case termbox.EventKey:
-			switch ev.Key {
-			case termbox.KeyEsc:
-				break loop
-			}
-		case termbox.EventResize:
-			e.draw()
-		}
-	}
-}
-
-func (e *Editor) draw() {
+	e.Views = []View{view1, view2, view3}
+	e.CurView = &view1
+	//e.SetCursor(0, 0)
 
 	e.Render()
-	e.FB(e.Theme.Fg, e.Theme.Bg)
-	e.Str(2, 3, "Hello World")
 
-	e.FB(e.Theme.String, e.Theme.Bg)
-	e.Str(1, 9, "Kw: What's up -\u0E5Bಠﭛಠ! \u2611 \u2612 ➩")
+	e.EventLoop()
+}
 
-	termbox.Flush()
+// Temporary testing
+func readFile(path string) [][]rune {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	lines := bytes.Split(data, []byte("\n"))
+	runes := [][]rune{}
+	for _, l := range lines {
+		runes = append(runes, bytes.Runes(l))
+	}
+	return runes
 }

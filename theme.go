@@ -18,6 +18,8 @@ type Theme struct {
 	Keyword Style
 	// Numbers Style
 	// Custom1 Style
+	// Symbols := = etc ...
+	// brackets {[]}()
 	FileClean     StyledRune
 	FileDirty     StyledRune
 	Scrollbar     StyledRune
@@ -28,6 +30,7 @@ type Theme struct {
 	MenubarText   Style
 	Viewbar       StyledRune
 	ViewbarText   Style
+	MoreText      StyledRune
 }
 
 func ReadTheme(path string) *Theme {
@@ -54,9 +57,10 @@ func defaultTheme() *Theme {
 		FileDirty:     StyledRune{'✗', fg, bg},
 		Scrollbar:     StyledRune{'░', fg, bg},
 		ScrollTab:     StyledRune{'▒', fg, bg},
-		Statusbar:     StyledRune{'•', fg, bg},
-		Menubar:       StyledRune{'•', fg, bg},
+		Statusbar:     StyledRune{'❊', fg, bg},
+		Menubar:       StyledRune{'❊', fg, bg},
 		Viewbar:       StyledRune{'–', fg, bg},
+		MoreText:      StyledRune{'…', fg, bg},
 	}
 }
 

@@ -43,3 +43,6 @@ cut
 paste
 copy
 search
+
+hexadecimal mode
+large files (no copy ?)

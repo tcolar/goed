@@ -35,9 +35,15 @@ func (e *Editor) Strv(x, y int, s string) {
 	}
 }
 
-func (e *Editor) Fill(c rune, x1, y1, w, h int) {
-	for x := x1; x != x1+w; x++ {
-		for y := y1; y != y1+h; y++ {
+func (e *Editor) Fill(c rune, x1, y1, x2, y2 int) {
+	if x1 > x2 {
+		x1, x2 = x2, x1
+	}
+	if y1 > y2 {
+		y1, y2 = y2, y1
+	}
+	for x := x1; x <= x2; x++ {
+		for y := y1; y <= y2; y++ {
 			e.Char(x, y, c)
 		}
 	}
