@@ -46,24 +46,24 @@ func (s *Statusbar) Event(ev *termbox.Event) {
 func (v *View) Event(ev *termbox.Event) {
 	switch ev.Type {
 	case termbox.EventKey:
-		/*switch ev.Key {
+		switch ev.Key {
 		case termbox.KeyArrowRight:
-			e.MoveCursor(1, 0)
+			v.MoveCursor(1, 0)
 		case termbox.KeyArrowLeft:
-			e.MoveCursor(-1, 0)
+			v.MoveCursor(-1, 0)
 		case termbox.KeyArrowUp:
-			e.MoveCursor(0, -1)
+			v.MoveCursor(0, -1)
 		case termbox.KeyArrowDown:
-			e.MoveCursor(0, 1)
+			v.MoveCursor(0, 1)
 		case termbox.KeyEsc:
 			return
-		}*/
+		}
 	case termbox.EventMouse:
 		switch ev.Key {
 		case termbox.MouseLeft:
-			termbox.SetCursor(ev.MouseX, ev.MouseY)
-			v.CursorX = ev.MouseX - v.x1
-			v.CursorY = ev.MouseY - v.y1
+			// MoveCursor use text coordinates which starts at offset 2,2
+			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
+			// Make the clicked view active
 			Ed.CurView = v
 		}
 	}

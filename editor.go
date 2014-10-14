@@ -10,7 +10,7 @@ import (
 type Editor struct {
 	Menubar   *Menubar
 	Statusbar *Statusbar
-	Views     []View
+	Views     []*View
 	Fg, Bg    Style
 	Theme     *Theme
 	CurView   *View
@@ -32,13 +32,13 @@ func (e *Editor) Start() {
 	e.Menubar.SetBounds(0, 0, w, 0)
 	e.Statusbar = &Statusbar{}
 	e.Statusbar.SetBounds(0, h-1, w, h-1)
-	hs := w * 2 / 3
+	hs := w*2/3 - 1
 	vs := (h - 2) * 2 / 3
 	view1 := View{
 		Id:     1,
-		Title:  "editor.go",
+		Title:  "view.go",
 		Dirty:  true,
-		Buffer: readFile("editor.go"),
+		Buffer: readFile("view.go"),
 	}
 	view1.SetBounds(0, 1, hs, h-2)
 	view2 := View{
@@ -48,14 +48,15 @@ func (e *Editor) Start() {
 	}
 	view2.SetBounds(hs+1, 1, w, vs)
 	view3 := View{
-		Id:    3,
-		Title: "@scratch",
+		Id:     3,
+		Title:  "@scratch",
+		Buffer: readFile("cam.props"),
 	}
 	view3.SetBounds(hs+1, vs+1, w, h-2)
 
-	e.Views = []View{view1, view2, view3}
+	e.Views = []*View{&view1, &view2, &view3}
 	e.CurView = &view1
-	//e.SetCursor(0, 0)
+	e.CurView.MoveCursor(0, 0)
 
 	e.Render()
 
@@ -70,8 +71,11 @@ func readFile(path string) [][]rune {
 	}
 	lines := bytes.Split(data, []byte("\n"))
 	runes := [][]rune{}
-	for _, l := range lines {
-		runes = append(runes, bytes.Runes(l))
+	for i, l := range lines {
+		// Ignore last line if empty
+		if i != len(lines)-1 || len(l) != 0 {
+			runes = append(runes, bytes.Runes(l))
+		}
 	}
 	return runes
 }

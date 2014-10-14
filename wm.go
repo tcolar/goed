@@ -24,7 +24,7 @@ func (e *Editor) WidgetAt(x, y int) Renderer {
 	}
 	for _, v := range e.Views {
 		if x >= v.x1 && x <= v.x2 && y >= v.y1 && y <= v.y2 {
-			return &v
+			return v
 		}
 	}
 	return nil
@@ -95,6 +95,7 @@ func (s *Statusbar) Render() {
 
 func (s *Statusbar) RenderPos() {
 	Ed.FB(Ed.Theme.StatusbarText, Ed.Theme.Statusbar.Bg)
-	pos := fmt.Sprintf("%d:%d", Ed.CurView.CursorX, Ed.CurView.CursorY)
+	v := Ed.CurView
+	pos := fmt.Sprintf("%d:%d [%d]", v.CurLine()+1, v.CurCol()+1, len(v.Buffer))
 	Ed.Str(s.x2-len(pos)-1, s.y1, pos)
 }
