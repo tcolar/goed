@@ -67,6 +67,10 @@ func (v *View) Event(ev *termbox.Event) {
 				dist = v.CurLine()
 			}
 			v.MoveCursor(0, -dist)
+		case termbox.KeyEnd:
+			v.MoveCursor(v.lineLn(v.CurLine())-v.CurCol(), 0)
+		case termbox.KeyHome:
+			v.MoveCursor(-v.CurCol(), 0)
 		case termbox.KeyEsc:
 			return
 		}
