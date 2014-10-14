@@ -55,6 +55,18 @@ func (v *View) Event(ev *termbox.Event) {
 			v.MoveCursor(0, -1)
 		case termbox.KeyArrowDown:
 			v.MoveCursor(0, 1)
+		case termbox.KeyPgdn:
+			dist := v.LastViewLine() + 1
+			if len(v.Buffer)-v.CurLine() < dist {
+				dist = len(v.Buffer) - v.CurLine() - 1
+			}
+			v.MoveCursor(0, dist)
+		case termbox.KeyPgup:
+			dist := v.LastViewLine() + 1
+			if dist > v.CurLine() {
+				dist = v.CurLine()
+			}
+			v.MoveCursor(0, -dist)
 		case termbox.KeyEsc:
 			return
 		}

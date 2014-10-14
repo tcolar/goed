@@ -212,10 +212,10 @@ func (v *View) MoveCursor(x, y int) {
 
 // Return the current line (zero indexed)
 func (v *View) CurLine() int {
-	return v.CursorX + v.offx
+	return v.CursorY + v.offy
 }
 
 // Return the current column (zero indexed)
 func (v *View) CurCol() int {
-	return v.CursorY + v.offy
+	return v.CursorX + v.offx
 }
