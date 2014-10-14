@@ -57,8 +57,8 @@ func (v *View) Event(ev *termbox.Event) {
 			v.MoveCursor(0, 1)
 		case termbox.KeyPgdn:
 			dist := v.LastViewLine() + 1
-			if len(v.Buffer)-v.CurLine() < dist {
-				dist = len(v.Buffer) - v.CurLine() - 1
+			if v.LineCount()-v.CurLine() < dist {
+				dist = v.LineCount() - v.CurLine() - 1
 			}
 			v.MoveCursor(0, dist)
 		case termbox.KeyPgup:
@@ -68,11 +68,20 @@ func (v *View) Event(ev *termbox.Event) {
 			}
 			v.MoveCursor(0, -dist)
 		case termbox.KeyEnd:
-			v.MoveCursor(v.lineLn(v.CurLine())-v.CurCol(), 0)
+			v.MoveCursor(v.lineCols(v.CurLine())-v.CurCol(), 0)
 		case termbox.KeyHome:
 			v.MoveCursor(-v.CurCol(), 0)
 		case termbox.KeyEsc:
 			return
+		case termbox.KeyEnter:
+			// special TBD
+		case termbox.KeyDelete:
+			// special TBD
+		case termbox.KeyBackspace, termbox.KeyBackspace2:
+			// special TBD
+		default:
+			// insert the key
+			v.Insert(ev.Ch)
 		}
 	case termbox.EventMouse:
 		switch ev.Key {

@@ -1,11 +1,6 @@
 package main
 
-import (
-	"bytes"
-	"io/ioutil"
-
-	"github.com/tcolar/termbox-go"
-)
+import "github.com/tcolar/termbox-go"
 
 type Editor struct {
 	Menubar   *Menubar
@@ -38,19 +33,19 @@ func (e *Editor) Start() {
 		Id:     1,
 		Title:  "view.go",
 		Dirty:  true,
-		Buffer: readFile("view.go"),
+		Buffer: NewFileBuffer("view.go"),
 	}
 	view1.SetBounds(0, 1, hs, h-2)
 	view2 := View{
 		Id:     2,
 		Title:  "themes/default.toml",
-		Buffer: readFile("themes/default.toml"),
+		Buffer: NewFileBuffer("themes/default.toml"),
 	}
 	view2.SetBounds(hs+1, 1, w, vs)
 	view3 := View{
 		Id:     3,
 		Title:  "@scratch",
-		Buffer: readFile("cam.props"),
+		Buffer: NewFileBuffer("cam.props"),
 	}
 	view3.SetBounds(hs+1, vs+1, w, h-2)
 
@@ -59,23 +54,12 @@ func (e *Editor) Start() {
 	e.CurView.MoveCursor(0, 0)
 
 	e.Render()
+	e.SetStatus("Holla!")
 
 	e.EventLoop()
 }
 
-// Temporary testing
-func readFile(path string) [][]rune {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-	lines := bytes.Split(data, []byte("\n"))
-	runes := [][]rune{}
-	for i, l := range lines {
-		// Ignore last line if empty
-		if i != len(lines)-1 || len(l) != 0 {
-			runes = append(runes, bytes.Runes(l))
-		}
-	}
-	return runes
+func (e *Editor) SetStatus(s string) {
+	e.Statusbar.msg = s
+	e.Statusbar.Render()
 }
