@@ -31,6 +31,7 @@ type Theme struct {
 	Viewbar       StyledRune
 	ViewbarText   Style
 	MoreText      StyledRune
+	TabChar       StyledRune
 }
 
 func ReadTheme(path string) *Theme {
@@ -61,6 +62,7 @@ func defaultTheme() *Theme {
 		Menubar:       StyledRune{'❊', fg, bg},
 		Viewbar:       StyledRune{'–', fg, bg},
 		MoreText:      StyledRune{'…', fg, bg},
+		TabChar:       StyledRune{'⇨', fg, bg},
 	}
 }
 

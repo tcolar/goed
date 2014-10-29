@@ -53,7 +53,7 @@ func (v *View) viewLines() [][]rune {
 	return lines
 }
 
-// single line to display (return only the relevant pasrt for display)
+// single line to display (return only the relevant parts for display)
 func (v *View) viewLine(index int) []rune {
 	line := []rune{}
 	if index >= v.LineCount() {
@@ -64,6 +64,7 @@ func (v *View) viewLine(index int) []rune {
 	// Get what we can "See" in the viewport, plus an extra to the right so
 	// we can know if we have it the end of the line or not.
 	for i := 0; i < len(ln) && len(line) < v.LastViewCol()+1; i++ {
+		c := ln[i]
 		if x >= v.offx {
 			// we have skipped all that is to the left of the viewport
 			if len(line) == 0 {
@@ -72,16 +73,16 @@ func (v *View) viewLine(index int) []rune {
 					line = append(line, ' ')
 				}
 			}
-			if ln[i] == '\t' {
+			line = append(line, c)
+			if c == '\t' {
 				for j := 1; j < tabSize; j++ {
 					x += tabSize - 1
 					line = append(line, ' ')
 				}
 			}
-			line = append(line, ln[i])
 		}
 		x++
-		if ln[i] == '\t' {
+		if c == '\t' {
 			x += tabSize - 1
 		}
 	}
@@ -100,7 +101,13 @@ func (v *View) RenderText() {
 			Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
 		}
 		for _, c := range l {
-			Ed.Char(x, y, c)
+			if c == '\t' {
+				Ed.FB(Ed.Theme.TabChar.Fg, Ed.Theme.TabChar.Bg)
+				Ed.Char(x, y, Ed.Theme.TabChar.Rune)
+				Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+			} else {
+				Ed.Char(x, y, c)
+			}
 			x++
 			if x > v.x2-1 {
 				// More text to our right
@@ -125,19 +132,19 @@ func (v *View) LastViewCol() int {
 	return v.x2 - v.x1 - 3
 }
 
-// MoveCursor : Move the cursor from it's current position by the x,y offsets
+// MoveCursor : Move the cursor from it's current position by the x,y offsets (**in runes**)
 // This makes all the checks to make sure it's in a valid location
 // also takes care to wrapping to previous/next line as needed
 // as well as scrolling the view as needed.
 func (v *View) MoveCursor(x, y int) {
-	curCol := v.CursorX + v.offx
-	curLine := v.CursorY + v.offy
+	curCol := v.CurCol()
+	curLine := v.CurLine()
 	lastLine := v.LineCount() - 1
 
 	if curLine+y < 0 || // before first line
 		curLine+y > lastLine || // after last line
 		(curLine <= 0 && curCol+x < 0) || // before beginning of file
-		(curLine >= lastLine && curCol+x > v.LineLen(lastLine)) { // after eof
+		(curLine >= lastLine && curCol+x > v.lineCols(lastLine)) { // after eof
 		return
 	}
 
@@ -163,6 +170,15 @@ func (v *View) MoveCursor(x, y int) {
 	v.CursorY += y
 	ln = v.LineLen(curLine + y)
 
+	// Special handling for tabs
+	c, textX, textY := v.CurChar()
+	if c != nil && *c == '\t' {
+		from := v.CursorX
+		// align cursor with beginning of tab
+		v.CursorX = v.lineColsTo(textY, textX) - v.offx
+		x -= v.CursorX - from
+	}
+
 	// No scrolling needed
 	if curCol+x >= v.offx && curCol+x <= v.offx+v.LastViewCol() &&
 		curLine+y >= v.offy && curLine+y <= v.offy+v.LastViewLine() {
@@ -186,7 +202,6 @@ func (v *View) MoveCursor(x, y int) {
 		v.CursorY = v.LastViewLine()
 	}
 
-	// TODO: Deal with cursor falling in the "middle" of a tab and adjust it
 	tox := v.x1 + 2 + v.CursorX
 	toy := v.y1 + 2 + v.CursorY
 

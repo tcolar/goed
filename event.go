@@ -48,9 +48,19 @@ func (v *View) Event(ev *termbox.Event) {
 	case termbox.EventKey:
 		switch ev.Key {
 		case termbox.KeyArrowRight:
-			v.MoveCursor(1, 0)
+			offset := 1
+			c, _, _ := v.CurChar()
+			if c != nil {
+				offset = v.runeSize(*c)
+			}
+			v.MoveCursor(offset, 0)
 		case termbox.KeyArrowLeft:
-			v.MoveCursor(-1, 0)
+			offset := 1
+			c, _, _ := v.CursorChar(v.CurCol()-1, v.CurLine())
+			if c != nil {
+				offset = v.runeSize(*c)
+			}
+			v.MoveCursor(-offset, 0)
 		case termbox.KeyArrowUp:
 			v.MoveCursor(0, -1)
 		case termbox.KeyArrowDown:
@@ -71,14 +81,18 @@ func (v *View) Event(ev *termbox.Event) {
 			v.MoveCursor(v.lineCols(v.CurLine())-v.CurCol(), 0)
 		case termbox.KeyHome:
 			v.MoveCursor(-v.CurCol(), 0)
+		case termbox.KeyTab:
+			v.Insert('\t')
+		case termbox.KeyEnter:
+			v.InsertNewLine()
+		case termbox.KeyDelete:
+			v.Delete()
+		case termbox.KeyBackspace, termbox.KeyBackspace2:
+			v.Backspace()
+		case termbox.KeyCtrlS:
+			v.Save()
 		case termbox.KeyEsc:
 			return
-		case termbox.KeyEnter:
-			// special TBD
-		case termbox.KeyDelete:
-			// special TBD
-		case termbox.KeyBackspace, termbox.KeyBackspace2:
-			// special TBD
 		default:
 			// insert the key
 			v.Insert(ev.Ch)
