@@ -92,12 +92,18 @@ func (v *View) viewLine(index int) []rune {
 func (v *View) RenderText() {
 	y := v.y1 + 2
 	Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+	if v.offy > 0 {
+		// More text above
+		Ed.FB(Ed.Theme.MoreTextUp.Fg, Ed.Theme.MoreTextUp.Bg)
+		Ed.Char(v.x1+1, y-1, Ed.Theme.MoreTextUp.Rune)
+		Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+	}
 	for _, l := range v.viewLines() {
 		x := v.x1 + 2
 		if v.offx > 0 {
 			// More text to our left
-			Ed.FB(Ed.Theme.MoreText.Fg, Ed.Theme.MoreText.Bg)
-			Ed.Char(v.x1+1, y, Ed.Theme.MoreText.Rune)
+			Ed.FB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
+			Ed.Char(x-1, y, Ed.Theme.MoreTextSide.Rune)
 			Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
 		}
 		for _, c := range l {
@@ -111,8 +117,8 @@ func (v *View) RenderText() {
 			x++
 			if x > v.x2-1 {
 				// More text to our right
-				Ed.FB(Ed.Theme.MoreText.Fg, Ed.Theme.MoreText.Bg)
-				Ed.Char(x-1, y, Ed.Theme.MoreText.Rune)
+				Ed.FB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
+				Ed.Char(x-1, y, Ed.Theme.MoreTextSide.Rune)
 				Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
 				break
 			}
@@ -121,6 +127,12 @@ func (v *View) RenderText() {
 		if y > v.y2-1 {
 			break
 		}
+	}
+	if v.offy+v.LastViewLine() < v.LineCount()-1 {
+		// More text below
+		Ed.FB(Ed.Theme.MoreTextDown.Fg, Ed.Theme.MoreTextDown.Bg)
+		Ed.Char(v.x1+1, y, Ed.Theme.MoreTextDown.Rune)
+		Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
 	}
 }
 

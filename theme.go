@@ -30,7 +30,9 @@ type Theme struct {
 	MenubarText   Style
 	Viewbar       StyledRune
 	ViewbarText   Style
-	MoreText      StyledRune
+	MoreTextSide  StyledRune
+	MoreTextUp    StyledRune
+	MoreTextDown  StyledRune
 	TabChar       StyledRune
 }
 
@@ -61,7 +63,9 @@ func defaultTheme() *Theme {
 		Statusbar:     StyledRune{'❊', fg, bg},
 		Menubar:       StyledRune{'❊', fg, bg},
 		Viewbar:       StyledRune{'–', fg, bg},
-		MoreText:      StyledRune{'…', fg, bg},
+		MoreTextSide:  StyledRune{'…', fg, bg},
+		MoreTextUp:    StyledRune{'⇡', fg, bg},
+		MoreTextDown:  StyledRune{'⇣', fg, bg},
 		TabChar:       StyledRune{'⇨', fg, bg},
 	}
 }

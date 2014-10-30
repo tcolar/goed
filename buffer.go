@@ -20,6 +20,11 @@ type Backend interface {
 	IsStale() bool       // whether the source as changed under us (fsnotify)
 	IsBufferStale() bool // wether the buffer has changed under us
 	LineCount() int
+
+	// insert(lineId, index, []rune)
+	// remove(lineId, from, len int)
+	// insertLine(index, []rune)
+	// removeLine(index)
 }
 
 type Buffer struct {

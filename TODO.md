@@ -6,17 +6,18 @@ X View buffer
 X Eventing basics (Mouse / keyboard)
 X Navigate buffer (arrows, scroll, pagination etc..)
 X Edit buffer -> insert
-- Edit buffer -> delete
-- open file(edit tag??) + create buffer copy in folder
-- use file copy as buffer (use interface for i/o)
+X Edit buffer -> delete
 ~ save file (C^s)
+- open file(edit tag??) + create buffer copy in folder
+- use file copy as buffer (use interface for i/o) Backend interface
 
 ->-> Minimum "usable" product
 
 - redo/undo (disallow for large files ?), keep undos on disk ?
-- plumber -> clickable line numbers
 - open a folder (listing)
+- plumber -> clickabl line numbers
 - plumber -> click file paths
+- Keyboard mapping
 
 ## Extended
 X theme/colors
@@ -25,7 +26,7 @@ X theme/colors
 
 ## Commands
 - execute (gofmt)
-- command creaes window
+- command creates window
 - search
 - search/replace/next/
 
@@ -61,5 +62,10 @@ X support & display multiple columns / views
 - ctrl+a : select all or line beginning ?
 - ctrl+g : goto ?
 
-
-
+acme shortcuts:
+alt+H,J,K,L -> vim nav ??
+^U -> Delete from cursor to start of line.
+^W -> Delete word before the cursor.
+^H -> Delete character before the cursor.
+^A -> Move cursor to start of the line.
+^E -> Move cursor to end of the line.
