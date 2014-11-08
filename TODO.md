@@ -47,25 +47,28 @@ X support & display multiple columns / views
 - scrollbar indicator
 
 ### Events
-- cut(C^x)
-- paste(C^v)
-- No select + R click = paste
-- copy(C^c)
-- select + L click = copy
-- putall
-- scrolling (mouse wheel, scrollbar clicks)
-- ctrl +c = copy
-- shift + arrows = select
 - select + enter = execute
 - select + middle click = execute
 
-- ctrl+a : select all or line beginning ?
-- ctrl+g : goto ?
+escape or caps or hh then,
 
-acme shortcuts:
-alt+H,J,K,L -> vim nav ??
-^U -> Delete from cursor to start of line.
-^W -> Delete word before the cursor.
-^H -> Delete character before the cursor.
-^A -> Move cursor to start of the line.
-^E -> Move cursor to end of the line.
+h help/commands (Ctrl+h)
+copy/paste (ctrl+c, ctrl+v)
+bl ? ^U -> Delete from cursor to start of line.
+bw ? ^W -> Delete word before the cursor.
+home ^A -> Move cursor to start of the line.
+end ^E -> Move cursor to end of the line.
+o open (Ctrl+o) -> show recent first, tab completion -> if dir then to new window
+g goto (Ctrl+g)
+f find (Ctrl+f)
+nc newcol 
+nv niewview
+dc, dv delcol delview
+r refresh / reload
+mh, mj, mk, ml move to view left right, up, down  (ctrl h,j,k,l)
+rh, rj, rk, rl relocate the view left right, up, down  (ctrl+shift+ h,j,k,l)
+sh,sj,sk,sl select l,r,u,d (alt h,j,k,l) or shift + arrows
+e exec -> output to new "shell" window (ctrl +e) (remember prevs ?)
+redo, undo (ctrl+z, ctrl+y)
+sa selectall ctrl+shift+a
+

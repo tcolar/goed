@@ -20,20 +20,23 @@ type Theme struct {
 	// Custom1 Style
 	// Symbols := = etc ...
 	// brackets {[]}()
-	FileClean     StyledRune
-	FileDirty     StyledRune
-	Scrollbar     StyledRune
-	ScrollTab     StyledRune
-	Statusbar     StyledRune
-	StatusbarText Style
-	Menubar       StyledRune
-	MenubarText   Style
-	Viewbar       StyledRune
-	ViewbarText   Style
-	MoreTextSide  StyledRune
-	MoreTextUp    StyledRune
-	MoreTextDown  StyledRune
-	TabChar       StyledRune
+	FileClean        StyledRune
+	FileDirty        StyledRune
+	Scrollbar        StyledRune
+	ScrollTab        StyledRune
+	Statusbar        StyledRune
+	StatusbarText    Style
+	StatusbarTextErr Style
+	Cmdbar           StyledRune
+	CmdbarText       Style
+	CmdbarTextOn     Style
+	Viewbar          StyledRune
+	ViewbarText      Style
+	MoreTextSide     StyledRune
+	MoreTextUp       StyledRune
+	MoreTextDown     StyledRune
+	TabChar          StyledRune
+	Margin           StyledRune
 }
 
 func ReadTheme(path string) *Theme {
@@ -48,25 +51,28 @@ func defaultTheme() *Theme {
 	fg := Style{0x0001}
 	bg := Style{0x0000}
 	return &Theme{
-		Bg:            bg,
-		Fg:            fg,
-		Comment:       fg,
-		String:        fg,
-		Keyword:       fg,
-		StatusbarText: fg,
-		MenubarText:   fg,
-		ViewbarText:   fg,
-		FileClean:     StyledRune{'✔', fg, bg},
-		FileDirty:     StyledRune{'✗', fg, bg},
-		Scrollbar:     StyledRune{'░', fg, bg},
-		ScrollTab:     StyledRune{'▒', fg, bg},
-		Statusbar:     StyledRune{'❊', fg, bg},
-		Menubar:       StyledRune{'❊', fg, bg},
-		Viewbar:       StyledRune{'–', fg, bg},
-		MoreTextSide:  StyledRune{'…', fg, bg},
-		MoreTextUp:    StyledRune{'⇡', fg, bg},
-		MoreTextDown:  StyledRune{'⇣', fg, bg},
-		TabChar:       StyledRune{'⇨', fg, bg},
+		Bg:               bg,
+		Fg:               fg,
+		Comment:          fg,
+		String:           fg,
+		Keyword:          fg,
+		StatusbarText:    fg,
+		StatusbarTextErr: Style{0x0101},
+		CmdbarText:       fg,
+		CmdbarTextOn:     Style{0x0101},
+		ViewbarText:      fg,
+		FileClean:        StyledRune{'✔', fg, bg},
+		FileDirty:        StyledRune{'✗', fg, bg},
+		Scrollbar:        StyledRune{'░', fg, bg},
+		ScrollTab:        StyledRune{'▒', fg, bg},
+		Statusbar:        StyledRune{'❊', fg, bg},
+		Cmdbar:           StyledRune{'❊', fg, bg},
+		Viewbar:          StyledRune{'–', fg, bg},
+		MoreTextSide:     StyledRune{'…', fg, bg},
+		MoreTextUp:       StyledRune{'⇡', fg, bg},
+		MoreTextDown:     StyledRune{'⇣', fg, bg},
+		TabChar:          StyledRune{'⇨', fg, bg},
+		Margin:           StyledRune{'|', fg, bg},
 	}
 }
 

@@ -9,7 +9,6 @@ const tabSize = 4
 type View struct {
 	Widget
 	Id               int
-	Title            string
 	Dirty            bool
 	Buffer           *Buffer
 	CursorX, CursorY int
@@ -24,10 +23,23 @@ func (v *View) Render() {
 		fg = fg.WithAttr(Bold)
 	}
 	Ed.FB(fg, Ed.Theme.Viewbar.Bg)
-	Ed.Str(v.x1+2, v.y1, v.Title)
+	Ed.Str(v.x1+2, v.y1, v.Title())
 	v.RenderScroll()
 	v.RenderIsDirty()
-	v.RenderText()
+	v.RenderMargin()
+	if v.Buffer != nil {
+		v.RenderText()
+	}
+}
+
+func (v *View) RenderMargin() {
+	if v.offx < 80 && v.offx+v.LastViewCol() >= 80 {
+		for i := 0; i != v.LastViewLine(); i++ {
+			Ed.FB(Ed.Theme.Margin.Fg, Ed.Theme.Margin.Bg)
+			Ed.Char(v.x1+2+80-v.offx, v.y1+2+i, Ed.Theme.Margin.Rune)
+			Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+		}
+	}
 }
 
 func (v *View) RenderScroll() {
@@ -218,6 +230,14 @@ func (v *View) MoveCursor(x, y int) {
 	toy := v.y1 + 2 + v.CursorY
 
 	termbox.SetCursor(tox, toy)
+}
+
+func (v *View) Title() string {
+	// Todo: shorten if does not fit
+	if len(v.Buffer.file) == 0 {
+		return "@@ NEW @@"
+	}
+	return v.Buffer.file
 }
 
 // Return the current line (zero indexed)
