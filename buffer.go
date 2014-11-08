@@ -55,9 +55,14 @@ func NewFileBuffer(path string) *Buffer {
 // TODO : this is an in memory "stupid" impl
 // Later implement "direct to file" edition ?
 func (v *View) Save() {
-	f, err := os.Create("/tmp/a.txt")
+	if len(v.Buffer.file) == 0 {
+		Ed.SetStatusErr("Save where ? Use save [path]")
+		return
+	}
+	f, err := os.Create(v.Buffer.file)
 	if err != nil {
-		panic(err)
+		Ed.SetStatusErr("Saving Failed ! " + v.Buffer.file)
+		return
 	}
 	defer f.Close()
 	buf := make([]byte, 4)
@@ -69,10 +74,11 @@ func (v *View) Save() {
 				panic(err)
 			}
 		}
-		if i != v.LineCount() || v.LineLen(i) != 0 { // ??
+		if i != v.LineCount() || v.LineLen(i) != 0 {
 			f.WriteString("\n")
 		}
 	}
+	v.Dirty = false
 	Ed.SetStatus("Saved " + v.Buffer.file)
 }
 
