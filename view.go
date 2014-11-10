@@ -6,6 +6,8 @@ import "github.com/tcolar/termbox-go"
 
 const tabSize = 4
 
+var id int = 0 // TODO id ??
+
 type View struct {
 	Widget
 	Id               int
@@ -13,6 +15,20 @@ type View struct {
 	Buffer           *Buffer
 	CursorX, CursorY int
 	offx, offy       int
+}
+
+func NewView() *View {
+	id++
+	return &View{
+		Id:     id,
+		Buffer: &Buffer{},
+	}
+}
+
+func NewFileView(path string) *View {
+	v := NewView()
+	Ed.OpenFile(path, v)
+	return v
 }
 
 func (v *View) Render() {

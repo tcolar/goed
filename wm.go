@@ -62,3 +62,20 @@ func (w *Widget) SetBounds(x1, y1, x2, y2 int) {
 	w.y1 = y1
 	w.y2 = y2
 }
+
+func (e *Editor) AddView(v *View) {
+	e.Views = append(e.Views, v)
+}
+
+func (e *Editor) NewCol(pct int) *View {
+	x1, y1, x2, y2 := e.CurView.Bounds()
+	w := x2 - x1
+	nc := int(float64(w) * float64(pct) / 100.0)
+	oc := w - nc
+	e.CurView.SetBounds(x1, y1, x1+oc, y2)
+	nv := NewView()
+	nv.SetBounds(x1+oc, y1, x2, y2) // todo : full height
+	e.AddView(nv)
+	// TODO: resize other views of same column
+	return nv
+}

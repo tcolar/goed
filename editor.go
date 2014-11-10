@@ -35,24 +35,17 @@ func (e *Editor) Start() {
 	e.Statusbar.SetBounds(0, h-1, w, h-1)
 	hs := w*2/3 - 1
 	vs := (h - 2) * 2 / 3
-	view1 := View{
-		Id:     1,
-		Buffer: NewFileBuffer("view.go"),
-	}
+	view1 := NewFileView("view.go")
 	view1.SetBounds(0, 1, hs, h-2)
-	view2 := View{
-		Id:     2,
-		Buffer: NewFileBuffer("themes/default.toml"),
-	}
+	e.AddView(view1)
+	view2 := NewFileView("themes/default.toml")
 	view2.SetBounds(hs+1, 1, w, vs)
-	view3 := View{
-		Id:     3,
-		Buffer: &Buffer{},
-	}
+	e.AddView(view2)
+	view3 := NewView()
 	view3.SetBounds(hs+1, vs+1, w, h-2)
+	e.AddView(view3)
 
-	e.Views = []*View{&view1, &view2, &view3}
-	e.CurView = &view1
+	e.CurView = view1
 	e.CurView.MoveCursor(0, 0)
 
 	e.Render()
@@ -61,9 +54,9 @@ func (e *Editor) Start() {
 	e.EventLoop()
 }
 
-func OpenFile(loc string, view *View) error {
+func (e *Editor) OpenFile(loc string, view *View) error {
 	if view == nil {
-		return fmt.Errorf("No active view.")
+		return fmt.Errorf("No view selected !")
 	}
 	if _, err := os.Stat(loc); err != nil {
 		return fmt.Errorf("File not found %s", loc)
