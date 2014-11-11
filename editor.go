@@ -10,11 +10,14 @@ import (
 type Editor struct {
 	Cmdbar    *Cmdbar
 	Statusbar *Statusbar
-	Views     []*View
-	Fg, Bg    Style
-	Theme     *Theme
-	CurView   *View
-	CmdOn     bool
+	//Views      []*View
+	Fg, Bg     Style
+	Theme      *Theme
+	Cols       []*Col
+	CurView    *View
+	CurCol     *Col
+	CmdOn      bool
+	pctw, pcth float64
 }
 
 func (e *Editor) Start() {
@@ -33,22 +36,28 @@ func (e *Editor) Start() {
 	e.Cmdbar.SetBounds(0, 0, w, 0)
 	e.Statusbar = &Statusbar{}
 	e.Statusbar.SetBounds(0, h-1, w, h-1)
-	hs := w*2/3 - 1
-	vs := (h - 2) * 2 / 3
-	view1 := NewFileView("view.go")
-	view1.SetBounds(0, 1, hs, h-2)
-	e.AddView(view1)
-	view2 := NewFileView("themes/default.toml")
-	view2.SetBounds(hs+1, 1, w, vs)
-	e.AddView(view2)
-	view3 := NewView()
-	view3.SetBounds(hs+1, vs+1, w, h-2)
-	e.AddView(view3)
+	view1 := e.NewFileView("view.go")
+	view1.HeightRatio = 1.0
+	view2 := e.NewFileView("themes/default.toml")
+	view2.HeightRatio = 0.8
+	view3 := e.NewView()
+	view3.HeightRatio = 0.2
+	c := e.NewCol(0.75, []*View{view1})
+	c2 := e.NewCol(0.25, []*View{view2, view3})
+	e.Cols = []*Col{
+		c,
+		c2,
+	}
 
 	e.CurView = view1
+	e.CurCol = c
+
+	e.Resize(e.Size())
+
 	e.CurView.MoveCursor(0, 0)
 
 	e.Render()
+
 	e.SetStatus("Holla!")
 
 	e.EventLoop()
@@ -61,7 +70,7 @@ func (e *Editor) OpenFile(loc string, view *View) error {
 	if _, err := os.Stat(loc); err != nil {
 		return fmt.Errorf("File not found %s", loc)
 	}
-	view.Buffer = NewFileBuffer(loc)
+	view.Buffer = e.NewFileBuffer(loc)
 	view.Dirty = false
 	return nil
 }

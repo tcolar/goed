@@ -2,7 +2,11 @@
 
 package main
 
-import "github.com/tcolar/termbox-go"
+import (
+	"path/filepath"
+
+	"github.com/tcolar/termbox-go"
+)
 
 func (e *Editor) EventLoop() {
 
@@ -12,7 +16,7 @@ func (e *Editor) EventLoop() {
 		ev := termbox.PollEvent()
 		switch ev.Type {
 		case termbox.EventResize:
-			e.Render()
+			e.Resize(ev.Width, ev.Height)
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeyCtrlQ:
@@ -139,6 +143,14 @@ func (v *View) Event(ev *termbox.Event) {
 			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
 			// Make the clicked view active
 			Ed.CurView = v
+			Ed.CurCol = Ed.ViewColumn(v)
+			if len(v.Buffer.file) != 0 {
+				if p, err := filepath.Abs(v.Buffer.file); err == nil {
+					Ed.SetStatus(p)
+				}
+			} else {
+				Ed.SetStatus("")
+			}
 		}
 	}
 	if dirty {

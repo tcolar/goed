@@ -54,6 +54,24 @@ func (c *Cmdbar) RunCmd() {
 		// nc [file], new col, open file
 		// nc 40 -> new col 40% width
 		// nc 40 [file] -> new col 40% width, open file
+		/*loc := ""
+		pct := 50
+		if len(parts) > 1 {
+			p, err := strconv.Atoi(parts[1])
+			if err == nil {
+				pct = p
+				if len(parts) > 2 {
+					loc = strings.Join(parts[2:], " ")
+				}
+			} else {
+				loc = strings.Join(parts[1:], " ")
+			}
+		}
+		v := Ed.AddCol(pct).Views[0]
+		if len(loc) > 0 {
+			Ed.OpenFile(loc, v)
+		}*/
+	case "nv", "newview":
 		loc := ""
 		pct := 50
 		if len(parts) > 1 {
@@ -67,12 +85,10 @@ func (c *Cmdbar) RunCmd() {
 				loc = strings.Join(parts[1:], " ")
 			}
 		}
-		v := Ed.NewCol(pct)
+		v := Ed.AddView(float64(pct) / 100.0)
 		if len(loc) > 0 {
 			Ed.OpenFile(loc, v)
 		}
-	case "nv", "newview":
-		Ed.SetStatus("TBD nv")
 	case "dc", "delcol":
 		Ed.SetStatus("TBD dc")
 	case "dv", "delview":

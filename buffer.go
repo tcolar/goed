@@ -33,7 +33,7 @@ type Buffer struct {
 }
 
 // For now just load the whole thing in memory, might change this later
-func NewFileBuffer(path string) *Buffer {
+func (e *Editor) NewFileBuffer(path string) *Buffer {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(err)
@@ -86,6 +86,9 @@ func (v *View) Save() {
 func (v *View) Insert(c rune) {
 	l := v.CurLine()
 	i := v.lineRunesTo(l, v.CurCol())
+	if l >= len(v.Buffer.text) {
+		v.Buffer.text = append(v.Buffer.text, []rune{})
+	}
 	line := v.Buffer.text[l]
 	line = append(line, c)
 	copy(line[i+1:], line[i:])
@@ -111,6 +114,9 @@ func (v *View) InsertNewLine() {
 func (v *View) Delete() {
 	l := v.CurLine()
 	i := v.lineRunesTo(l, v.CurCol())
+	if l >= len(v.Buffer.text) {
+		return
+	}
 	line := v.Buffer.text[l]
 	if i < len(line) {
 		// remove a char
@@ -126,6 +132,9 @@ func (v *View) Delete() {
 func (v *View) Backspace() {
 	l := v.CurLine()
 	i := v.lineRunesTo(l, v.CurCol())
+	if l >= len(v.Buffer.text) {
+		return
+	}
 	line := v.Buffer.text[l]
 	if i > 0 {
 		c := line[i-1]
@@ -178,6 +187,9 @@ func (v *View) lineColsTo(lnIndex, to int) int {
 // lineRunesTo returns the number of raw runes to the given line column
 func (v View) lineRunesTo(lnIndex, column int) int {
 	runes := 0
+	if lnIndex >= v.LineCount() {
+		return 0
+	}
 	ln := v.Line(lnIndex)
 	for i := 0; i <= column && runes < len(ln); {
 		i += v.runeSize(ln[runes])
@@ -197,6 +209,9 @@ func (v *View) CursorTextPos(cursorX, cursorY int) (int, int) {
 // CursorChar returns the rune at the given cursor location
 // Also returns the position of the char in the text buffer
 func (v *View) CursorChar(cursorX, cursorY int) (r *rune, textX int, textY int) {
+	if len(v.Buffer.text) == 0 {
+		return nil, 1, 1
+	}
 	x, y := v.CursorTextPos(cursorX, cursorY)
 	if y >= v.LineCount() || x >= len(v.Buffer.text[y]) {
 		return nil, 0, 0

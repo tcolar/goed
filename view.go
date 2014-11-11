@@ -2,7 +2,11 @@
 
 package main
 
-import "github.com/tcolar/termbox-go"
+import (
+	"path/filepath"
+
+	"github.com/tcolar/termbox-go"
+)
 
 const tabSize = 4
 
@@ -15,18 +19,20 @@ type View struct {
 	Buffer           *Buffer
 	CursorX, CursorY int
 	offx, offy       int
+	HeightRatio      float64
 }
 
-func NewView() *View {
+func (e *Editor) NewView() *View {
 	id++
 	return &View{
-		Id:     id,
-		Buffer: &Buffer{},
+		Id:          id,
+		Buffer:      &Buffer{},
+		HeightRatio: 0.5,
 	}
 }
 
-func NewFileView(path string) *View {
-	v := NewView()
+func (e *Editor) NewFileView(path string) *View {
+	v := e.NewView()
 	Ed.OpenFile(path, v)
 	return v
 }
@@ -39,7 +45,11 @@ func (v *View) Render() {
 		fg = fg.WithAttr(Bold)
 	}
 	Ed.FB(fg, Ed.Theme.Viewbar.Bg)
-	Ed.Str(v.x1+2, v.y1, v.Title())
+	t := v.Title()
+	if v.x1+len(t) > v.x2-2 {
+		t = t[:v.x2-v.x1-2]
+	}
+	Ed.Str(v.x1+2, v.y1, t)
 	v.RenderScroll()
 	v.RenderIsDirty()
 	v.RenderMargin()
@@ -50,7 +60,7 @@ func (v *View) Render() {
 
 func (v *View) RenderMargin() {
 	if v.offx < 80 && v.offx+v.LastViewCol() >= 80 {
-		for i := 0; i != v.LastViewLine(); i++ {
+		for i := 0; i <= v.LastViewLine(); i++ {
 			Ed.FB(Ed.Theme.Margin.Fg, Ed.Theme.Margin.Bg)
 			Ed.Char(v.x1+2+80-v.offx, v.y1+2+i, Ed.Theme.Margin.Rune)
 			Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
@@ -249,11 +259,10 @@ func (v *View) MoveCursor(x, y int) {
 }
 
 func (v *View) Title() string {
-	// Todo: shorten if does not fit
 	if len(v.Buffer.file) == 0 {
-		return "@@ NEW @@"
+		return "~~ NEW ~~"
 	}
-	return v.Buffer.file
+	return filepath.Base(v.Buffer.file)
 }
 
 // Return the current line (zero indexed)
