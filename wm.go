@@ -116,21 +116,43 @@ func (e *Editor) Resize(width, height int) {
 	}
 }
 
-// AddCol adds a new column, space is "taken" from the current column
-func (e *Editor) AddCol(pct int) *Col {
-	/*_, eh := e.Size()
-	x1, _, x2, _ := e.CurView.Bounds()
-	w := x2 - x1
-	nc := int(float64(w) * float6pct) / 100.0)
-	oc := w - nc
-	for _, v := range e.colViews(e.CurView.x1) {
-		v.SetBounds(v.x1, v.y1, v.x1+oc, v.y2)
+// ViewIndex returns the index of a view in the column
+func (e *Editor) ViewIndex(col *Col, view *View) int {
+	for i, v := range col.Views {
+		if v == view {
+			return i
+		}
 	}
-	nv := NewView()
-	nv.SetBounds(x1+oc, 1, x2, eh-2)
-	e.Views = append(e.Views, nv)
-	return nv*/
-	return nil
+	return -1
+}
+
+// ColIndex returns the index of a column in the editor
+func (e *Editor) ColIndex(col *Col) int {
+	for i, c := range e.Cols {
+		if c == col {
+			return i
+		}
+	}
+	return -1
+}
+
+// AddCol adds a new column, space is "taken" from the current column
+func (e *Editor) AddCol(ratio float64) *Col {
+	r := e.CurCol.WidthRatio
+	nv := e.NewView()
+	nv.HeightRatio = 1.0
+	c := e.NewCol(r*ratio, []*View{nv})
+	e.CurCol.WidthRatio = r - (r * ratio)
+	// Insert it after curcol
+	i := e.ColIndex(e.CurCol) + 1
+	e.Cols = append(e.Cols, nil)
+	copy(e.Cols[i+1:], e.Cols[i:])
+	e.Cols[i] = c
+
+	e.CurCol = c
+	e.CurView = nv
+	e.Resize(e.Size())
+	return c
 }
 
 // AddCol adds a new view in the current column, space is "taken" from the current view
@@ -139,9 +161,69 @@ func (e *Editor) AddView(ratio float64) *View {
 	nv := e.NewView()
 	nv.HeightRatio = r * ratio
 	e.CurView.HeightRatio = r - (r * ratio)
-	col := e.ViewColumn(e.CurView)
-	// TODO: Need to insert it at the right index
-	col.Views = append(col.Views, nv)
+	col := e.CurCol
+	// Insert it at after curView
+	i := e.ViewIndex(col, e.CurView) + 1
+	col.Views = append(col.Views, nil)
+	copy(col.Views[i+1:], col.Views[i:])
+	col.Views[i] = nv
+	e.CurView = nv
 	e.Resize(e.Size())
 	return nv
+}
+
+func (e *Editor) DelCol() {
+	// TODO: check and warn if any view is dirty ??
+	if len(e.Cols) <= 1 {
+		e.SetStatusErr("Only one column left !")
+		return
+	}
+	var prev *Col
+	for i, c := range e.Cols {
+		if c == e.CurCol {
+			if prev != nil {
+				prev.WidthRatio += c.WidthRatio
+				e.CurCol = prev
+			} else {
+				e.Cols[i+1].WidthRatio += c.WidthRatio
+				e.CurCol = e.Cols[i+1]
+			}
+			e.CurView = e.CurCol.Views[0]
+			e.Cols = append(e.Cols[:i], e.Cols[i+1:]...)
+			break
+		}
+		prev = e.Cols[i]
+	}
+	e.Resize(e.Size())
+}
+
+func (e *Editor) DelView() {
+	// TODO: check and warn if dirty ??
+	c := e.CurCol
+	if len(e.Cols) <= 1 && len(c.Views) <= 1 {
+		e.SetStatusErr("Only one view left !")
+		return
+	}
+	// only one view left in col, delcol
+	if len(c.Views) <= 1 {
+		e.DelCol()
+		return
+	}
+	// otherwise remove curview and reassign space
+	var prev *View
+	for i, v := range c.Views {
+		if v == e.CurView {
+			if prev != nil {
+				prev.HeightRatio += v.HeightRatio
+				e.CurView = prev
+			} else {
+				c.Views[i+1].HeightRatio += v.HeightRatio
+				e.CurView = c.Views[i+1]
+			}
+			c.Views = append(c.Views[:i], c.Views[i+1:]...)
+			break
+		}
+		prev = c.Views[i]
+	}
+	e.Resize(e.Size())
 }
