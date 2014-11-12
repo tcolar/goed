@@ -25,5 +25,5 @@ func (s *Statusbar) RenderPos() {
 	Ed.FB(Ed.Theme.StatusbarText, Ed.Theme.Statusbar.Bg)
 	v := Ed.CurView
 	pos := fmt.Sprintf(" %d:%d [%d]", v.CurLine()+1, v.CurCol()+1, v.LineCount())
-	Ed.Str(s.x2-len(pos)-2, s.y1, pos)
+	Ed.Str(s.x2-len(pos), s.y1, pos)
 }

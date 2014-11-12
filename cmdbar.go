@@ -23,6 +23,8 @@ func (c *Cmdbar) Render() {
 		Ed.FB(Ed.Theme.CmdbarText, Ed.Theme.Cmdbar.Bg)
 		Ed.Str(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
 	}
+	Ed.FB(Ed.Theme.CmdbarText, Ed.Theme.Cmdbar.Bg)
+	Ed.Str(c.x2-11, c.y1, fmt.Sprintf("|GoEd %s", Version))
 }
 
 func (c *Cmdbar) RunCmd() {
@@ -93,6 +95,7 @@ func (c *Cmdbar) RunCmd() {
 		Ed.DelCol()
 	case "dv", "delview":
 		Ed.DelView()
+		// TODO: Resize view / col ??
 	case "gf", "gofmt":
 		Ed.SetStatus("TBD gofmt")
 	default:

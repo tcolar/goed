@@ -18,6 +18,7 @@ type Editor struct {
 	CurCol     *Col
 	CmdOn      bool
 	pctw, pcth float64
+	evtState   *EvtState
 }
 
 func (e *Editor) Start() {
@@ -27,6 +28,7 @@ func (e *Editor) Start() {
 	}
 	defer termbox.Close()
 	termbox.SetExtendedColors(*colors == 256)
+	e.evtState = &EvtState{}
 	e.Theme = ReadTheme("themes/default.toml")
 	e.Fg = e.Theme.Fg
 	e.Bg = e.Theme.Bg

@@ -27,7 +27,7 @@ func (e *Editor) NewCol(width float64, views []*View) *Col {
 
 func (e *Editor) WidgetAt(x, y int) Renderer {
 	_, h := e.Size()
-	if y == 1 {
+	if y == 0 {
 		return e.Cmdbar
 	}
 	if y == h-1 {
@@ -37,17 +37,6 @@ func (e *Editor) WidgetAt(x, y int) Renderer {
 		for _, v := range c.Views {
 			if x >= v.x1 && x <= v.x2 && y >= v.y1 && y <= v.y2 {
 				return v
-			}
-		}
-	}
-	return nil
-}
-
-func (e *Editor) ViewColumn(v *View) *Col {
-	for _, c := range e.Cols {
-		for _, view := range c.Views {
-			if v.Id == view.Id {
-				return c
 			}
 		}
 	}
@@ -107,13 +96,119 @@ func (e *Editor) Resize(width, height int) {
 		for j, v := range c.Views {
 			h := int(float64(height-2) * v.HeightRatio)
 			if j == len(c.Views)-1 {
-				h = height - hc - 2 // last view gets rest of height
+				h = height - hc - 1 // last view gets rest of height
+				// TODO: maybe adjust the ratio so it always adds up to ~100%
 			}
-			v.SetBounds(wc, hc, wc+w, hc+h)
+			v.SetBounds(wc, hc, wc+w-1, hc+h-1)
 			hc += h
 		}
 		wc += w
 	}
+}
+
+// ViewMove handles moving & resizing views/columns, typically using the mouse
+func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
+	w, h := Ed.Size()
+	v1 := e.WidgetAt(x1, y1).(*View)
+	v2 := e.WidgetAt(x2, y2).(*View)
+	c1 := e.ViewColumn(v1)
+	c2 := e.ViewColumn(v2)
+	c1i := e.ColIndex(c1)
+	v1i := e.ViewIndex(c1, v1)
+	v2i := e.ViewIndex(c2, v2)
+	c2i := e.ColIndex(c2)
+	onSep := x2 == v2.x1 // dropped on a column "scrollbar"
+	if x1 == x2 && y1 == y2 {
+		// noop
+		e.SetStatus("")
+		return
+	}
+	if onSep {
+		// We are moving a single view
+		if v1 == v2 {
+			if v1i > 0 {
+				// Reducing a view
+				ratio := float64(y2-y1) / float64(h-2)
+				v1.HeightRatio -= ratio
+				c1.Views[v1i-1].HeightRatio += ratio // giving space to prev view
+			}
+		} else if c1i == c2i && v2i == v1i-1 {
+			// Expanding the view
+			ratio := float64(y1-y2) / float64(h-2)
+			v1.HeightRatio += ratio
+			c1.Views[v1i-1].HeightRatio -= ratio // taking space from prev view
+		} else if c1i == c2i {
+			// moved within same column
+			i1, i2 := v1i, v2i
+			if i1 < i2 { // down
+				copy(c1.Views[i1:i2], c2.Views[i1+1:i2+1])
+				c1.Views[v2i] = v1
+			} else { // up
+				copy(c1.Views[i2+1:i1+1], c1.Views[i2:i1])
+				c1.Views[v2i+1] = v1
+			}
+		} else {
+			// moved to a different column
+			// TODO: Try to be samrt like acme as far as minimizing whitespace
+			// For now will just take 50% of the target view
+			v2.HeightRatio /= 2
+			v1.HeightRatio = v2.HeightRatio
+			c2.Views = append(c2.Views, nil)
+			copy(c2.Views[v2i+2:], c2.Views[v2i+1:])
+			c2.Views[v2i+1] = v1
+			ov := e.CurView
+			oc := e.CurCol
+			e.CurView = v1
+			e.CurCol = c1
+			if len(c1.Views) == 0 {
+				e.DelCol()
+			} else {
+				e.DelView()
+			}
+			e.CurView = ov
+			e.CurCol = oc
+		}
+	} else {
+		// Moving a whole column
+		if c1i == c2i {
+			if c1i > 0 {
+				// Reducing a column
+				ratio := float64(x2-x1) / float64(w)
+				c1.WidthRatio -= ratio
+				Ed.Cols[c1i-1].WidthRatio += ratio // giving space to prev col
+			}
+		} else if c2i == c1i-1 {
+			// Expanding the column
+			ratio := float64(x1-x2) / float64(w)
+			c1.WidthRatio += ratio
+			Ed.Cols[c1i-1].WidthRatio -= ratio // taking space from prev col
+		} else {
+			//reorder
+			i1, i2 := c1i, c2i
+			if i1 < i2 { // right
+				copy(Ed.Cols[i1:i2], Ed.Cols[i1+1:i2+1])
+				e.Cols[c2i] = c1
+			} else { // left
+				copy(Ed.Cols[i2+1:i1+1], Ed.Cols[i2:i1])
+				e.Cols[c2i+1] = c1
+			}
+
+		}
+	}
+	e.SetStatus("")
+	e.Resize(e.Size())
+}
+
+// ViewColumn returns the column that is holding a given view
+func (e *Editor) ViewColumn(v *View) *Col {
+	for _, c := range e.Cols {
+		for _, view := range c.Views {
+			if v.Id == view.Id {
+				return c
+			}
+		}
+	}
+	return nil
 }
 
 // ViewIndex returns the index of a view in the column

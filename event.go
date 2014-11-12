@@ -8,6 +8,12 @@ import (
 	"github.com/tcolar/termbox-go"
 )
 
+// Evttate stores some state about kb/mouse events
+type EvtState struct {
+	MovingView bool
+	X, Y       int
+}
+
 func (e *Editor) EventLoop() {
 
 	termbox.SetInputMode(termbox.InputEsc | termbox.InputMouse)
@@ -43,6 +49,8 @@ func (e *Editor) EventLoop() {
 	}
 }
 
+// ##################### CmdBar ########################################
+
 // Event handler for Cmdbar
 func (m *Cmdbar) Event(ev *termbox.Event) {
 	switch ev.Type {
@@ -69,10 +77,14 @@ func (m *Cmdbar) Event(ev *termbox.Event) {
 	}
 }
 
+// ##################### StatusBar ########################################
+
 // Event handler for Statusbar
 func (s *Statusbar) Event(ev *termbox.Event) {
 	// TBD
 }
+
+// ##################### View       ########################################
 
 // Event handler for View
 func (v *View) Event(ev *termbox.Event) {
@@ -138,6 +150,18 @@ func (v *View) Event(ev *termbox.Event) {
 	case termbox.EventMouse:
 		switch ev.Key {
 		case termbox.MouseLeft:
+			if Ed.evtState.MovingView {
+				Ed.evtState.MovingView = false
+				Ed.ViewMove(Ed.evtState.X, Ed.evtState.Y, ev.MouseX, ev.MouseY)
+				return
+			}
+			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
+				Ed.evtState.MovingView = true
+				Ed.evtState.X = ev.MouseX
+				Ed.evtState.Y = ev.MouseY
+				Ed.SetStatusErr("Starting move, click new position.")
+				return
+			}
 			Ed.CmdOn = false
 			// MoveCursor use text coordinates which starts at offset 2,2
 			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
