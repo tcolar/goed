@@ -172,6 +172,13 @@ func (v *View) RenderText() {
 		Ed.Char(v.x1+1, y, Ed.Theme.MoreTextDown.Rune)
 		Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
 	}
+	// With some terminals & color schemes the cursor might be "invisible" if we are at a
+	// location with no text (ie: end of line)
+	// so in that case put as space there to cause the cursor to appear.
+	c, _, _ := v.CursorChar(v.CursorX, v.CursorY)
+	if c == nil {
+		Ed.Char(v.CursorX+2, v.CursorY+3, ' ')
+	}
 }
 
 func (v *View) LastViewLine() int {
