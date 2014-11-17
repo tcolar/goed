@@ -8,9 +8,8 @@ import (
 )
 
 type Editor struct {
-	Cmdbar    *Cmdbar
-	Statusbar *Statusbar
-	//Views      []*View
+	Cmdbar     *Cmdbar
+	Statusbar  *Statusbar
 	Fg, Bg     Style
 	Theme      *Theme
 	Cols       []*Col
@@ -57,6 +56,15 @@ func (e *Editor) Start() {
 	e.Resize(e.Size())
 
 	e.CurView.MoveCursor(0, 0)
+
+	view1.Selections = []Selection{
+		Selection{
+			LineFrom: 16,
+			ColFrom:  4,
+			LineTo:   29,
+			ColTo:    6,
+		},
+	}
 
 	e.Render()
 

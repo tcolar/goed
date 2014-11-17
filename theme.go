@@ -11,11 +11,13 @@ import (
 )
 
 type Theme struct {
-	Bg      Style // default to term bg
-	Fg      Style // default to term fg
-	Comment Style
-	String  Style
-	Keyword Style
+	Bg       Style // default to term bg
+	Fg       Style // default to term fg
+	BgSelect Style // default to term bg
+	FgSelect Style // default to term fg
+	Comment  Style
+	String   Style
+	Keyword  Style
 	// Numbers Style
 	// Custom1 Style
 	// Symbols := = etc ...
@@ -53,6 +55,8 @@ func defaultTheme() *Theme {
 	return &Theme{
 		Bg:               bg,
 		Fg:               fg,
+		BgSelect:         fg,
+		FgSelect:         bg,
 		Comment:          fg,
 		String:           fg,
 		Keyword:          fg,

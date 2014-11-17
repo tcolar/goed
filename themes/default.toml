@@ -1,5 +1,7 @@
 Bg="EA000000"
-Fg="DF030F00"
+Fg="DF030F01"
+BgSelect="DF030F00"
+FgSelect="EA000001"
 Comment="F2070F00"
 String="28020F00"
 Keyword="C4010F01"

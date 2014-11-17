@@ -26,16 +26,6 @@ func main() {
 		*colors = 2
 	}
 
-	/*a := []int{0, 1, 2, 3, 4, 5, 6}
-	// 0,2,3,4,1,5,6
-	i1 := 1
-	i2 := 4
-	v := a[i1]
-	copy(a[i1:i2], a[i1+1:i2+1])
-	a[i2] = v
-	pretty.Print(a)
-	return*/
-
 	Ed = Editor{}
 	Ed.Start()
 }

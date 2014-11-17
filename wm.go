@@ -53,6 +53,16 @@ func (e *Editor) Render() {
 		}
 	}
 
+	// With some terminals & color schemes the cursor might be "invisible" if we are at a
+	// location with no text (ie: end of line)
+	// so in that case put as space there to cause the cursor to appear.
+	v := Ed.CurView
+	cc, cl := v.CurCol(), v.CurLine()
+	c, _, _ := v.CursorChar(cc, cl)
+	if c == nil {
+		Ed.Char(cc+2-v.offx, cl+3-v.offy, ' ')
+	}
+
 	e.Cmdbar.Render()
 	e.Statusbar.Render()
 

@@ -2,8 +2,10 @@
 
 Most important now:
 
-- Move /resize window
+X Move /resize window
+- Select section (mouse and/or Kb)
 - Copy/paste
+- Warn on dirty view close
 - Undo / Redo
 - GoFmt
 - File buffers ?

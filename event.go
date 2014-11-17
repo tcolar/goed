@@ -10,12 +10,14 @@ import (
 
 // Evttate stores some state about kb/mouse events
 type EvtState struct {
-	MovingView bool
-	X, Y       int
+	MovingView                     bool
+	X, Y                           int
+	DragX1, DragY1, DragX2, DragY2 int
 }
 
 func (e *Editor) EventLoop() {
 
+	termbox.SetMouseMode(termbox.MouseMotion)
 	termbox.SetInputMode(termbox.InputEsc | termbox.InputMouse)
 
 	for {
@@ -140,6 +142,10 @@ func (v *View) Event(ev *termbox.Event) {
 			dirty = true
 		case termbox.KeyCtrlS:
 			v.Save()
+		case termbox.KeyCtrlC:
+			v.Copy()
+		case termbox.KeyCtrlV:
+			v.Paste()
 		case termbox.KeyCtrlQ:
 			return
 		default:
@@ -161,6 +167,37 @@ func (v *View) Event(ev *termbox.Event) {
 				Ed.evtState.Y = ev.MouseY
 				Ed.SetStatusErr("Starting move, click new position.")
 				return
+			}
+			if ev.DragOn {
+				if Ed.evtState.DragX1 == 0 {
+					// start drag
+					Ed.evtState.DragX1, Ed.evtState.DragY1 = ev.MouseX, ev.MouseY
+				}
+				// continued drag
+				Ed.evtState.DragX2, Ed.evtState.DragY2 = ev.MouseX, ev.MouseY
+				s := Selection{
+					LineFrom: Ed.evtState.DragY1 - v.y1 + v.offy - 2,
+					LineTo:   Ed.evtState.DragY2 - v.y1 + v.offy - 2,
+					ColFrom:  Ed.evtState.DragX1 - v.x1 + v.offx - 2,
+					ColTo:    Ed.evtState.DragX2 - v.x1 + v.offx - 2,
+				}
+				// Deal with "reverse" selection
+				if s.LineFrom == s.LineTo && s.ColFrom > s.ColTo {
+					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
+				} else if s.LineFrom > s.LineTo {
+					s.LineFrom, s.LineTo = s.LineTo, s.LineFrom
+					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
+				}
+				// set the selection
+				v.Selections = []Selection{
+					s,
+				}
+				return
+			} else {
+				// reset drag
+				Ed.evtState.DragX1, Ed.evtState.DragY1 = 0, 0
+				Ed.evtState.DragX2, Ed.evtState.DragY2 = 0, 0
+				v.Selections = []Selection{}
 			}
 			Ed.CmdOn = false
 			// MoveCursor use text coordinates which starts at offset 2,2

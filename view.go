@@ -20,6 +20,7 @@ type View struct {
 	CursorX, CursorY int
 	offx, offy       int
 	HeightRatio      float64
+	Selections       []Selection
 }
 
 func (e *Editor) NewView() *View {
@@ -129,12 +130,15 @@ func (v *View) viewLine(index int) []rune {
 
 func (v *View) RenderText() {
 	y := v.y1 + 2
-	Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+	fg := Ed.Theme.Fg
+	bg := Ed.Theme.Bg
+	Ed.FB(fg, bg)
+	inSelection := false
 	if v.offy > 0 {
 		// More text above
 		Ed.FB(Ed.Theme.MoreTextUp.Fg, Ed.Theme.MoreTextUp.Bg)
 		Ed.Char(v.x1+1, y-1, Ed.Theme.MoreTextUp.Rune)
-		Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+		Ed.FB(fg, bg)
 	}
 	for _, l := range v.viewLines() {
 		x := v.x1 + 2
@@ -142,13 +146,23 @@ func (v *View) RenderText() {
 			// More text to our left
 			Ed.FB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
 			Ed.Char(x-1, y, Ed.Theme.MoreTextSide.Rune)
-			Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+			Ed.FB(fg, bg)
 		}
 		for _, c := range l {
+			selected, _ := v.Selected(v.CursorTextPos(v.offx+x-2-v.x1, v.offy+y-2-v.y1))
+			if selected != inSelection {
+				inSelection = selected
+				if selected {
+					fg, bg = Ed.Theme.FgSelect, Ed.Theme.BgSelect
+				} else {
+					fg, bg = Ed.Theme.Fg, Ed.Theme.Bg
+				}
+				Ed.FB(fg, bg)
+			}
 			if c == '\t' {
-				Ed.FB(Ed.Theme.TabChar.Fg, Ed.Theme.TabChar.Bg)
+				Ed.FB(Ed.Theme.TabChar.Fg, bg)
 				Ed.Char(x, y, Ed.Theme.TabChar.Rune)
-				Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+				Ed.FB(fg, bg)
 			} else {
 				Ed.Char(x, y, c)
 			}
@@ -157,7 +171,7 @@ func (v *View) RenderText() {
 				// More text to our right
 				Ed.FB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
 				Ed.Char(x-1, y, Ed.Theme.MoreTextSide.Rune)
-				Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+				Ed.FB(fg, bg)
 				break
 			}
 		}
@@ -170,14 +184,7 @@ func (v *View) RenderText() {
 		// More text below
 		Ed.FB(Ed.Theme.MoreTextDown.Fg, Ed.Theme.MoreTextDown.Bg)
 		Ed.Char(v.x1+1, y, Ed.Theme.MoreTextDown.Rune)
-		Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
-	}
-	// With some terminals & color schemes the cursor might be "invisible" if we are at a
-	// location with no text (ie: end of line)
-	// so in that case put as space there to cause the cursor to appear.
-	c, _, _ := v.CursorChar(v.CursorX, v.CursorY)
-	if c == nil {
-		Ed.Char(v.CursorX+2, v.CursorY+3, ' ')
+		Ed.FB(fg, bg)
 	}
 }
 

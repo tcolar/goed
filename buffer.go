@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"unicode/utf8"
+
+	"github.com/atotto/clipboard"
 )
 
 // TODO: flush this out + File based impl
@@ -99,6 +101,7 @@ func (v *View) Insert(c rune) {
 
 // InsertNewLine inserts a "newline"(Enter key) in the buffer
 func (v *View) InsertNewLine() {
+	// TODO: Keep indentation
 	l := v.CurLine()
 	i := v.lineRunesTo(l, v.CurCol())
 	line := v.Buffer.text[l]
@@ -226,9 +229,22 @@ func (v *View) CurChar() (r *rune, textX int, textY int) {
 
 // The runeSize (on screen)
 // tabs are a special case
-func (v View) runeSize(r rune) int {
+func (v *View) runeSize(r rune) int {
 	if r == '\t' {
 		return tabSize
 	}
 	return 1
+}
+
+func (v *View) Copy() {
+	clipboard.WriteAll("TBD")
+}
+
+func (v *View) Paste() {
+	text, err := clipboard.ReadAll()
+	if err != nil {
+		Ed.SetStatusErr(err.Error())
+		return
+	}
+	Ed.SetStatus(text)
 }
