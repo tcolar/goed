@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"io/ioutil"
 	"os"
 	"unicode/utf8"
-
-	"github.com/atotto/clipboard"
 )
 
 // TODO: flush this out + File based impl
@@ -40,14 +37,7 @@ func (e *Editor) NewFileBuffer(path string) *Buffer {
 	if err != nil {
 		panic(err)
 	}
-	lines := bytes.Split(data, []byte("\n"))
-	runes := [][]rune{}
-	for i, l := range lines {
-		// Ignore last line if empty
-		if i != len(lines)-1 || len(l) != 0 {
-			runes = append(runes, bytes.Runes(l))
-		}
-	}
+	runes := Ed.StringToRunes(data)
 	return &Buffer{
 		text: runes,
 		file: path,
@@ -111,6 +101,18 @@ func (v *View) InsertNewLine() {
 	b[l+1] = line[i:]                    // make rest of current line it's own line
 	v.Buffer.text = b
 	v.MoveCursor(1, 0)
+}
+
+// TODO: This is not most efficient
+func (v *View) InsertLines(lines [][]rune) {
+	for i, l := range lines {
+		for _, r := range l {
+			v.Insert(r)
+		}
+		if i < len(lines)-1 {
+			v.InsertNewLine()
+		}
+	}
 }
 
 // Delete removes a character at the current location
@@ -190,7 +192,7 @@ func (v *View) lineColsTo(lnIndex, to int) int {
 // lineRunesTo returns the number of raw runes to the given line column
 func (v View) lineRunesTo(lnIndex, column int) int {
 	runes := 0
-	if lnIndex >= v.LineCount() {
+	if lnIndex >= v.LineCount() || lnIndex < 0 {
 		return 0
 	}
 	ln := v.Line(lnIndex)
@@ -234,17 +236,4 @@ func (v *View) runeSize(r rune) int {
 		return tabSize
 	}
 	return 1
-}
-
-func (v *View) Copy() {
-	clipboard.WriteAll("TBD")
-}
-
-func (v *View) Paste() {
-	text, err := clipboard.ReadAll()
-	if err != nil {
-		Ed.SetStatusErr(err.Error())
-		return
-	}
-	Ed.SetStatus(text)
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
@@ -57,18 +58,7 @@ func (e *Editor) Start() {
 
 	e.CurView.MoveCursor(0, 0)
 
-	view1.Selections = []Selection{
-		Selection{
-			LineFrom: 16,
-			ColFrom:  4,
-			LineTo:   29,
-			ColTo:    6,
-		},
-	}
-
 	e.Render()
-
-	e.SetStatus("Holla!")
 
 	e.EventLoop()
 }
@@ -94,4 +84,28 @@ func (e *Editor) SetStatus(s string) {
 	e.Statusbar.msg = s
 	e.Statusbar.isErr = false
 	e.Statusbar.Render()
+}
+
+// RunesToString returns a rune section as a srting.
+func (e Editor) RunesToString(runes [][]rune) string {
+	r := []rune{}
+	for i, line := range runes {
+		if i != 0 && i != len(runes) {
+			r = append(r, '\n')
+		}
+		r = append(r, line...)
+	}
+	return string(r)
+}
+
+func (e Editor) StringToRunes(s []byte) [][]rune {
+	lines := bytes.Split(s, []byte("\n"))
+	runes := [][]rune{}
+	for i, l := range lines {
+		// Ignore last line if empty
+		if i != len(lines)-1 || len(l) != 0 {
+			runes = append(runes, bytes.Runes(l))
+		}
+	}
+	return runes
 }

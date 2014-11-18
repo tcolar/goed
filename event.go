@@ -8,7 +8,7 @@ import (
 	"github.com/tcolar/termbox-go"
 )
 
-// Evttate stores some state about kb/mouse events
+// Evtstate stores some state about kb/mouse events
 type EvtState struct {
 	MovingView                     bool
 	X, Y                           int
@@ -83,7 +83,7 @@ func (m *Cmdbar) Event(ev *termbox.Event) {
 
 // Event handler for Statusbar
 func (s *Statusbar) Event(ev *termbox.Event) {
-	// TBD
+	// Anyhting ??
 }
 
 // ##################### View       ########################################
@@ -143,7 +143,9 @@ func (v *View) Event(ev *termbox.Event) {
 		case termbox.KeyCtrlS:
 			v.Save()
 		case termbox.KeyCtrlC:
-			v.Copy()
+			if len(v.Selections) > 0 {
+				v.Copy(v.Selections[0])
+			}
 		case termbox.KeyCtrlV:
 			v.Paste()
 		case termbox.KeyCtrlQ:
@@ -155,6 +157,10 @@ func (v *View) Event(ev *termbox.Event) {
 		}
 	case termbox.EventMouse:
 		switch ev.Key {
+		case termbox.MouseScrollUp:
+			v.MoveCursor(0, -1)
+		case termbox.MouseScrollDown:
+			v.MoveCursor(0, 1)
 		case termbox.MouseLeft:
 			if Ed.evtState.MovingView {
 				Ed.evtState.MovingView = false
@@ -175,18 +181,32 @@ func (v *View) Event(ev *termbox.Event) {
 				}
 				// continued drag
 				Ed.evtState.DragX2, Ed.evtState.DragY2 = ev.MouseX, ev.MouseY
+				x1 := Ed.evtState.DragX1 - v.x1 + v.offx - 2
+				x2 := Ed.evtState.DragX2 - v.x1 + v.offx - 2
+				y1 := Ed.evtState.DragY1 - v.y1 + v.offy - 2
+				y2 := Ed.evtState.DragY2 - v.y1 + v.offy - 2
+
 				s := Selection{
-					LineFrom: Ed.evtState.DragY1 - v.y1 + v.offy - 2,
-					LineTo:   Ed.evtState.DragY2 - v.y1 + v.offy - 2,
-					ColFrom:  Ed.evtState.DragX1 - v.x1 + v.offx - 2,
-					ColTo:    Ed.evtState.DragX2 - v.x1 + v.offx - 2,
+					LineFrom: y1,
+					LineTo:   y2,
+					ColFrom:  v.lineRunesTo(y1, x1),
+					ColTo:    v.lineRunesTo(y2, x2),
 				}
 				// Deal with "reverse" selection
+				reverse := false
 				if s.LineFrom == s.LineTo && s.ColFrom > s.ColTo {
+					reverse = true
 					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
 				} else if s.LineFrom > s.LineTo {
+					reverse = true
 					s.LineFrom, s.LineTo = s.LineTo, s.LineFrom
 					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
+				}
+				// Because we only receive the event after a "move", we need to add the start location
+				if reverse {
+					s.ColTo++
+				} else {
+					s.ColFrom--
 				}
 				// set the selection
 				v.Selections = []Selection{

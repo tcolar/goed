@@ -10,7 +10,7 @@ import (
 
 const tabSize = 4
 
-var id int = 0 // TODO id ??
+var id int = 0
 
 type View struct {
 	Widget

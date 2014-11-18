@@ -15,6 +15,8 @@ type Theme struct {
 	Fg       Style // default to term fg
 	BgSelect Style // default to term bg
 	FgSelect Style // default to term fg
+	BgCursor Style
+	FgCursor Style
 	Comment  Style
 	String   Style
 	Keyword  Style
@@ -57,6 +59,8 @@ func defaultTheme() *Theme {
 		Fg:               fg,
 		BgSelect:         fg,
 		FgSelect:         bg,
+		BgCursor:         fg,
+		FgCursor:         bg,
 		Comment:          fg,
 		String:           fg,
 		Keyword:          fg,
