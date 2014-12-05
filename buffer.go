@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"unicode/utf8"
@@ -42,6 +43,26 @@ func (e *Editor) NewFileBuffer(path string) *Buffer {
 		text: runes,
 		file: path,
 	}
+}
+
+// File listing buffer
+func (e *Editor) NewDirBuffer(loc string) (*Buffer, error) {
+	listing := "..\n"
+	info, err := ioutil.ReadDir(loc)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range info {
+		dir := ""
+		if f.IsDir() {
+			dir = "/"
+		}
+		listing = fmt.Sprintf("%s%s%s\n", listing, f.Name(), dir)
+	}
+	return &Buffer{
+		text: Ed.StringToRunes([]byte(listing)),
+		file: loc,
+	}, nil
 }
 
 // TODO : this is an in memory "stupid" impl

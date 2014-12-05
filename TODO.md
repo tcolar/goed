@@ -3,12 +3,12 @@
 Most important now:
 
 X Move /resize window
-+ Select section (mouse and/or Kb)
 X Copy/paste
+- List / open files
+- GoFmt
++ Select section (mouse and/or Kb)
 - Warn on dirty view close
 - Undo / Redo
-- GoFmt
-- List / open files
 - File buffers ?
 
 ### Core
@@ -62,8 +62,10 @@ X 256 colors cant see cursor when on white space
 
 ### Events
 - scrolling selection support
-- select + enter = execute
-- select + middle click = execute
+- CTRL+ O -> open selection
+- ctrl + enter = execute current line
+- select + ctrl + enter = execute   ALT+E ?
+- -> execute goes to new window, closing that window kills the process ??
 + escape or caps or hh then,
 - h help/commands (Ctrl+h)
 X copy/paste (ctrl+c, ctrl+v)
@@ -80,7 +82,7 @@ X copy/paste (ctrl+c, ctrl+v)
 X nc newcol 
 X nv niewview
 X dc, dv delcol delview
-- r refresh / reload
+- r refresh / reload -> Ctrl+r -> refresh buffer / dir listing ?
 - re replace ? -> +CtrlN for replace next ??
 - mh, mj, mk, ml move to view left right, up, down  (ctrl h,j,k,l)
 - rh, rj, rk, rl relocate the view left right, up, down  (ctrl+shift+ h,j,k,l)

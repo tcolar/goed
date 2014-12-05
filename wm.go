@@ -269,6 +269,9 @@ func (e *Editor) AddCol(ratio float64) *Col {
 
 // AddCol adds a new view in the current column, space is "taken" from the current view
 func (e *Editor) AddView(ratio float64) *View {
+	if ratio > 1.0 {
+		ratio = 1.0
+	}
 	r := e.CurView.HeightRatio
 	nv := e.NewView()
 	nv.HeightRatio = r * ratio

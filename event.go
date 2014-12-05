@@ -18,7 +18,7 @@ type EvtState struct {
 func (e *Editor) EventLoop() {
 
 	termbox.SetMouseMode(termbox.MouseMotion)
-	termbox.SetInputMode(termbox.InputEsc | termbox.InputMouse)
+	termbox.SetInputMode(termbox.InputMouse)
 
 	for {
 		ev := termbox.PollEvent()
@@ -65,10 +65,10 @@ func (m *Cmdbar) Event(ev *termbox.Event) {
 			}
 		case termbox.KeyEnter:
 			m.RunCmd()
-		case termbox.KeySpace:
-			m.Cmd = append(m.Cmd, ' ') // hum why is ev.Ch not space when pressing space ???
 		default:
-			m.Cmd = append(m.Cmd, ev.Ch)
+			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
+				m.Cmd = append(m.Cmd, ev.Ch)
+			}
 		}
 
 	case termbox.EventMouse:
@@ -93,6 +93,15 @@ func (v *View) Event(ev *termbox.Event) {
 	dirty := false
 	switch ev.Type {
 	case termbox.EventKey:
+		// alt combo
+		if ev.Mod == termbox.ModAlt {
+			switch ev.Ch {
+			case 'o':
+				Ed.Cmdbar.OpenSelection(v, false)
+			}
+			return
+		}
+		// Not alt
 		switch ev.Key {
 		case termbox.KeyArrowRight:
 			offset := 1
@@ -142,6 +151,8 @@ func (v *View) Event(ev *termbox.Event) {
 			dirty = true
 		case termbox.KeyCtrlS:
 			v.Save()
+		case termbox.KeyCtrlO:
+			Ed.Cmdbar.OpenSelection(v, true)
 		case termbox.KeyCtrlC:
 			if len(v.Selections) > 0 {
 				v.Copy(v.Selections[0])
@@ -152,8 +163,10 @@ func (v *View) Event(ev *termbox.Event) {
 			return
 		default:
 			// insert the key
-			v.Insert(ev.Ch)
-			dirty = true
+			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
+				v.Insert(ev.Ch)
+				dirty = true
+			}
 		}
 	case termbox.EventMouse:
 		switch ev.Key {

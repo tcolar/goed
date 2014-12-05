@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/tcolar/termbox-go"
 )
@@ -19,14 +22,16 @@ type Editor struct {
 	CmdOn      bool
 	pctw, pcth float64
 	evtState   *EvtState
+	Home       string
 }
 
-func (e *Editor) Start() {
+func (e *Editor) Start(loc string) {
 	err := termbox.Init()
 	if err != nil {
 		panic(err)
 	}
 	defer termbox.Close()
+	e.initHome()
 	termbox.SetExtendedColors(*colors == 256)
 	e.evtState = &EvtState{}
 	e.Theme = ReadTheme("themes/default.toml")
@@ -38,17 +43,19 @@ func (e *Editor) Start() {
 	e.Cmdbar.SetBounds(0, 0, w, 0)
 	e.Statusbar = &Statusbar{}
 	e.Statusbar.SetBounds(0, h-1, w, h-1)
-	view1 := e.NewFileView("view.go")
+	view1 := &View{}
+	e.Open(loc, view1, "")
 	view1.HeightRatio = 1.0
-	view2 := e.NewFileView("themes/default.toml")
-	view2.HeightRatio = 0.8
-	view3 := e.NewView()
-	view3.HeightRatio = 0.2
-	c := e.NewCol(0.75, []*View{view1})
-	c2 := e.NewCol(0.25, []*View{view2, view3})
-	e.Cols = []*Col{
-		c,
-		c2,
+
+	c := e.NewCol(1.0, []*View{view1})
+	e.Cols = []*Col{c}
+	if stat, err := os.Stat(loc); err == nil && !stat.IsDir() {
+		view2 := &View{}
+		e.Open(".", view2, "")
+		view2.HeightRatio = 1.0
+		c.WidthRatio = 0.75
+		c2 := e.NewCol(0.25, []*View{view2})
+		e.Cols = append(e.Cols, c2)
 	}
 
 	e.CurView = view1
@@ -63,13 +70,50 @@ func (e *Editor) Start() {
 	e.EventLoop()
 }
 
-func (e *Editor) OpenFile(loc string, view *View) error {
+func (e *Editor) Open(loc string, view *View, rel string) error {
 	if view == nil {
 		return fmt.Errorf("No view selected !")
 	}
-	if _, err := os.Stat(loc); err != nil {
+	if len(rel) > 0 && !strings.HasPrefix(loc, string(os.PathSeparator)) {
+		loc = path.Join(rel, loc)
+	}
+	stat, err := os.Stat(loc)
+	if err != nil {
 		return fmt.Errorf("File not found %s", loc)
 	}
+	// make it absolute
+	loc, err = filepath.Abs(loc)
+	if err != nil {
+		return err
+	}
+	title := filepath.Base(loc)
+	if stat.IsDir() {
+		loc += string(os.PathSeparator)
+		title += string(os.PathSeparator)
+	}
+	e.CurView = view
+	view.Reset()
+	view.title = title
+	if stat.IsDir() {
+		err = e.openDir(loc, view)
+	} else {
+		err = e.openFile(loc, view)
+	}
+	e.SetStatus(loc)
+	return err
+}
+
+func (e *Editor) openDir(loc string, view *View) error {
+	buffer, err := e.NewDirBuffer(loc)
+	if err != nil {
+		return err
+	}
+	view.Buffer = buffer
+	view.Dirty = false
+	return nil
+}
+
+func (e *Editor) openFile(loc string, view *View) error {
 	view.Buffer = e.NewFileBuffer(loc)
 	view.Dirty = false
 	return nil

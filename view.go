@@ -3,6 +3,7 @@
 package main
 
 import (
+	"os/exec"
 	"path/filepath"
 
 	"github.com/tcolar/termbox-go"
@@ -21,6 +22,8 @@ type View struct {
 	offx, offy       int
 	HeightRatio      float64
 	Selections       []Selection
+	Cmd              *exec.Cmd
+	title            string
 }
 
 func (e *Editor) NewView() *View {
@@ -34,8 +37,15 @@ func (e *Editor) NewView() *View {
 
 func (e *Editor) NewFileView(path string) *View {
 	v := e.NewView()
-	Ed.OpenFile(path, v)
+	e.Open(path, v, "")
 	return v
+}
+
+func (v *View) Reset() {
+	v.CursorX, v.CursorY, v.offx, v.offy = 0, 0, 0, 0
+	v.Selections = []Selection{}
+	// TODO: shutdown command
+	v.Cmd = nil
 }
 
 func (v *View) Render() {
@@ -273,10 +283,15 @@ func (v *View) MoveCursor(x, y int) {
 }
 
 func (v *View) Title() string {
-	if len(v.Buffer.file) == 0 {
-		return "~~ NEW ~~"
+	if len(v.title) != 0 {
+		return v.title
 	}
-	return filepath.Base(v.Buffer.file)
+	if len(v.Buffer.file) == 0 {
+		v.title = "~~ NEW ~~"
+		return v.title
+	}
+	v.title = filepath.Base(v.Buffer.file)
+	return v.title
 }
 
 // Return the current line (zero indexed)

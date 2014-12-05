@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -42,7 +43,8 @@ func (c *Cmdbar) RunCmd() {
 		Ed.DelCol()
 	case "dv", "delview":
 		Ed.DelView()
-	//case "e", "exec":
+	case "e", "exec":
+		c.exec(args)
 	//case "gf", "gofmt":
 	//	Ed.SetStatus("TBD gofmt")
 	//case "h", "help":
@@ -97,13 +99,39 @@ func (c *Cmdbar) yank(args []string) {
 
 func (c *Cmdbar) open(args []string) {
 	if len(args) < 1 {
-		Ed.SetStatusErr("Missing file path")
+		// try to expand a location from the current view
+		Ed.SetStatusErr("No path provided")
 		return
 	}
-	// if no active view, create one ??
-	// if active view is dirty, create one ??
-	Ed.OpenFile(args[0], Ed.CurView)
+	// if active view is dirty, create a new one ??
+	err := Ed.Open(args[0], Ed.CurView, "")
+	if err != nil {
+		Ed.SetStatusErr(err.Error())
+		return
+	}
 	Ed.CmdOn = false
+}
+
+// Open what's selected or under the cursor
+// if newView is true then opne in a new biew, otherwise
+// replace content of v
+func (c *Cmdbar) OpenSelection(v *View, newView bool) {
+	// TODO: dirty check !
+	text := ""
+	if len(v.Selections) > 0 {
+		text = Ed.RunesToString(v.Selections[0].Text(v))
+	} else {
+		// TODO: parse line !
+		text = string(v.Line(v.CurLine()))
+	}
+	v2 := v
+	if newView {
+		v2 = Ed.AddView(0.5)
+	}
+	if err := Ed.Open(text, v2, v.Buffer.file); err != nil {
+		Ed.DelView()
+		Ed.SetStatusErr(err.Error())
+	}
 }
 
 func (c *Cmdbar) save(args []string) {
@@ -133,7 +161,7 @@ func (c *Cmdbar) newCol(args []string) {
 	}
 	v := Ed.AddCol(float64(pct) / 100.0).Views[0]
 	if len(loc) > 0 {
-		Ed.OpenFile(loc, v)
+		Ed.Open(loc, v, "")
 	}
 }
 
@@ -153,6 +181,13 @@ func (c *Cmdbar) newView(args []string) {
 	}
 	v := Ed.AddView(float64(pct) / 100.0)
 	if len(loc) > 0 {
-		Ed.OpenFile(loc, v)
+		Ed.Open(loc, v, "")
 	}
+}
+
+func (c *Cmdbar) exec(args []string) {
+	cmd := exec.Command(args[0], args[1:]...)
+	v := Ed.AddView(0.5)
+	v.Cmd = cmd
+	go v.Exec()
 }
