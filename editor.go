@@ -153,3 +153,16 @@ func (e Editor) StringToRunes(s []byte) [][]rune {
 	}
 	return runes
 }
+
+// QuitCeck check if it's ok to quit
+// if there are no dirty buffer
+// or if requested twice in a row
+func (e *Editor) QuitCheck() bool {
+	ok := true
+	for _, c := range e.Cols {
+		for _, v := range c.Views {
+			ok = ok && v.canClose()
+		}
+	}
+	return ok
+}

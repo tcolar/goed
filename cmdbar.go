@@ -42,9 +42,9 @@ func (c *Cmdbar) RunCmd() {
 	//case "d", "del": // as vi del
 	//case "dd":
 	case "dc", "delcol":
-		Ed.DelCol(Ed.CurCol)
+		Ed.DelColCheck(Ed.CurCol)
 	case "dv", "delview":
-		Ed.DelView(Ed.CurView)
+		Ed.DelViewCheck(Ed.CurView)
 	case "e", "exec":
 		c.exec(args)
 	//case "gf", "gofmt":

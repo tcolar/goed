@@ -5,6 +5,7 @@ package main
 import (
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/tcolar/termbox-go"
 )
@@ -24,6 +25,7 @@ type View struct {
 	Selections       []Selection
 	Cmd              *exec.Cmd
 	title            string
+	lastCloseTs      time.Time // Timestamp of previous view close request
 }
 
 func (e *Editor) NewView() *View {
@@ -308,4 +310,19 @@ func (v *View) CurLine() int {
 // Return the current column (zero indexed)
 func (v *View) CurCol() int {
 	return v.CursorX + v.offx
+}
+
+// canClose checks if the view can be closed
+// that is true if the view is not dirty
+// otherwise, if dirty, returns true if we get 2 lose request in a short timespan
+func (v *View) canClose() bool {
+	if !v.Dirty {
+		return true
+	}
+	if v.lastCloseTs.IsZero() || time.Now().Sub(v.lastCloseTs) > 10*time.Second {
+		v.lastCloseTs = time.Now()
+		return false
+	}
+	// 2 "quick"close request in a row
+	return true
 }

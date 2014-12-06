@@ -168,9 +168,9 @@ func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
 			// moved to a different column
 			ratio := float64(y2-v2.y1) / float64(v2.y2-v2.y1)
 			if len(c1.Views) == 0 {
-				e.DelCol(c1)
+				e.DelCol(c1, true)
 			} else {
-				e.DelView(v1)
+				e.DelView(v1, false)
 			}
 			v1.HeightRatio = v2.HeightRatio * (1.0 - ratio)
 			v2.HeightRatio *= ratio
@@ -184,7 +184,7 @@ func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
 			// Moving a view to it's own column
 			ratio := float64(x2-v2.x1) / float64(v2.x2-v2.x1)
 			nc := e.AddCol(c2, 1.0-ratio)
-			e.DelView(v1)
+			e.DelView(v1, false)
 			nc.Views[0] = v1
 		} else if c1i == c2i {
 			// Reducing a column
@@ -338,7 +338,7 @@ func (e *Editor) ReplaceView(oldView, newView *View) {
 	e.TerminateView(oldView)
 }
 
-func (e *Editor) DelCol(col *Col) {
+func (e *Editor) DelCol(col *Col, terminateViews bool) {
 	if len(e.Cols) <= 1 {
 		e.SetStatusErr("Only one column left !")
 		return
@@ -359,14 +359,16 @@ func (e *Editor) DelCol(col *Col) {
 		}
 		prev = e.Cols[i]
 	}
-	for _, v := range col.Views {
-		e.TerminateView(v)
+	if terminateViews {
+		for _, v := range col.Views {
+			e.TerminateView(v)
+		}
 	}
 	col = nil
 	e.Resize(e.Size())
 }
 
-func (e *Editor) DelView(view *View) {
+func (e *Editor) DelView(view *View, terminate bool) {
 	c := e.ViewColumn(view)
 	if len(e.Cols) <= 1 && len(c.Views) <= 1 {
 		e.SetStatusErr("Only one view left !")
@@ -374,7 +376,7 @@ func (e *Editor) DelView(view *View) {
 	}
 	// only one view left in col, delcol
 	if len(c.Views) <= 1 {
-		e.DelCol(c)
+		e.DelCol(c, terminate)
 		return
 	}
 	// otherwise remove curview and reassign space
@@ -389,7 +391,9 @@ func (e *Editor) DelView(view *View) {
 				e.CurView = c.Views[i+1]
 			}
 			c.Views = append(c.Views[:i], c.Views[i+1:]...)
-			e.TerminateView(v)
+			if terminate {
+				e.TerminateView(v)
+			}
 			break
 		}
 		prev = c.Views[i]
@@ -405,4 +409,26 @@ func (e *Editor) TerminateView(v *View) {
 		// TODO: stop any  command etc....
 	}
 	v = nil
+}
+
+// Delete (close) a view, but with dirty check
+func (e *Editor) DelViewCheck(v *View) {
+	if !v.canClose() {
+		Ed.SetStatusErr("Unsaved changes. Save or request close again.")
+		return
+	}
+	e.DelView(v, true)
+}
+
+// Delete (close) a col, but with dirty check
+func (e *Editor) DelColCheck(c *Col) {
+	ok := true
+	for _, v := range c.Views {
+		ok = ok && v.canClose()
+	}
+	if !ok {
+		Ed.SetStatusErr("Unsaved changes. Save or request close again.")
+		return
+	}
+	e.DelCol(c, true)
 }

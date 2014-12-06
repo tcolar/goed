@@ -28,7 +28,11 @@ func (e *Editor) EventLoop() {
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeyCtrlQ:
-				return
+				if !e.QuitCheck() {
+					Ed.SetStatusErr("Unsaved changes. Save or request close again.")
+				} else {
+					return // the end
+				}
 			case termbox.KeyEsc:
 				if !Ed.CmdOn {
 					Ed.Cmdbar.Cmd = []rune{}
@@ -154,10 +158,7 @@ func (v *View) Event(ev *termbox.Event) {
 		case termbox.KeyCtrlO:
 			Ed.Cmdbar.OpenSelection(v, true)
 		case termbox.KeyCtrlW:
-			/*if !dirtyCheck() {
-				return
-			}*/
-			Ed.DelView(Ed.CurView)
+			Ed.DelViewCheck(Ed.CurView)
 		case termbox.KeyCtrlC:
 			if len(v.Selections) > 0 {
 				v.Copy(v.Selections[0])
@@ -187,9 +188,7 @@ func (v *View) Event(ev *termbox.Event) {
 				return
 			}
 			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 {
-				// close button
-				// TODO: dirty check
-				Ed.DelView(v)
+				Ed.DelViewCheck(v)
 				return
 			}
 			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
