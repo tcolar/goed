@@ -57,10 +57,11 @@ func (v *View) Render() {
 	}
 	Ed.FB(fg, Ed.Theme.Viewbar.Bg)
 	t := v.Title()
-	if v.x1+len(t) > v.x2-2 {
-		t = t[:v.x2-v.x1-2]
+	if v.x1+len(t) > v.x2-4 {
+		t = t[:v.x2-v.x1-4]
 	}
 	Ed.Str(v.x1+2, v.y1, t)
+	v.RenderClose()
 	v.RenderScroll()
 	v.RenderIsDirty()
 	v.RenderMargin()
@@ -91,6 +92,11 @@ func (v *View) RenderIsDirty() {
 	}
 	Ed.FB(style.Fg, style.Bg)
 	Ed.Char(v.x1, v.y1, style.Rune)
+}
+
+func (v *View) RenderClose() {
+	Ed.FB(Ed.Theme.Close.Fg, Ed.Theme.Close.Bg)
+	Ed.Char(v.x2-1, v.y1, Ed.Theme.Close.Rune)
 }
 
 // Gives us the lines to show in the view as text (\t as spaces)

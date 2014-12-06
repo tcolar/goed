@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -11,7 +12,7 @@ import (
 type Cmdbar struct {
 	Widget
 	Cmd     []rune
-	History [][]rune // TBD
+	History [][]rune // TODO : cmd history
 }
 
 func (c *Cmdbar) Render() {
@@ -36,13 +37,14 @@ func (c *Cmdbar) RunCmd() {
 		return
 	}
 	args := parts[1:]
+	var err error
 	switch parts[0] {
 	//case "d", "del": // as vi del
 	//case "dd":
 	case "dc", "delcol":
-		Ed.DelCol()
+		Ed.DelCol(Ed.CurCol)
 	case "dv", "delview":
-		Ed.DelView()
+		Ed.DelView(Ed.CurView)
 	case "e", "exec":
 		c.exec(args)
 	//case "gf", "gofmt":
@@ -54,17 +56,22 @@ func (c *Cmdbar) RunCmd() {
 	case "nv", "newview":
 		c.newView(args)
 	case "o", "open":
-		c.open(args)
+		err = c.open(args)
 	case "p", "paste": // as vi
 		c.paste(args)
 	case "s", "save":
 		c.save(args)
 	case "y", "yank": // as vi copy
-		c.yank(args)
+		err = c.yank(args)
 	case "yy":
-		c.yank([]string{"1"})
+		err = c.yank([]string{"1"})
 	default:
 		Ed.SetStatusErr("Unexpected command " + parts[0])
+	}
+	if err == nil {
+		Ed.CmdOn = false
+	} else {
+		Ed.SetStatus(err.Error())
 	}
 }
 
@@ -75,18 +82,17 @@ func (c *Cmdbar) paste(args []string) {
 	v.Paste()
 	v.InsertNewLine()
 	v.MoveCursor(-v.CurCol(), l-v.CurLine())
+	v.Dirty = true
 }
 
-func (c *Cmdbar) yank(args []string) {
+func (c *Cmdbar) yank(args []string) error {
 	v := Ed.CurView
 	if len(args) == 0 {
-		Ed.SetStatus("Expected an argument.")
-		return
+		return fmt.Errorf("Expected an argument")
 	}
 	nb, err := strconv.Atoi(args[0])
 	if err != nil {
-		Ed.SetStatus("Expected a numeric argument.")
-		return
+		return fmt.Errorf("Expected a numericargument")
 	}
 	nb--
 	Ed.CurView.Copy(
@@ -95,28 +101,35 @@ func (c *Cmdbar) yank(args []string) {
 			LineTo:   v.CurLine() + nb,
 			ColTo:    v.LineLen(v.CurLine() + nb),
 		})
+	return nil
 }
 
-func (c *Cmdbar) open(args []string) {
+func (c *Cmdbar) open(args []string) error {
 	if len(args) < 1 {
 		// try to expand a location from the current view
-		Ed.SetStatusErr("No path provided")
-		return
+		return fmt.Errorf("No path provided")
 	}
-	// if active view is dirty, create a new one ??
-	err := Ed.Open(args[0], Ed.CurView, "")
+	v := Ed.NewView()
+	err := Ed.Open(args[0], v, "")
 	if err != nil {
-		Ed.SetStatusErr(err.Error())
-		return
+		return err
 	}
-	Ed.CmdOn = false
+	if Ed.CurView.Dirty {
+		Ed.InsertViewSmart(v)
+		Ed.SetStatus("insert")
+	} else {
+		Ed.ReplaceView(Ed.CurView, v)
+		Ed.SetStatus("replace")
+	}
+	Ed.CurView = v
+	return nil
 }
 
 // Open what's selected or under the cursor
-// if newView is true then opne in a new biew, otherwise
+// if newView is true then open in a new view, otherwise
 // replace content of v
 func (c *Cmdbar) OpenSelection(v *View, newView bool) {
-	// TODO: dirty check !
+	newView = newView || v.Dirty
 	text := ""
 	if len(v.Selections) > 0 {
 		text = Ed.RunesToString(v.Selections[0].Text(v))
@@ -124,14 +137,20 @@ func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 		// TODO: parse line !
 		text = string(v.Line(v.CurLine()))
 	}
-	v2 := v
-	if newView {
-		v2 = Ed.AddView(0.5)
-	}
+	v2 := Ed.NewView()
 	if err := Ed.Open(text, v2, v.Buffer.file); err != nil {
-		Ed.DelView()
 		Ed.SetStatusErr(err.Error())
 	}
+	if newView {
+		if strings.HasSuffix(text, string(os.PathSeparator)) {
+			Ed.InsertView(v2, v, 0.5)
+		} else {
+			Ed.InsertViewSmart(v2)
+		}
+	} else {
+		Ed.ReplaceView(v, v2)
+	}
+	Ed.CurView = v
 }
 
 func (c *Cmdbar) save(args []string) {
@@ -159,7 +178,7 @@ func (c *Cmdbar) newCol(args []string) {
 			loc = strings.Join(args, " ")
 		}
 	}
-	v := Ed.AddCol(float64(pct) / 100.0).Views[0]
+	v := Ed.AddCol(Ed.CurCol, float64(pct)/100.0).Views[0]
 	if len(loc) > 0 {
 		Ed.Open(loc, v, "")
 	}
@@ -179,7 +198,7 @@ func (c *Cmdbar) newView(args []string) {
 			loc = strings.Join(args, " ")
 		}
 	}
-	v := Ed.AddView(float64(pct) / 100.0)
+	v := Ed.AddView(Ed.CurView, float64(pct)/100.0)
 	if len(loc) > 0 {
 		Ed.Open(loc, v, "")
 	}
@@ -187,7 +206,7 @@ func (c *Cmdbar) newView(args []string) {
 
 func (c *Cmdbar) exec(args []string) {
 	cmd := exec.Command(args[0], args[1:]...)
-	v := Ed.AddView(0.5)
+	v := Ed.AddViewSmart()
 	v.Cmd = cmd
 	go v.Exec()
 }

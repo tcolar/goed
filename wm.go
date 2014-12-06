@@ -149,7 +149,7 @@ func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
 				v1.HeightRatio -= ratio
 				c1.Views[v1i-1].HeightRatio += ratio // giving space to prev view
 			}
-		} else if c1i == c2i && v2i == v1i-1 {
+		} else if c1i == c2i && v2i == v1i-1 && y2 != v2.y1 {
 			// Expanding the view
 			ratio := float64(y1-y2) / float64(h-2)
 			v1.HeightRatio += ratio
@@ -166,33 +166,32 @@ func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
 			}
 		} else {
 			// moved to a different column
-			// TODO: Try to be samrt like acme as far as minimizing whitespace
-			// For now will just take 50% of the target view
-			v2.HeightRatio /= 2
-			v1.HeightRatio = v2.HeightRatio
+			ratio := float64(y2-v2.y1) / float64(v2.y2-v2.y1)
+			if len(c1.Views) == 0 {
+				e.DelCol(c1)
+			} else {
+				e.DelView(v1)
+			}
+			v1.HeightRatio = v2.HeightRatio * (1.0 - ratio)
+			v2.HeightRatio *= ratio
 			c2.Views = append(c2.Views, nil)
 			copy(c2.Views[v2i+2:], c2.Views[v2i+1:])
 			c2.Views[v2i+1] = v1
-			ov := e.CurView
-			oc := e.CurCol
-			e.CurView = v1
-			e.CurCol = c1
-			if len(c1.Views) == 0 {
-				e.DelCol()
-			} else {
-				e.DelView()
-			}
-			e.CurView = ov
-			e.CurCol = oc
 		}
 	} else {
-		// Moving a whole column
-		if c1i == c2i {
+		// Moving a whole column or a view to it's own column
+		if y2 == 1 && v1i > 0 && x2 > v2.x1 && x2 < v2.x2 {
+			// Moving a view to it's own column
+			ratio := float64(x2-v2.x1) / float64(v2.x2-v2.x1)
+			nc := e.AddCol(c2, 1.0-ratio)
+			e.DelView(v1)
+			nc.Views[0] = v1
+		} else if c1i == c2i {
+			// Reducing a column
 			if c1i > 0 {
-				// Reducing a column
 				ratio := float64(x2-x1) / float64(w)
 				c1.WidthRatio -= ratio
-				Ed.Cols[c1i-1].WidthRatio += ratio // giving space to prev col
+				e.Cols[c1i-1].WidthRatio += ratio // giving space to prev col
 			}
 		} else if c2i == c1i-1 {
 			// Expanding the column
@@ -203,10 +202,10 @@ func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
 			//reorder
 			i1, i2 := c1i, c2i
 			if i1 < i2 { // right
-				copy(Ed.Cols[i1:i2], Ed.Cols[i1+1:i2+1])
+				copy(e.Cols[i1:i2], e.Cols[i1+1:i2+1])
 				e.Cols[c2i] = c1
 			} else { // left
-				copy(Ed.Cols[i2+1:i1+1], Ed.Cols[i2:i1])
+				copy(e.Cols[i2+1:i1+1], e.Cols[i2:i1])
 				e.Cols[c2i+1] = c1
 			}
 
@@ -220,7 +219,7 @@ func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
 func (e *Editor) ViewColumn(v *View) *Col {
 	for _, c := range e.Cols {
 		for _, view := range c.Views {
-			if v.Id == view.Id {
+			if v == view {
 				return c
 			}
 		}
@@ -248,15 +247,15 @@ func (e *Editor) ColIndex(col *Col) int {
 	return -1
 }
 
-// AddCol adds a new column, space is "taken" from the current column
-func (e *Editor) AddCol(ratio float64) *Col {
-	r := e.CurCol.WidthRatio
+// AddCol adds a new column, space is "taken" from toCol
+func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
+	r := toCol.WidthRatio
 	nv := e.NewView()
 	nv.HeightRatio = 1.0
 	c := e.NewCol(r*ratio, []*View{nv})
-	e.CurCol.WidthRatio = r - (r * ratio)
+	toCol.WidthRatio = r - (r * ratio)
 	// Insert it after curcol
-	i := e.ColIndex(e.CurCol) + 1
+	i := e.ColIndex(toCol) + 1
 	e.Cols = append(e.Cols, nil)
 	copy(e.Cols[i+1:], e.Cols[i:])
 	e.Cols[i] = c
@@ -267,35 +266,86 @@ func (e *Editor) AddCol(ratio float64) *Col {
 	return c
 }
 
-// AddCol adds a new view in the current column, space is "taken" from the current view
-func (e *Editor) AddView(ratio float64) *View {
-	if ratio > 1.0 {
-		ratio = 1.0
+func (e *Editor) AddViewSmart() *View {
+	var nv *View
+	var emptiestCol *Col
+	for _, c := range e.Cols {
+		// if we have room for a new column,favor that
+		if c.Views[0].x2-c.Views[0].x1 > 120 {
+			nc := Ed.AddCol(c, 0.5)
+			nv = nc.Views[0]
+			break
+		}
+		// otherwise favor emptiest, most to the right col
+		if emptiestCol == nil || len(c.Views) <= len(emptiestCol.Views) {
+			emptiestCol = c
+		}
 	}
-	r := e.CurView.HeightRatio
-	nv := e.NewView()
-	nv.HeightRatio = r * ratio
-	e.CurView.HeightRatio = r - (r * ratio)
-	col := e.CurCol
-	// Insert it at after curView
-	i := e.ViewIndex(col, e.CurView) + 1
-	col.Views = append(col.Views, nil)
-	copy(col.Views[i+1:], col.Views[i:])
-	col.Views[i] = nv
+	if nv == nil {
+		// will take some of emptiest col tallest view
+		var emptiestView *View
+		for _, v := range emptiestCol.Views {
+			if emptiestView == nil || emptiestView.HeightRatio <= v.HeightRatio {
+				emptiestView = v
+			}
+		}
+		// TODO : consider buffer text length ?
+		nv = e.AddView(emptiestView, 0.5)
+	}
 	e.CurView = nv
 	e.Resize(e.Size())
 	return nv
 }
 
-func (e *Editor) DelCol() {
-	// TODO: check and warn if any view is dirty ??
+func (e *Editor) InsertViewSmart(view *View) {
+	nv := e.AddViewSmart()
+	e.ReplaceView(nv, view)
+}
+
+// AddCol adds a new view in the current column, space is "taken" from toView
+func (e *Editor) AddView(toView *View, ratio float64) *View {
+	nv := e.NewView()
+	e.InsertView(nv, toView, ratio)
+	e.CurView = nv
+	return nv
+}
+
+func (e *Editor) InsertView(view, toView *View, ratio float64) {
+	if ratio > 1.0 {
+		ratio = 1.0
+	}
+	r := toView.HeightRatio
+	view.HeightRatio = r * ratio
+	toView.HeightRatio = r - (r * ratio)
+	col := e.ViewColumn(toView)
+	// Insert it at after toView
+	i := e.ViewIndex(col, toView) + 1
+	col.Views = append(col.Views, nil)
+	copy(col.Views[i+1:], col.Views[i:])
+	col.Views[i] = view
+	e.Resize(e.Size())
+}
+
+func (e *Editor) ReplaceView(oldView, newView *View) {
+	newView.x1 = oldView.x1
+	newView.x2 = oldView.x2
+	newView.y1 = oldView.y1
+	newView.y2 = oldView.y2
+	newView.HeightRatio = oldView.HeightRatio
+	col := e.ViewColumn(oldView)
+	i := e.ViewIndex(col, oldView)
+	col.Views[i] = newView
+	e.TerminateView(oldView)
+}
+
+func (e *Editor) DelCol(col *Col) {
 	if len(e.Cols) <= 1 {
 		e.SetStatusErr("Only one column left !")
 		return
 	}
 	var prev *Col
 	for i, c := range e.Cols {
-		if c == e.CurCol {
+		if c == col {
 			if prev != nil {
 				prev.WidthRatio += c.WidthRatio
 				e.CurCol = prev
@@ -309,25 +359,28 @@ func (e *Editor) DelCol() {
 		}
 		prev = e.Cols[i]
 	}
+	for _, v := range col.Views {
+		e.TerminateView(v)
+	}
+	col = nil
 	e.Resize(e.Size())
 }
 
-func (e *Editor) DelView() {
-	// TODO: check and warn if dirty ??
-	c := e.CurCol
+func (e *Editor) DelView(view *View) {
+	c := e.ViewColumn(view)
 	if len(e.Cols) <= 1 && len(c.Views) <= 1 {
 		e.SetStatusErr("Only one view left !")
 		return
 	}
 	// only one view left in col, delcol
 	if len(c.Views) <= 1 {
-		e.DelCol()
+		e.DelCol(c)
 		return
 	}
 	// otherwise remove curview and reassign space
 	var prev *View
 	for i, v := range c.Views {
-		if v == e.CurView {
+		if v == view {
 			if prev != nil {
 				prev.HeightRatio += v.HeightRatio
 				e.CurView = prev
@@ -336,9 +389,20 @@ func (e *Editor) DelView() {
 				e.CurView = c.Views[i+1]
 			}
 			c.Views = append(c.Views[:i], c.Views[i+1:]...)
+			e.TerminateView(v)
 			break
 		}
 		prev = c.Views[i]
 	}
 	e.Resize(e.Size())
+}
+
+func (e *Editor) TerminateView(v *View) {
+	if v == nil {
+		return
+	}
+	if v.Cmd != nil {
+		// TODO: stop any  command etc....
+	}
+	v = nil
 }

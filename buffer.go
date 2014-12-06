@@ -84,7 +84,7 @@ func (v *View) Save() {
 			n := utf8.EncodeRune(buf, c)
 			_, err := f.Write(buf[0:n])
 			if err != nil {
-				panic(err)
+				Ed.SetStatusErr("Saved Failed " + err.Error())
 			}
 		}
 		if i != v.LineCount() || v.LineLen(i) != 0 {

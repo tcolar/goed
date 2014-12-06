@@ -41,6 +41,7 @@ type Theme struct {
 	MoreTextDown     StyledRune
 	TabChar          StyledRune
 	Margin           StyledRune
+	Close            StyledRune
 }
 
 func ReadTheme(path string) *Theme {
@@ -81,6 +82,7 @@ func defaultTheme() *Theme {
 		MoreTextDown:     StyledRune{'⇣', fg, bg},
 		TabChar:          StyledRune{'⇨', fg, bg},
 		Margin:           StyledRune{'|', fg, bg},
+		Close:            StyledRune{'✕', fg, bg},
 	}
 }
 

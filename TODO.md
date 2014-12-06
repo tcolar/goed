@@ -1,12 +1,17 @@
-## todo
+## TODO
 
 Most important now:
 
 X Move /resize window
 X Copy/paste
-- List / open files
+X List / open files
 - GoFmt
-+ Select section (mouse and/or Kb)
+- Configured events/shortcuts
+- Dirty status should be kept from buffer status (insert, delete etc....)
+- Syntax highlighting
+- closeView/Col with dirty check allow if twice in row ? 
+- closeView icon
++ Select section (mouse and/or Kb) -> with scrolling
 - Warn on dirty view close
 - Undo / Redo
 - File buffers ?
@@ -35,6 +40,7 @@ X open file(edit tag??)
 X theme/colors
 - Hexadecimal mode
 - large file, in place mode (no copy ?)
+- sed/sam like cmd language
 
 ## Commands
 - execute (gofmt)
@@ -44,11 +50,13 @@ X theme/colors
 
 ## WM
 X support & display multiple columns / views
+X move view 2+ of column to "top bar" -> create new column and put view in it
+X Proportional move view / col (ratio)
+X replaceView(drop old create new in place) with dirtyCheck, if dirty -> new view
 X newcol
 X  delcol -> check dirty
 X newview
 X delview > check dirty
-- move views
 X resize cols
 ~ exit -> check dirty
 - dbl click to "collapse" / fold (single line)

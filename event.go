@@ -153,12 +153,18 @@ func (v *View) Event(ev *termbox.Event) {
 			v.Save()
 		case termbox.KeyCtrlO:
 			Ed.Cmdbar.OpenSelection(v, true)
+		case termbox.KeyCtrlW:
+			/*if !dirtyCheck() {
+				return
+			}*/
+			Ed.DelView(Ed.CurView)
 		case termbox.KeyCtrlC:
 			if len(v.Selections) > 0 {
 				v.Copy(v.Selections[0])
 			}
 		case termbox.KeyCtrlV:
 			v.Paste()
+			dirty = true
 		case termbox.KeyCtrlQ:
 			return
 		default:
@@ -180,7 +186,14 @@ func (v *View) Event(ev *termbox.Event) {
 				Ed.ViewMove(Ed.evtState.X, Ed.evtState.Y, ev.MouseX, ev.MouseY)
 				return
 			}
+			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 {
+				// close button
+				// TODO: dirty check
+				Ed.DelView(v)
+				return
+			}
 			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
+				// handle
 				Ed.evtState.MovingView = true
 				Ed.evtState.X = ev.MouseX
 				Ed.evtState.Y = ev.MouseY
