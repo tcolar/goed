@@ -10,6 +10,6 @@ One of the main source of inspiration is Acme, however it will be more configura
 That is not to say it will necessarely be "keyboard only" and it won't rely on "modes" as Vi and Emacs do.
 
 Early screenshot (12/7/2014): 
-![Screenshot](https://github.com/tcolar/goed/screenshot.png)
+![Screenshot](https://raw.github.com/tcolar/goed/screenshot.png)
 
 
