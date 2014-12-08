@@ -2,7 +2,12 @@
 
 package main
 
-import "github.com/tcolar/termbox-go"
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/tcolar/termbox-go"
+)
 
 const (
 	Plain uint16 = iota + (1 << 8)
@@ -104,23 +109,36 @@ func (e *Editor) Resize(width, height int) {
 	e.Cmdbar.SetBounds(0, 0, width, 0)
 	e.Statusbar.SetBounds(0, height-1, width, height-1)
 	wc := 0
+	wr := 0.0
 	for i, c := range e.Cols {
 		hc := 1
+		hr := 0.0
 		w := int(float64(width) * c.WidthRatio)
 		if i == len(e.Cols)-1 {
 			w = width - wc // las column gets rest of width
+			c.WidthRatio = 1.0 - wr
 		}
 		for j, v := range c.Views {
 			h := int(float64(height-2) * v.HeightRatio)
 			if j == len(c.Views)-1 {
 				h = height - hc - 1 // last view gets rest of height
-				// TODO: maybe adjust the ratio so it always adds up to ~100%
+				v.HeightRatio = 1.0 - hr
 			}
 			v.SetBounds(wc, hc, wc+w-1, hc+h-1)
 			hc += h
+			hr += v.HeightRatio
 		}
 		wc += w
+		wr += c.WidthRatio
 	}
+	s := ""
+	for _, c := range e.Cols {
+		s = fmt.Sprintf("%s |(%s)", s, strconv.Itoa(int(c.WidthRatio*100.0)))
+		for _, v := range c.Views {
+			s = fmt.Sprintf("%s-%s", s, strconv.Itoa(int(v.HeightRatio*100.0)))
+		}
+	}
+	e.SetStatus(s)
 }
 
 // ViewMove handles moving & resizing views/columns, typically using the mouse
@@ -166,12 +184,9 @@ func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
 			}
 		} else {
 			// moved to a different column
+			// taking space out of target view
 			ratio := float64(y2-v2.y1) / float64(v2.y2-v2.y1)
-			if len(c1.Views) == 0 {
-				e.DelCol(c1, true)
-			} else {
-				e.DelView(v1, false)
-			}
+			e.DelView(v1, false)
 			v1.HeightRatio = v2.HeightRatio * (1.0 - ratio)
 			v2.HeightRatio *= ratio
 			c2.Views = append(c2.Views, nil)
