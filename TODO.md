@@ -1,5 +1,12 @@
 ## TODO
 
+Command bar: up/down, left, right, copy, paste
+Expand selection + line number etc...
+Open -> if already opened don't reopen
+/ foo -> grep -nr foo $curfile
+: 25 -> goto line 25
+-> make commands like that by configuration ?
+
 Most important now:
 
 X Move /resize window

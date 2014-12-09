@@ -2,12 +2,7 @@
 
 package main
 
-import (
-	"fmt"
-	"strconv"
-
-	"github.com/tcolar/termbox-go"
-)
+import "github.com/tcolar/termbox-go"
 
 const (
 	Plain uint16 = iota + (1 << 8)
@@ -120,6 +115,9 @@ func (e *Editor) Resize(width, height int) {
 		}
 		for j, v := range c.Views {
 			h := int(float64(height-2) * v.HeightRatio)
+			if h < 1 {
+				h = 1
+			}
 			if j == len(c.Views)-1 {
 				h = height - hc - 1 // last view gets rest of height
 				v.HeightRatio = 1.0 - hr
@@ -131,14 +129,6 @@ func (e *Editor) Resize(width, height int) {
 		wc += w
 		wr += c.WidthRatio
 	}
-	s := ""
-	for _, c := range e.Cols {
-		s = fmt.Sprintf("%s |(%s)", s, strconv.Itoa(int(c.WidthRatio*100.0)))
-		for _, v := range c.Views {
-			s = fmt.Sprintf("%s-%s", s, strconv.Itoa(int(v.HeightRatio*100.0)))
-		}
-	}
-	e.SetStatus(s)
 }
 
 // ViewMove handles moving & resizing views/columns, typically using the mouse
@@ -275,8 +265,7 @@ func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	copy(e.Cols[i+1:], e.Cols[i:])
 	e.Cols[i] = c
 
-	e.CurCol = c
-	e.CurView = nv
+	e.ActivateView(nv, 0, 0)
 	e.Resize(e.Size())
 	return c
 }
@@ -307,7 +296,7 @@ func (e *Editor) AddViewSmart() *View {
 		// TODO : consider buffer text length ?
 		nv = e.AddView(emptiestView, 0.5)
 	}
-	e.CurView = nv
+	e.ActivateView(nv, 0, 0)
 	e.Resize(e.Size())
 	return nv
 }
@@ -321,7 +310,7 @@ func (e *Editor) InsertViewSmart(view *View) {
 func (e *Editor) AddView(toView *View, ratio float64) *View {
 	nv := e.NewView()
 	e.InsertView(nv, toView, ratio)
-	e.CurView = nv
+	e.ActivateView(nv, 0, 0)
 	return nv
 }
 
@@ -368,7 +357,7 @@ func (e *Editor) DelCol(col *Col, terminateViews bool) {
 				e.Cols[i+1].WidthRatio += c.WidthRatio
 				e.CurCol = e.Cols[i+1]
 			}
-			e.CurView = e.CurCol.Views[0]
+			e.ActivateView(e.CurCol.Views[0], 0, 0)
 			e.Cols = append(e.Cols[:i], e.Cols[i+1:]...)
 			break
 		}
@@ -406,6 +395,7 @@ func (e *Editor) DelView(view *View, terminate bool) {
 				e.CurView = c.Views[i+1]
 			}
 			c.Views = append(c.Views[:i], c.Views[i+1:]...)
+			e.ActivateView(e.CurView, 0, 0)
 			if terminate {
 				e.TerminateView(v)
 			}
@@ -446,4 +436,10 @@ func (e *Editor) DelColCheck(c *Col) {
 		return
 	}
 	e.DelCol(c, true)
+}
+
+func (e *Editor) ActivateView(v *View, cursorx, cursory int) {
+	Ed.CurView = v
+	Ed.CurCol = Ed.ViewColumn(v)
+	v.MoveCursor(cursorx, cursory)
 }

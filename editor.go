@@ -82,6 +82,9 @@ func (e *Editor) Open(loc string, view *View, rel string) error {
 	if err != nil {
 		return fmt.Errorf("File not found %s", loc)
 	}
+	if stat.Size() > 500000 { // TODO : check if utf8 / executable
+		return fmt.Errorf("File too large %s", loc)
+	}
 	// make it absolute
 	loc, err = filepath.Abs(loc)
 	if err != nil {
@@ -99,8 +102,9 @@ func (e *Editor) Open(loc string, view *View, rel string) error {
 	} else {
 		err = e.openFile(loc, view)
 	}
-	e.SetStatus(loc)
-	return err
+	view.WorkDir = filepath.Dir(loc)
+	e.SetStatus(view.WorkDir)
+	return nil
 }
 
 func (e *Editor) openDir(loc string, view *View) error {

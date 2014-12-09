@@ -2,11 +2,7 @@
 
 package main
 
-import (
-	"path/filepath"
-
-	"github.com/tcolar/termbox-go"
-)
+import "github.com/tcolar/termbox-go"
 
 // Evtstate stores some state about kb/mouse events
 type EvtState struct {
@@ -248,15 +244,8 @@ func (v *View) Event(ev *termbox.Event) {
 			// MoveCursor use text coordinates which starts at offset 2,2
 			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
 			// Make the clicked view active
-			Ed.CurView = v
-			Ed.CurCol = Ed.ViewColumn(v)
-			if len(v.Buffer.file) != 0 {
-				if p, err := filepath.Abs(v.Buffer.file); err == nil {
-					Ed.SetStatus(p)
-				}
-			} else {
-				Ed.SetStatus("")
-			}
+			Ed.ActivateView(v, 0, 0)
+			Ed.SetStatus(v.WorkDir)
 		}
 	}
 	if dirty {

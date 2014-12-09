@@ -19,6 +19,7 @@ type View struct {
 	Id               int
 	Dirty            bool
 	Buffer           *Buffer
+	WorkDir          string
 	CursorX, CursorY int
 	offx, offy       int
 	HeightRatio      float64
@@ -30,10 +31,12 @@ type View struct {
 
 func (e *Editor) NewView() *View {
 	id++
+	d, _ := filepath.Abs(".")
 	return &View{
 		Id:          id,
 		Buffer:      &Buffer{},
 		HeightRatio: 0.5,
+		WorkDir:     d,
 	}
 }
 

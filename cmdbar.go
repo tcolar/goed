@@ -121,7 +121,7 @@ func (c *Cmdbar) open(args []string) error {
 		Ed.ReplaceView(Ed.CurView, v)
 		Ed.SetStatus("replace")
 	}
-	Ed.CurView = v
+	Ed.ActivateView(v, 0, 0)
 	return nil
 }
 
@@ -130,19 +130,22 @@ func (c *Cmdbar) open(args []string) error {
 // replace content of v
 func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 	newView = newView || v.Dirty
-	text := ""
-	if len(v.Selections) > 0 {
-		text = Ed.RunesToString(v.Selections[0].Text(v))
-	} else {
-		// TODO: parse line !
-		text = string(v.Line(v.CurLine()))
+	if len(v.Selections) == 0 {
+		selection := v.PathSelection(v.CurLine(), v.CurCol())
+		if selection == nil {
+			Ed.SetStatusErr("Could not expand location from cursor location.")
+			return
+		}
+		v.Selections = []Selection{*selection}
 	}
+	loc, line, col := v.selToLoc(v.Selections[0])
 	v2 := Ed.NewView()
-	if err := Ed.Open(text, v2, v.Buffer.file); err != nil {
+	if err := Ed.Open(loc, v2, v.WorkDir); err != nil {
 		Ed.SetStatusErr(err.Error())
+		return
 	}
 	if newView {
-		if strings.HasSuffix(text, string(os.PathSeparator)) {
+		if strings.HasSuffix(loc, string(os.PathSeparator)) {
 			Ed.InsertView(v2, v, 0.5)
 		} else {
 			Ed.InsertViewSmart(v2)
@@ -150,11 +153,11 @@ func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 	} else {
 		Ed.ReplaceView(v, v2)
 	}
-	Ed.CurView = v
+	// note:  x, y are zero based, line, col are 1 based
+	Ed.ActivateView(v2, col-1, line-1)
 }
 
 func (c *Cmdbar) save(args []string) {
-	//TODO: might need a new id etc.../
 	if Ed.CurView != nil {
 		Ed.CurView.Save()
 	}
@@ -206,7 +209,11 @@ func (c *Cmdbar) newView(args []string) {
 
 func (c *Cmdbar) exec(args []string) {
 	cmd := exec.Command(args[0], args[1:]...)
+	workDir := "."
+	if Ed.CurView != nil {
+		workDir = Ed.CurView.WorkDir
+	}
 	v := Ed.AddViewSmart()
 	v.Cmd = cmd
-	go v.Exec()
+	go v.Exec(workDir)
 }

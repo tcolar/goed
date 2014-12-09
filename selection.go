@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"unicode"
 
 	"github.com/atotto/clipboard"
 )
@@ -80,4 +83,44 @@ func (v *View) Paste() {
 		return
 	}
 	v.InsertLines(Ed.StringToRunes([]byte(text)))
+}
+
+var locationRegexp = regexp.MustCompile("^([^\\s({<;:]+)(:\\d+)?(:\\d+)?")
+
+// Try to select a "location" from the given position
+// a location is a path with possibly a line number and maybe a column number as well
+func (v *View) PathSelection(line, col int) *Selection {
+	ln := string(v.Line(line))
+	c := v.lineRunesTo(line, col)
+	for ; c > 0 && c < len(ln) && !unicode.IsSpace(rune(ln[c-1])); c-- {
+	}
+	loc := locationRegexp.FindString(string(ln[c:]))
+	if len(loc) == 0 {
+		return nil
+	}
+	return &Selection{
+		LineFrom: line,
+		ColFrom:  v.lineColsTo(line, c),
+		LineTo:   line,
+		ColTo:    v.lineColsTo(line, c+len(loc)) - 1,
+	}
+}
+
+// Parses a selection into a location (file, line, col)
+func (v *View) selToLoc(selection Selection) (loc string, line, col int) {
+	sub := locationRegexp.FindAllStringSubmatch(Ed.RunesToString(selection.Text(v)), 1)
+	if len(sub) == 0 {
+		return
+	}
+	s := sub[0]
+	if len(s) >= 1 {
+		loc = s[1]
+	}
+	if len(s[2]) > 0 {
+		line, _ = strconv.Atoi(s[2][1:])
+	}
+	if len(s[3]) > 0 {
+		col, _ = strconv.Atoi(s[3][1:])
+	}
+	return loc, line, col
 }
