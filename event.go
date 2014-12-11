@@ -177,6 +177,10 @@ func (v *View) Event(ev *termbox.Event) {
 			v.MoveCursor(0, -1)
 		case termbox.MouseScrollDown:
 			v.MoveCursor(0, 1)
+		case termbox.MouseRight:
+			v.Selections = []Selection{}
+			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
+			Ed.Cmdbar.OpenSelection(v, true)
 		case termbox.MouseLeft:
 			if Ed.evtState.MovingView {
 				Ed.evtState.MovingView = false
@@ -207,6 +211,13 @@ func (v *View) Event(ev *termbox.Event) {
 				y1 := Ed.evtState.DragY1 - v.y1 + v.offy - 2
 				y2 := Ed.evtState.DragY2 - v.y1 + v.offy - 2
 
+				if (y1 == y1 && x1 > x2) ||
+					(y1 > y2){
+					x1++
+				} else {
+					x1--
+				}
+
 				s := Selection{
 					LineFrom: y1,
 					LineTo:   y2,
@@ -214,25 +225,18 @@ func (v *View) Event(ev *termbox.Event) {
 					ColTo:    v.lineRunesTo(y2, x2),
 				}
 				// Deal with "reverse" selection
-				reverse := false
 				if s.LineFrom == s.LineTo && s.ColFrom > s.ColTo {
-					reverse = true
 					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
 				} else if s.LineFrom > s.LineTo {
-					reverse = true
 					s.LineFrom, s.LineTo = s.LineTo, s.LineFrom
 					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
 				}
 				// Because we only receive the event after a "move", we need to add the start location
-				if reverse {
-					s.ColTo++
-				} else {
-					s.ColFrom--
-				}
 				// set the selection
 				v.Selections = []Selection{
 					s,
 				}
+				Ed.SetStatus(s.String())
 				return
 			} else {
 				// reset drag

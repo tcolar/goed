@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -139,6 +141,7 @@ func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 		v.Selections = []Selection{*selection}
 	}
 	loc, line, col := v.selToLoc(v.Selections[0])
+	loc = c.lookupLocation(v.WorkDir, loc)
 	v2 := Ed.NewView()
 	if err := Ed.Open(loc, v2, v.WorkDir); err != nil {
 		Ed.SetStatusErr(err.Error())
@@ -155,6 +158,22 @@ func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 	}
 	// note:  x, y are zero based, line, col are 1 based
 	Ed.ActivateView(v2, col-1, line-1)
+}
+
+// lookupLocation will try to locate the given location
+// if not found relative to dir, then try up the directory tree
+// this works great to open GO import path for example
+func (c *Cmdbar) lookupLocation(dir, loc string) string {
+	f := path.Join(dir, loc)
+	_, err := os.Stat(f)
+	if err == nil {
+		return f
+	}
+	dir = filepath.Dir(dir)
+	if strings.HasSuffix(dir, string(os.PathSeparator)) { //root
+		return loc
+	}
+	return c.lookupLocation(dir, loc)
 }
 
 func (c *Cmdbar) save(args []string) {

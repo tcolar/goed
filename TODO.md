@@ -1,11 +1,13 @@
 ## TODO
 
-Command bar: up/down, left, right, copy, paste
-Expand selection + line number etc...
-Open -> if already opened don't reopen
-/ foo -> grep -nr foo $curfile
-: 25 -> goto line 25
--> make commands like that by configuration ?
+- split event in multiple files, event, ui folder
+- copy indentation to next line on return
+- ctrl + x
+- Command bar: up/down, left, right, copy, paste
+- Open -> if already opened don't reopen
+- / foo -> grep -nr foo $curfile
+- : 25 -> goto line 25
+  -> make commands like that by configuration ?
 
 Most important now:
 

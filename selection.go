@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"unicode"
 
 	"github.com/atotto/clipboard"
 )
@@ -85,24 +84,32 @@ func (v *View) Paste() {
 	v.InsertLines(Ed.StringToRunes([]byte(text)))
 }
 
-var locationRegexp = regexp.MustCompile("^([^\\s({<;:]+)(:\\d+)?(:\\d+)?")
+var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?(:\d+)?`)
 
 // Try to select a "location" from the given position
 // a location is a path with possibly a line number and maybe a column number as well
 func (v *View) PathSelection(line, col int) *Selection {
 	ln := string(v.Line(line))
 	c := v.lineRunesTo(line, col)
-	for ; c > 0 && c < len(ln) && !unicode.IsSpace(rune(ln[c-1])); c-- {
+	matches := locationRegexp.FindAllStringIndex(string(ln), -1)
+	var best []int
+	// Find the "narrowest" match around the cursor
+	for _, s := range matches {
+		if s[0] <= c && s[1] >= c {
+			if best == nil || s[1]-s[0] < best[1]-best[0] {
+				best = s
+			}
+		}
 	}
-	loc := locationRegexp.FindString(string(ln[c:]))
-	if len(loc) == 0 {
+	if best == nil {
 		return nil
 	}
+	// TODO: if a path like a go import, try to find that path up from curdir ?
 	return &Selection{
 		LineFrom: line,
-		ColFrom:  v.lineColsTo(line, c),
+		ColFrom:  best[0],
 		LineTo:   line,
-		ColTo:    v.lineColsTo(line, c+len(loc)) - 1,
+		ColTo:    best[1] - 1,
 	}
 }
 

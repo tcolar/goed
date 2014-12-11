@@ -59,7 +59,7 @@ func (e *Editor) Start(loc string) {
 		view2.HeightRatio = 1.0
 		c.WidthRatio = 0.75
 		c2 := e.NewCol(0.25, []*View{view2})
-		e.Cols = append(e.Cols, c2)
+		e.Cols = append([]*Col{c2}, c)
 	}
 
 	e.Resize(e.Size())
