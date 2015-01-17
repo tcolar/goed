@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/coreos/etcd/third_party/github.com/BurntSushi/toml"
+	"github.com/BurntSushi/toml"
 )
 
 type Theme struct {
