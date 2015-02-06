@@ -8,6 +8,7 @@
 - / foo -> grep -nr foo $curfile
 - : 25 -> goto line 25
   -> make commands like that by configuration ?
+- use a channel(size 1) for save
 
 Most important now:
 

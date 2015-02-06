@@ -1,6 +1,8 @@
 package main
 
-import "gopkg.in/alecthomas/kingpin.v1"
+import (
+	"gopkg.in/alecthomas/kingpin.v1"
+)
 
 var (
 	Version = "0.0.1"
@@ -8,8 +10,6 @@ var (
 	test    = kingpin.Flag("testterm", "Pints colors to the terminal to test it.").Bool()
 	colors  = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
 	loc     = kingpin.Arg("location", "location to open").Default(".").String()
-
-	Ed Editor
 )
 
 func main() {
@@ -27,6 +27,6 @@ func main() {
 		*colors = 2
 	}
 
-	Ed = Editor{}
+	Ed = &Editor{}
 	Ed.Start(*loc)
 }

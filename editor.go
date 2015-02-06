@@ -11,6 +11,8 @@ import (
 	"github.com/tcolar/termbox-go"
 )
 
+var Ed *Editor
+
 type Editor struct {
 	Cmdbar     *Cmdbar
 	Statusbar  *Statusbar
@@ -46,6 +48,11 @@ func (e *Editor) Start(loc string) {
 	view1 := &View{}
 	e.CurView = view1
 	e.Open(loc, view1, "")
+	if view1.Buffer == nil { // new file that does not exist yet
+		view1.Buffer = &Buffer{
+			file: loc,
+		}
+	}
 	view1.HeightRatio = 1.0
 
 	c := e.NewCol(1.0, []*View{view1})
@@ -53,6 +60,7 @@ func (e *Editor) Start(loc string) {
 
 	e.CurCol = c
 
+	// Add a directory listing view if we don't already have one
 	if stat, err := os.Stat(loc); err == nil && !stat.IsDir() {
 		view2 := &View{}
 		e.Open(".", view2, "")
@@ -124,11 +132,18 @@ func (e *Editor) openFile(loc string, view *View) error {
 }
 
 func (e *Editor) SetStatusErr(s string) {
+	if e.Statusbar == nil {
+		return
+	}
 	e.Statusbar.msg = s
 	e.Statusbar.isErr = true
 	e.Statusbar.Render()
 }
 func (e *Editor) SetStatus(s string) {
+	if e.Statusbar == nil {
+		return
+	}
+	e.Statusbar.msg = s
 	e.Statusbar.msg = s
 	e.Statusbar.isErr = false
 	e.Statusbar.Render()

@@ -1,5 +1,3 @@
-// History: Oct 07 14 tcolar Creation
-
 package main
 
 import "github.com/tcolar/termbox-go"
@@ -212,7 +210,7 @@ func (v *View) Event(ev *termbox.Event) {
 				y2 := Ed.evtState.DragY2 - v.y1 + v.offy - 2
 
 				if (y1 == y1 && x1 > x2) ||
-					(y1 > y2){
+					(y1 > y2) {
 					x1++
 				} else {
 					x1--

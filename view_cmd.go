@@ -16,7 +16,7 @@ func (v *View) Exec(workDir string) {
 		Ed.SetStatusErr("Command missing !")
 		return
 	}
-	file, err := os.Create(Ed.BufferFile(v))
+	file, err := os.Create(Ed.BufferFile(v.Id))
 	if err != nil {
 		Ed.SetStatusErr(err.Error())
 		return

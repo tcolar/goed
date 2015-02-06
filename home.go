@@ -23,6 +23,6 @@ func (e *Editor) initHome() {
 	os.MkdirAll(path.Join(e.Home, "buffers"), 0777)
 }
 
-func (e *Editor) BufferFile(v *View) string {
-	return path.Join(e.Home, "buffers", strconv.Itoa(v.Id))
+func (e *Editor) BufferFile(id int) string {
+	return path.Join(e.Home, "buffers", strconv.Itoa(id))
 }

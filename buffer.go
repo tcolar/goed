@@ -4,29 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"unicode"
 	"unicode/utf8"
 )
 
-// TODO: flush this out + File based impl
-// TODO: use bufio
-type Backend interface {
-	Location() string  // "original" source
-	BufferLoc() string // buffer location (ie: file or mem)
-	Title() string
-	Insert(c rune, row, col int) error
-	//Remove(r1,c1,count int) error // remove n runes
-	Save() error         // save to source
-	Sync() error         // sync from source ?
-	IsStale() bool       // whether the source as changed under us (fsnotify)
-	IsBufferStale() bool // wether the buffer has changed under us
-	LineCount() int
-
-	// insert(lineId, index, []rune)
-	// remove(lineId, from, len int)
-	// insertLine(index, []rune)
-	// removeLine(index)
-}
-
+// TODO: Make buffer use the backend interface
 type Buffer struct {
 	text [][]rune
 	file string
@@ -112,16 +94,27 @@ func (v *View) Insert(c rune) {
 
 // InsertNewLine inserts a "newline"(Enter key) in the buffer
 func (v *View) InsertNewLine() {
-	// TODO: Keep indentation
 	l := v.CurLine()
 	i := v.lineRunesTo(l, v.CurCol())
+	if l >= len(v.Buffer.text) {
+		v.Buffer.text = append(v.Buffer.text, []rune{})
+		return
+	}
 	line := v.Buffer.text[l]
+	indent := []rune{}
+	for _, r := range line {
+		if unicode.IsSpace(r) {
+			indent = append(indent, r)
+		} else {
+			break
+		}
+	}
 	b := append(v.Buffer.text, []rune{}) // Extend buffer size with a new blank line
 	copy(b[l+1:], b[l:])                 // Move buffer tail by one to create a "hole" (blank line)
 	b[l] = line[:i]                      // truncate current line up to cursor
-	b[l+1] = line[i:]                    // make rest of current line it's own line
+	b[l+1] = append(indent, line[i:]...) // make rest of current line it's own line
 	v.Buffer.text = b
-	v.MoveCursor(1, 0)
+	v.MoveCursor(v.lineColsTo(l+1, len(indent))-v.CurCol(), 1)
 }
 
 // TODO: This is not most efficient

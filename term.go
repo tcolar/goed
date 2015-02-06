@@ -1,5 +1,3 @@
-// History: Oct 03 14 tcolar Creation
-
 package main
 
 import (
