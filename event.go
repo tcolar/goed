@@ -56,7 +56,6 @@ func (m *Cmdbar) Event(ev *termbox.Event) {
 	switch ev.Type {
 	case termbox.EventKey:
 		switch ev.Key {
-		//case termbox.KeyDelete:
 		case termbox.KeyBackspace, termbox.KeyBackspace2:
 			if len(m.Cmd) > 0 {
 				m.Cmd = m.Cmd[:len(m.Cmd)-1]

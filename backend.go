@@ -42,16 +42,17 @@ type Rwsc interface {
 func (v *View) Save() {
 	err := v.backend.Save(v.backend.SrcLoc())
 	if err != nil {
-		Ed.SetStatusErr("Saving Failed %s " + err.Error())
+		Ed.SetStatusErr("Saving Failed " + err.Error())
 		return
 	}
 	Ed.SetStatus("Saved " + v.backend.SrcLoc())
 }
 func (v *View) Insert(s string) {
 	// backend is 1-based indexed
-	err := v.backend.Insert(v.CurLine()+1, v.CurCol()+1, s)
+	_, x, y := v.CurChar()
+	err := v.backend.Insert(y+1, x+1, s)
 	if err != nil {
-		Ed.SetStatusErr("Saving Failed %s " + err.Error())
+		Ed.SetStatusErr("Insert Failed " + err.Error())
 		return
 	}
 	v.MoveCursor(v.strSize(s), 0)
@@ -64,26 +65,27 @@ func (v *View) InsertNewLine() {
 
 // Delete removes a character at the current location
 func (v *View) Delete(s string) {
+	_, x, y := v.CurChar()
+	Ed.SetStatus("Removing " + s)
 	// backend is 1-based indexed
-	err := v.backend.Remove(v.CurLine()+1, v.CurCol()+1, s)
+	err := v.backend.Remove(y+1, x+1, s)
 	if err != nil {
-		Ed.SetStatusErr("Delete Failed %s " + err.Error())
+		Ed.SetStatusErr("Delete Failed " + err.Error())
 		return
 	}
 }
 
 // Backspace removes a character before the current location
 func (v *View) Backspace() {
+	if v.CursorY == 0 && v.CursorX == 0 {
+		return
+	}
+	v.MoveCursor(-1, 0)
 	c, _, _ := v.CurChar()
 	if c == nil {
 		return
 	}
-	err := v.backend.Remove(v.CurLine(), v.CurCol(), string(*c))
-	if err != nil {
-		Ed.SetStatusErr("Delete Failed %s " + err.Error())
-		return
-	}
-	v.MoveCursor(-v.runeSize(*c), 0)
+	v.Delete(string(*c))
 }
 
 // LineCount return the number of lines in the buffer
@@ -151,12 +153,15 @@ func (v *View) CursorTextPos(cursorX, cursorY int) (int, int) {
 // Also returns the position of the char in the text buffer
 func (v *View) CursorChar(cursorX, cursorY int) (r *rune, textX, textY int) {
 	// backend is 1-based indexed
-	s := v.backend.Slice(cursorY+1, cursorX+1, cursorY+1, cursorX+1)
-	if len(s) == 0 || len(s[0]) == 0 {
-		return nil, 0, 0
-	}
 	x, y := v.CursorTextPos(cursorX, cursorY)
-	return &s[0][0], x, y
+	ln := v.Line(y)
+	if len(ln) == x { // EOL
+		nl := '\n'
+		return &nl, x, y
+	} else if len(ln) <= x {
+		return nil, x, y
+	}
+	return &ln[x], x, y
 }
 
 // CurChar returns the rune at the current cursor location
