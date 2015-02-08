@@ -15,8 +15,11 @@ const bufferId = 9999
 func Test(t *testing.T) {
 	var b *FileBackend
 	var err error
+	v := &View{
+		Id: bufferId,
+	}
 	// TODO: copy it to a temp dir
-	b, err = NewFileBackend("test_data/file1.txt", bufferId)
+	b, err = Ed.NewFileBackend("test_data/file1.txt", v)
 	if err != nil {
 		panic(err)
 	}
@@ -122,7 +125,7 @@ func insertionTests(t *testing.T, b Backend) {
 		panic(err)
 	}
 
-	whole2 := Ed.RunesToString(b.Slice(1, 1, 100, 100))
+	whole2 := Ed.RunesToString(b.Slice(1, 1, -1, -1))
 	if whole2 != whole {
 		log.Fatalf("File has changed :\n---\n%s\n---\n%s", whole, whole2)
 	}

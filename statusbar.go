@@ -24,6 +24,9 @@ func (s *Statusbar) Render() {
 func (s *Statusbar) RenderPos() {
 	Ed.FB(Ed.Theme.StatusbarText, Ed.Theme.Statusbar.Bg)
 	v := Ed.CurView
+	if v == nil || v.backend == nil {
+		return
+	}
 	pos := fmt.Sprintf(" %d:%d [%d]", v.CurLine()+1, v.CurCol()+1, v.LineCount())
 	Ed.Str(s.x2-len(pos), s.y1, pos)
 }

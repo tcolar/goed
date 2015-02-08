@@ -12,6 +12,7 @@ type FileBackend struct {
 	srcLoc    string
 	bufferLoc string
 	file      Rwsc //ReaderWriterSeekerCloser
+	view      *View
 
 	bufferSize int64 // Internal buffer size for file ops
 
@@ -23,33 +24,39 @@ type FileBackend struct {
 }
 
 // File backend, the source is a file, the buffer is a copy of the file in the buffer dir.
-func NewFileBackend(loc string, bufferId int) (*FileBackend, error) {
-	f, err := os.Open(loc)
-	if err != nil {
-		return nil, err
-	}
-	stat, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
+func (e *Editor) NewFileBackend(loc string, view *View) (*FileBackend, error) {
 	b := &FileBackend{
+		view:       view,
 		srcLoc:     loc,
 		ln:         1,
+		lnCount:    1,
 		col:        1,
 		prevCol:    1,
 		bufferSize: 65536,
 	}
-	b.length = stat.Size()
-	if b.length > 10000000 {
-		b.bufferLoc = loc
-		Ed.SetStatusErr("EDITING IN PLACE ! (Large file)")
-	} else {
-		b.bufferLoc = Ed.BufferFile(bufferId)
-		err = CopyFile(b.srcLoc, b.bufferLoc)
+	fb := Ed.BufferFile(view.Id)
+	b.bufferLoc = fb
+	if len(loc) > 0 && fb != loc {
+		f, err := os.Open(loc)
 		if err != nil {
 			return nil, err
 		}
+		stat, err := f.Stat()
+		if err != nil {
+			return nil, err
+		}
+		b.length = stat.Size()
+		if b.length > 10000000 {
+			b.bufferLoc = loc
+			Ed.SetStatusErr("EDITING IN PLACE ! (Large file)")
+		} else {
+			err = CopyFile(b.srcLoc, b.bufferLoc)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
+	var err error
 	// TODO: is sync necessary or better to call it selectively ??
 	b.file, err = os.OpenFile(b.bufferLoc, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0666)
 
@@ -114,25 +121,26 @@ func (f *FileBackend) LineCount() int {
 }
 
 // Slice returns the runes that are in the given rectangle.
+// row2 / col2 maybe -1, meaning all lines / whole lines
 func (f *FileBackend) Slice(row, col, row2, col2 int) [][]rune {
-	if row < 1 || col < 1 || row2 < 1 || col2 < 1 {
-		panic("Slice params must be >= 1 !")
+	if row < 1 || col < 1 {
+		return [][]rune{}
 	}
-	if row > row2 {
+	if row2 != -1 && row > row2 {
 		row, row2 = row2, row
 	}
-	if col > col2 {
+	if col2 != -1 && col > col2 {
 		col, col2 = col2, col
 	}
 	runes := [][]rune{}
 	r := row
-	for ; r <= row2; r++ {
+	for ; row2 == -1 || r <= row2; r++ {
 		err := f.seek(r, col)
 		if err != nil && err != io.EOF {
 			panic(err)
 		}
 		ln := []rune{}
-		for f.col <= col2 {
+		for col2 == -1 || f.col <= col2 {
 			rune, _, err := f.readRune()
 			if err != nil {
 				return runes
@@ -148,7 +156,7 @@ func (f *FileBackend) Slice(row, col, row2, col2 int) [][]rune {
 }
 
 func (f *FileBackend) Save(loc string) error {
-	if f.srcLoc == f.bufferLoc {
+	if loc == f.bufferLoc {
 		return nil // editing in place
 	}
 	f.srcLoc = loc

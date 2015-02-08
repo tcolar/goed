@@ -408,8 +408,8 @@ func (e *Editor) TerminateView(v *View) {
 	if v == nil {
 		return
 	}
-	if v.Cmd != nil {
-		// TODO: stop any  command etc....
+	if v.backend != nil {
+		v.backend.Close()
 	}
 	v = nil
 }

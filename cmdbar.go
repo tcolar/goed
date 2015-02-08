@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -82,7 +81,7 @@ func (c *Cmdbar) paste(args []string) {
 	v.MoveCursor(-v.CurCol(), 1)
 	l := v.CurLine()
 	v.Paste()
-	v.InsertNewLine()
+	v.Insert("\n")
 	v.MoveCursor(-v.CurCol(), l-v.CurLine())
 	v.Dirty = true
 }
@@ -101,7 +100,7 @@ func (c *Cmdbar) yank(args []string) error {
 		Selection{
 			LineFrom: v.CurLine(),
 			LineTo:   v.CurLine() + nb,
-			ColTo:    v.LineLen(v.CurLine() + nb),
+			ColTo:    -1,
 		})
 	return nil
 }
@@ -227,12 +226,14 @@ func (c *Cmdbar) newView(args []string) {
 }
 
 func (c *Cmdbar) exec(args []string) {
-	cmd := exec.Command(args[0], args[1:]...)
 	workDir := "."
 	if Ed.CurView != nil {
 		workDir = Ed.CurView.WorkDir
 	}
 	v := Ed.AddViewSmart()
-	v.Cmd = cmd
-	go v.Exec(workDir)
+	b, err := Ed.NewFileBackendCmd(args, workDir, v)
+	if err != nil {
+		Ed.SetStatusErr(err.Error())
+	}
+	v.backend = b
 }

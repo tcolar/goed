@@ -10,7 +10,7 @@ import (
 
 type Selection struct {
 	LineFrom, ColFrom int // selection start point
-	LineTo, ColTo     int // selection end point
+	LineTo, ColTo     int // selection end point (colto=-1 means whole lines)
 }
 
 func (s Selection) String() string {
@@ -81,7 +81,7 @@ func (v *View) Paste() {
 		Ed.SetStatusErr(err.Error())
 		return
 	}
-	v.InsertLines(Ed.StringToRunes([]byte(text)))
+	v.Insert(text)
 }
 
 var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?(:\d+)?`)

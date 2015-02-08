@@ -48,10 +48,8 @@ func (e *Editor) Start(loc string) {
 	view1 := &View{}
 	e.CurView = view1
 	e.Open(loc, view1, "")
-	if view1.Buffer == nil { // new file that does not exist yet
-		view1.Buffer = &Buffer{
-			file: loc,
-		}
+	if view1.backend == nil { // new file that does not exist yet
+		view1.backend, _ = e.NewFileBackend("", view1)
 	}
 	view1.HeightRatio = 1.0
 
@@ -116,17 +114,22 @@ func (e *Editor) Open(loc string, view *View, rel string) error {
 }
 
 func (e *Editor) openDir(loc string, view *View) error {
-	buffer, err := e.NewDirBuffer(loc)
+	args := []string{"ls", "-a", "--color=no"}
+	backend, err := e.NewFileBackendCmd(args, loc, view)
 	if err != nil {
 		return err
 	}
-	view.Buffer = buffer
+	view.backend = backend
 	view.Dirty = false
 	return nil
 }
 
 func (e *Editor) openFile(loc string, view *View) error {
-	view.Buffer = e.NewFileBuffer(loc)
+	backend, err := e.NewFileBackend(loc, view)
+	if err != nil {
+		return err
+	}
+	view.backend = backend
 	view.Dirty = false
 	return nil
 }

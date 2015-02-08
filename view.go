@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -16,13 +15,12 @@ type View struct {
 	Widget
 	Id               int
 	Dirty            bool
-	Buffer           *Buffer
+	backend          Backend
 	WorkDir          string
 	CursorX, CursorY int
 	offx, offy       int
 	HeightRatio      float64
 	Selections       []Selection
-	Cmd              *exec.Cmd
 	title            string
 	lastCloseTs      time.Time // Timestamp of previous view close request
 }
@@ -30,12 +28,14 @@ type View struct {
 func (e *Editor) NewView() *View {
 	id++
 	d, _ := filepath.Abs(".")
-	return &View{
+	v := &View{
 		Id:          id,
-		Buffer:      &Buffer{},
 		HeightRatio: 0.5,
 		WorkDir:     d,
 	}
+	// TODO : Dummy/blank backend ??
+	v.backend, _ = e.NewFileBackend("", v)
+	return v
 }
 
 func (e *Editor) NewFileView(path string) *View {
@@ -47,8 +47,7 @@ func (e *Editor) NewFileView(path string) *View {
 func (v *View) Reset() {
 	v.CursorX, v.CursorY, v.offx, v.offy = 0, 0, 0, 0
 	v.Selections = []Selection{}
-	// TODO: shutdown command
-	v.Cmd = nil
+	// TODO : reset the backend !! v.backend.Reset()
 }
 
 func (v *View) Render() {
@@ -68,7 +67,7 @@ func (v *View) Render() {
 	v.RenderScroll()
 	v.RenderIsDirty()
 	v.RenderMargin()
-	if v.Buffer != nil {
+	if v.backend != nil {
 		v.RenderText()
 	}
 }
@@ -295,11 +294,11 @@ func (v *View) Title() string {
 	if len(v.title) != 0 {
 		return v.title
 	}
-	if len(v.Buffer.file) == 0 {
+	if v.backend == nil || len(v.backend.SrcLoc()) == 0 {
 		v.title = "~~ NEW ~~"
 		return v.title
 	}
-	v.title = filepath.Base(v.Buffer.file)
+	v.title = filepath.Base(v.backend.SrcLoc())
 	return v.title
 }
 
