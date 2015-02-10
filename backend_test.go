@@ -44,6 +44,11 @@ func TestBackend(t *testing.T) {
 	err = b.Close()
 	assert.Nil(t, err, "close")
 
+	b2 := Ed.NewMemBackend("test_data/file1.txt", v.Id)
+	assert.Nil(t, err, "newMemBackend")
+	//testBackend(t, b2)
+	err = b2.Close()
+	assert.Nil(t, err, "close")
 }
 
 // test Backend API methods
