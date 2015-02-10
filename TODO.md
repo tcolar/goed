@@ -9,6 +9,14 @@
 - : 25 -> goto line 25
   -> make commands like that by configuration ?
 - use a channel(size 1) for save
+- Deal and/or reject files with CR/LF
+- Broken delete at EOF
+- Test backend/view
+- Test editor/Wm
+- reimpl memory buffer
+- Dbl click
+- Redo/Undo
+
 
 Most important now:
 

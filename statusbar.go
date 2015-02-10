@@ -27,6 +27,7 @@ func (s *Statusbar) RenderPos() {
 	if v == nil || v.backend == nil {
 		return
 	}
-	pos := fmt.Sprintf(" %d:%d [%d]", v.CurLine()+1, v.CurCol()+1, v.LineCount())
+	col, ln := v.CursorTextPos(v.CurCol(), v.CurLine())
+	pos := fmt.Sprintf(" %d:%d [%d]", ln+1, col+1, v.LineCount())
 	Ed.Str(s.x2-len(pos), s.y1, pos)
 }
