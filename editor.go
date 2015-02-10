@@ -25,6 +25,7 @@ type Editor struct {
 	pctw, pcth float64
 	evtState   *EvtState
 	Home       string
+	testing    bool
 }
 
 func (e *Editor) Start(loc string) {
@@ -45,11 +46,11 @@ func (e *Editor) Start(loc string) {
 	e.Cmdbar.SetBounds(0, 0, w, 0)
 	e.Statusbar = &Statusbar{}
 	e.Statusbar.SetBounds(0, h-1, w, h-1)
-	view1 := &View{}
+	view1 := e.NewView()
 	e.CurView = view1
 	e.Open(loc, view1, "")
 	if view1.backend == nil { // new file that does not exist yet
-		view1.backend, _ = e.NewFileBackend("", view1)
+		view1.backend, _ = e.NewFileBackend("", view1.Id)
 	}
 	view1.HeightRatio = 1.0
 
@@ -60,7 +61,7 @@ func (e *Editor) Start(loc string) {
 
 	// Add a directory listing view if we don't already have one
 	if stat, err := os.Stat(loc); err == nil && !stat.IsDir() {
-		view2 := &View{}
+		view2 := e.NewView()
 		e.Open(".", view2, "")
 		view2.HeightRatio = 1.0
 		c.WidthRatio = 0.75
@@ -109,27 +110,28 @@ func (e *Editor) Open(loc string, view *View, rel string) error {
 		err = e.openFile(loc, view)
 	}
 	view.WorkDir = filepath.Dir(loc)
-	e.SetStatus(view.WorkDir)
 	return nil
 }
 
 func (e *Editor) openDir(loc string, view *View) error {
 	args := []string{"ls", "-a", "--color=no"}
-	backend, err := e.NewFileBackendCmd(args, loc, view)
+	backend, err := e.NewFileBackendCmd(args, loc, view.Id)
 	if err != nil {
 		return err
 	}
 	view.backend = backend
+	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id, view.WorkDir))
 	view.Dirty = false
 	return nil
 }
 
 func (e *Editor) openFile(loc string, view *View) error {
-	backend, err := e.NewFileBackend(loc, view)
+	backend, err := e.NewFileBackend(loc, view.Id)
 	if err != nil {
 		return err
 	}
 	view.backend = backend
+	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id, view.WorkDir))
 	view.Dirty = false
 	return nil
 }
@@ -176,7 +178,7 @@ func (e Editor) StringToRunes(s []byte) [][]rune {
 	return runes
 }
 
-// QuitCeck check if it's ok to quit
+// QuitCheck check if it's ok to quit
 // if there are no dirty buffer
 // or if requested twice in a row
 func (e *Editor) QuitCheck() bool {

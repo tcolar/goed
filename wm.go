@@ -441,3 +441,14 @@ func (e *Editor) ActivateView(v *View, cursorx, cursory int) {
 	Ed.CurCol = Ed.ViewColumn(v)
 	v.MoveCursor(cursorx, cursory)
 }
+
+func (e *Editor) ViewById(id int) *View {
+	for _, c := range e.Cols {
+		for _, v := range c.Views {
+			if v.Id == id {
+				return v
+			}
+		}
+	}
+	return nil
+}

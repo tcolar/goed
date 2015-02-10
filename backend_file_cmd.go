@@ -13,11 +13,10 @@ type FileBackendCmd struct {
 	FileBackend
 	dir    string
 	runner *exec.Cmd
-	view   *View
 }
 
-func (e *Editor) NewFileBackendCmd(args []string, dir string, v *View) (*FileBackendCmd, error) {
-	b, err := e.NewFileBackend(e.BufferFile(v.Id), v)
+func (e *Editor) NewFileBackendCmd(args []string, dir string, viewId int) (*FileBackendCmd, error) {
+	b, err := e.NewFileBackend(e.BufferFile(viewId), viewId)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +25,7 @@ func (e *Editor) NewFileBackendCmd(args []string, dir string, v *View) (*FileBac
 		dir:         dir,
 		runner:      exec.Command(args[0], args[1:]...),
 	}
-	// TODO: go fb.start()
+	go fb.start()
 	return fb, nil
 }
 
@@ -42,7 +41,7 @@ func (f *FileBackendCmd) Close() error {
 
 func (f *FileBackendCmd) start() {
 	workDir, _ := filepath.Abs(f.dir)
-	v := f.view
+	v := Ed.ViewById(f.viewId)
 	v.WorkDir = workDir
 	f.runner.Stdout = f.file
 	f.runner.Stderr = f.file
@@ -51,6 +50,7 @@ func (f *FileBackendCmd) start() {
 	v.title = fmt.Sprintf("[RUNNING] %s", title)
 	Ed.Render()
 	err := f.runner.Run()
+	// TODO: autorefresh every n seconds or new output available ....
 	Ed.Open(f.srcLoc, v, "")
 	v.WorkDir = workDir // open() would have modified this
 	if err != nil {
@@ -58,13 +58,15 @@ func (f *FileBackendCmd) start() {
 		Ed.SetStatusErr(err.Error())
 	} else {
 		v.title = fmt.Sprintf("[DONE] %s", title)
-		Ed.SetStatus(workDir)
 	}
 	Ed.Render()
 }
 
 func (f *FileBackendCmd) stop() {
-	// TODO: kill command properly
+	if f.runner != nil && f.runner.Process != nil {
+		f.runner.Process.Release()
+		f.runner.Process.Kill()
+	}
 	f.runner = nil
 }
 

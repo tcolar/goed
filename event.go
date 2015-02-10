@@ -1,6 +1,10 @@
 package main
 
-import "github.com/tcolar/termbox-go"
+import (
+	"fmt"
+
+	"github.com/tcolar/termbox-go"
+)
 
 // Evtstate stores some state about kb/mouse events
 type EvtState struct {
@@ -249,7 +253,7 @@ func (v *View) Event(ev *termbox.Event) {
 			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
 			// Make the clicked view active
 			Ed.ActivateView(v, 0, 0)
-			Ed.SetStatus(v.WorkDir)
+			Ed.SetStatus(fmt.Sprintf("[%d]%s", v.Id, v.WorkDir))
 		}
 	}
 	if dirty {

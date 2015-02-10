@@ -231,7 +231,7 @@ func (c *Cmdbar) exec(args []string) {
 		workDir = Ed.CurView.WorkDir
 	}
 	v := Ed.AddViewSmart()
-	b, err := Ed.NewFileBackendCmd(args, workDir, v)
+	b, err := Ed.NewFileBackendCmd(args, workDir, v.Id)
 	if err != nil {
 		Ed.SetStatusErr(err.Error())
 	}

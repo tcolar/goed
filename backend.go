@@ -45,6 +45,7 @@ func (v *View) Save() {
 		Ed.SetStatusErr("Saving Failed " + err.Error())
 		return
 	}
+	v.Dirty = false
 	Ed.SetStatus("Saved " + v.backend.SrcLoc())
 }
 func (v *View) Insert(s string) {
@@ -63,7 +64,7 @@ func (v *View) InsertNewLine() {
 	v.Insert("\n")
 }
 
-// Delete removes a character at the current location
+// Delete removes characters at the current location
 func (v *View) Delete(s string) {
 	_, x, y := v.CurChar()
 	Ed.SetStatus("Removing " + s)

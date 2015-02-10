@@ -12,7 +12,7 @@ type FileBackend struct {
 	srcLoc    string
 	bufferLoc string
 	file      Rwsc //ReaderWriterSeekerCloser
-	view      *View
+	viewId    int
 
 	bufferSize int64 // Internal buffer size for file ops
 
@@ -24,9 +24,9 @@ type FileBackend struct {
 }
 
 // File backend, the source is a file, the buffer is a copy of the file in the buffer dir.
-func (e *Editor) NewFileBackend(loc string, view *View) (*FileBackend, error) {
+func (e *Editor) NewFileBackend(loc string, viewId int) (*FileBackend, error) {
 	b := &FileBackend{
-		view:       view,
+		viewId:     viewId,
 		srcLoc:     loc,
 		ln:         1,
 		lnCount:    1,
@@ -34,13 +34,19 @@ func (e *Editor) NewFileBackend(loc string, view *View) (*FileBackend, error) {
 		prevCol:    1,
 		bufferSize: 65536,
 	}
-	fb := Ed.BufferFile(view.Id)
+	fb := Ed.BufferFile(viewId)
 	b.bufferLoc = fb
+	if fb != loc {
+		// unless we are opening the bffer directly,
+		// make sure there is no existing buffer content
+		os.Remove(fb)
+	}
 	if len(loc) > 0 && fb != loc {
 		f, err := os.Open(loc)
 		if err != nil {
 			return nil, err
 		}
+		defer f.Close()
 		stat, err := f.Stat()
 		if err != nil {
 			return nil, err

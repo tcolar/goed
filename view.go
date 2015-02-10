@@ -17,8 +17,8 @@ type View struct {
 	Dirty            bool
 	backend          Backend
 	WorkDir          string
-	CursorX, CursorY int
-	offx, offy       int
+	CursorX, CursorY int // realtive position of cursor in view (0 index)
+	offx, offy       int // absolute view offset (scrolled down/right) (0 index)
 	HeightRatio      float64
 	Selections       []Selection
 	title            string
@@ -33,8 +33,7 @@ func (e *Editor) NewView() *View {
 		HeightRatio: 0.5,
 		WorkDir:     d,
 	}
-	// TODO : Dummy/blank backend ??
-	v.backend, _ = e.NewFileBackend("", v)
+	v.backend, _ = e.NewFileBackend("", v.Id)
 	return v
 }
 
@@ -47,7 +46,6 @@ func (e *Editor) NewFileView(path string) *View {
 func (v *View) Reset() {
 	v.CursorX, v.CursorY, v.offx, v.offy = 0, 0, 0, 0
 	v.Selections = []Selection{}
-	// TODO : reset the backend !! v.backend.Reset()
 }
 
 func (v *View) Render() {
@@ -264,7 +262,7 @@ func (v *View) MoveCursor(x, y int) {
 	// No scrolling needed
 	if curCol+x >= v.offx && curCol+x <= v.offx+v.LastViewCol() &&
 		curLine+y >= v.offy && curLine+y <= v.offy+v.LastViewLine() {
-		termbox.SetCursor(v.x1+2+v.CursorX, v.y1+2+v.CursorY)
+		v.setCursor(v.x1+2+v.CursorX, v.y1+2+v.CursorY)
 		return
 	}
 
@@ -287,7 +285,7 @@ func (v *View) MoveCursor(x, y int) {
 	tox := v.x1 + 2 + v.CursorX
 	toy := v.y1 + 2 + v.CursorY
 
-	termbox.SetCursor(tox, toy)
+	v.setCursor(tox, toy)
 }
 
 func (v *View) Title() string {
@@ -302,12 +300,12 @@ func (v *View) Title() string {
 	return v.title
 }
 
-// Return the current line (zero indexed)
+// Return the current line (0 indexed)
 func (v *View) CurLine() int {
 	return v.CursorY + v.offy
 }
 
-// Return the current column (zero indexed)
+// Return the current column (0 indexed)
 func (v *View) CurCol() int {
 	return v.CursorX + v.offx
 }
@@ -323,6 +321,12 @@ func (v *View) canClose() bool {
 		v.lastCloseTs = time.Now()
 		return false
 	}
-	// 2 "quick"close request in a row
+	// 2 "quick" close request in a row
 	return true
+}
+
+func (v *View) setCursor(x, y int) {
+	if !Ed.testing {
+		termbox.SetCursor(x, y)
+	}
 }
