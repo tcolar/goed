@@ -1,0 +1,12 @@
+1234567890
+
+abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+
+αβξδεφγηιςκλμνοπθρστυωωχψζ
+ΑΒΞΔΕΦΓΗΙςΚΛΜΝΟΠΘΡΣΤΥΩΩΧΨΖ
+
+		abc
+
+// TODO: "wide" runes support / test
