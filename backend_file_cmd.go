@@ -69,34 +69,3 @@ func (f *FileBackendCmd) stop() {
 	}
 	f.runner = nil
 }
-
-/*
-// FileBackendInternalCmd is a special type of Command where the command is "internal" to goed,
-// rather than an exeternal command.
-type FileBackendInternalCmd struct {
-	FileBackend
-	cmd string
-	dir string
-}
-
-type CmdName string
-
-const (
-	CmdDirLs CmdName = "ls"
-)
-
-func NewFileBackendInternalCmd(cmd CmdName, dir string, bufferId int) (*FileBackendCmd, error) {
-	b, err := NewFileBackend("TODO", bufferId)
-	if err != nil {
-		return nil, err
-	}
-	return &FileBackendCmd{
-		FileBackend: *b,
-		cmd:         cmd,
-		dir:         dir,
-	}, nil
-}
-
-func (f *FileBackendInternalCmd) Refresh() {
-	//TODO
-}*/

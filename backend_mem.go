@@ -13,16 +13,16 @@ type MemBackend struct {
 	view *View
 }
 
-func (e *Editor) NewMemBackend(path string, viewId int) *MemBackend {
+func (e *Editor) NewMemBackend(path string, viewId int) (*MemBackend, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	runes := Ed.StringToRunes(data)
+	runes := Ed.StringToRunes(string(data))
 	return &MemBackend{
 		text: runes,
 		file: path,
-	}
+	}, nil
 }
 
 func (b *MemBackend) Save(loc string) error {
@@ -61,36 +61,67 @@ func (b *MemBackend) BufferLoc() string {
 }
 
 func (b *MemBackend) Insert(row, col int, text string) error {
-	runes := Ed.StringToRunes([]byte(text))
+	row-- // 1 index to 0 index
+	col--
+	runes := Ed.StringToRunes(text)
 	if len(runes) == 0 {
 		return nil
 	}
 	var tail []rune
 	last := len(runes) - 1
 	// Create a "hole" for the new lines to be inserted
-	if len(runes) > 2 {
-		for i := 2; i < len(runes); i++ {
+	if len(runes) > 1 {
+		for i := 1; i < len(runes); i++ {
 			b.text = append(b.text, []rune{})
 		}
-		copy(b.text[row+len(runes)-2:], b.text[row+1:])
+		copy(b.text[row+last:], b.text[row:])
 	}
 	for i, ln := range runes {
-		if i == 0 {
-			tail = b.text[row][col:]
-			b.text[row+i] = append(b.text[row+i], ln...)
+		line := b.text[row+i]
+		if i == 0 && last == 0 {
+			line = append(line, ln...)           // grow line
+			copy(line[col+len(ln):], line[col:]) // create hole
+			copy(line[col:], ln)                 //file hole
+		} else if i == 0 {
+			tail = make([]rune, len(line)-col)
+			copy(tail, line[col:])
+			line = append(line[:col], ln...)
+		} else if i == last {
+			line = append(ln, tail...)
+		} else {
+			line = ln
 		}
-		if i == last {
-			b.text[row+i] = append(ln, tail...)
-		}
-		if i > 0 && i < last {
-			b.text[row+i] = runes[row+i]
-		}
+		b.text[row+i] = line
 	}
 
 	return nil
 }
 
 func (b *MemBackend) Remove(row, col int, text string) error {
+	row-- // 1 index to 0 index
+	col--
+	runes := Ed.StringToRunes(text)
+	drop := 0
+	last := len(runes) - 1
+	for i, ln := range runes {
+		line := b.text[row+i]
+		if i == 0 && last == 0 {
+			copy(line[col:], line[col+len(ln):])
+			line = line[:len(line)-len(ln)]
+		} else if i == 0 {
+			line = line[:col]
+		} else if i == last {
+			b.text[row] = append(b.text[row], line[len(ln):]...)
+			drop++
+		} else {
+			drop++
+		}
+		b.text[row+i] = line
+	}
+	if drop > 0 {
+		copy(b.text[row+1:], b.text[row+1+drop:])
+		b.text = b.text[:len(b.text)-drop]
+	}
 	return nil
 }
 
@@ -107,24 +138,34 @@ func (b *MemBackend) Slice(row, col, row2, col2 int) [][]rune {
 	runes := [][]rune{}
 	r := row
 	for ; row2 == -1 || r <= row2; r++ {
+		if r > len(b.text) {
+			break
+		}
 		if col2 == -1 {
-			runes = append(runes, b.text[row])
+			runes = append(runes, b.text[r-1])
 		} else {
-			c, c2, l := col, col2, len(b.text[row])
+			c, c2, l := col-1, col2, len(b.text[r-1])
 			if c > l {
 				c = l
 			}
 			if c2 > l {
 				c2 = l
 			}
-			runes = append(runes, b.text[row][c:c2])
+			runes = append(runes, b.text[r-1][c:c2])
 		}
 	}
 	return runes
 }
 
 func (b *MemBackend) LineCount() int {
-	return len(b.text)
+	count := len(b.text)
+	if count > 0 {
+		last := len(b.text) - 1
+		if len(b.text[last]) == 0 {
+			count--
+		}
+	}
+	return count
 }
 
 func (b *MemBackend) Close() error {
@@ -132,58 +173,6 @@ func (b *MemBackend) Close() error {
 }
 
 /*
-// Inserts a rune at the cursor location
-func (v *View) Insert(c rune) {
-	l := v.CurLine()
-	i := v.lineRunesTo(l, v.CurCol())
-	if l >= len(v.Buffer.text) {
-		v.Buffer.text = append(v.Buffer.text, []rune{})
-	}
-	line := v.Buffer.text[l]
-	line = append(line, c)
-	copy(line[i+1:], line[i:])
-	line[i] = c
-	v.Buffer.text[l] = line
-	v.MoveCursor(v.runeSize(c), 0)
-}
-
-// InsertNewLine inserts a "newline"(Enter key) in the buffer
-func (v *View) InsertNewLine() {
-	l := v.CurLine()
-	i := v.lineRunesTo(l, v.CurCol())
-	if l >= len(v.Buffer.text) {
-		v.Buffer.text = append(v.Buffer.text, []rune{})
-		return
-	}
-	line := v.Buffer.text[l]
-	indent := []rune{}
-	for _, r := range line {
-		if unicode.IsSpace(r) {
-			indent = append(indent, r)
-		} else {
-			break
-		}
-	}
-	b := append(v.Buffer.text, []rune{}) // Extend buffer size with a new blank line
-	copy(b[l+1:], b[l:])                 // Move buffer tail by one to create a "hole" (blank line)
-	b[l] = line[:i]                      // truncate current line up to cursor
-	b[l+1] = append(indent, line[i:]...) // make rest of current line it's own line
-	v.Buffer.text = b
-	v.MoveCursor(v.lineColsTo(l+1, len(indent))-v.CurCol(), 1)
-}
-
-// TODO: This is not most efficient
-func (v *View) InsertLines(lines [][]rune) {
-	for i, l := range lines {
-		for _, r := range l {
-			v.Insert(r)
-		}
-		if i < len(lines)-1 {
-			v.InsertNewLine()
-		}
-	}
-}
-
 // Delete removes a character at the current location
 func (v *View) Delete() {
 	l := v.CurLine()

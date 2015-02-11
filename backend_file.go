@@ -37,7 +37,7 @@ func (e *Editor) NewFileBackend(loc string, viewId int) (*FileBackend, error) {
 	fb := Ed.BufferFile(viewId)
 	b.bufferLoc = fb
 	if fb != loc {
-		// unless we are opening the bffer directly,
+		// unless we are opening the buffer directly,
 		// make sure there is no existing buffer content
 		os.Remove(fb)
 	}
@@ -65,12 +65,15 @@ func (e *Editor) NewFileBackend(loc string, viewId int) (*FileBackend, error) {
 	var err error
 	// TODO: is sync necessary or better to call it selectively ??
 	b.file, err = os.OpenFile(b.bufferLoc, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0666)
+	if err != nil {
+		return nil, err
+	}
 
 	// get base line count
 	b.lnCount, _ = CountLines(b.file)
 
 	b.reset()
-	return b, err
+	return b, nil
 }
 
 func (f *FileBackend) SrcLoc() string {
@@ -142,8 +145,12 @@ func (f *FileBackend) Slice(row, col, row2, col2 int) [][]rune {
 	r := row
 	for ; row2 == -1 || r <= row2; r++ {
 		err := f.seek(r, col)
-		if err != nil && err != io.EOF {
-			panic(err)
+		if err != nil {
+			if err != io.EOF {
+				panic(err)
+			} else {
+				return runes
+			}
 		}
 		ln := []rune{}
 		for col2 == -1 || f.col <= col2 {

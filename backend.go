@@ -90,6 +90,7 @@ func (v *View) Backspace() {
 }
 
 // LineCount return the number of lines in the buffer
+// if the last line is a blank line, do not cunt it
 func (v *View) LineCount() int {
 	return v.backend.LineCount()
 }
