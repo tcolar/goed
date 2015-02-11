@@ -18,7 +18,7 @@ func TestView(t *testing.T) {
 	assertCursor(t, v, 0, 0, 0, 0, "mc")
 	assert.True(t, strings.HasSuffix(v.backend.SrcLoc(), "test_data/file1.txt"), "srcloc")
 	assert.True(t, strings.HasSuffix(v.WorkDir, "test_data"), "workdir")
-	assert.Equal(t, v.backend.BufferLoc(), Ed.BufferFile(2), "bufferloc")
+	assert.Equal(t, v.backend.BufferLoc(), Ed.BufferFile(v.Id), "bufferloc")
 	assert.False(t, v.Dirty, "dirty")
 	assert.Equal(t, v.Title(), "file1.txt")
 	assert.Equal(t, v.LineCount(), 12, "lineCount")
@@ -44,6 +44,10 @@ func TestView(t *testing.T) {
 	assertCursor(t, v, 0, 1, 0, 0, "mc7")
 	v.MoveCursor(100, 100) // should do nothing
 	assertCursor(t, v, 0, 1, 0, 0, "mc8")
+}
+
+func TestViewSelections(t *testing.T) {
+	// TODO: test selection stuff / copy/paste
 }
 
 func assertCursor(t *testing.T, v *View, x, y, offsetX, offsetY int, msg string) {

@@ -13,11 +13,11 @@ func init() {
 	Ed.initHome()
 }
 
-func TestBackend(t *testing.T) {
+func TestFileBackend(t *testing.T) {
 	var b *FileBackend
 	var err error
 	v := Ed.NewView()
-	// TODO: copy it to a temp dir
+	// TODO: copy it to a temp dir for save test
 	b, err = Ed.NewFileBackend("test_data/file1.txt", v.Id)
 	assert.Nil(t, err, "newFileBackend")
 
@@ -39,23 +39,26 @@ func TestBackend(t *testing.T) {
 
 	// Test backend interface compliance
 	b.bufferSize = 17 // use a smallish buffer to make things more interesting
-	testBackend(t, b)
+	assert.Equal(t, b.BufferLoc(), Ed.BufferFile(v.Id), "bufferLoc")
+	testBackend(t, b, v.Id)
 
 	err = b.Close()
 	assert.Nil(t, err, "close")
 
-	b2 := Ed.NewMemBackend("test_data/file1.txt", v.Id)
-	assert.Nil(t, err, "newMemBackend")
-	//testBackend(t, b2)
+}
+
+func TestMemBackend(t *testing.T) {
+	v2 := Ed.NewView()
+	b2, err := Ed.NewMemBackend("test_data/file1.txt", v2.Id)
+	testBackend(t, b2, v2.Id)
 	err = b2.Close()
 	assert.Nil(t, err, "close")
 }
 
 // test Backend API methods
-func testBackend(t *testing.T, b Backend) {
+func testBackend(t *testing.T, b Backend, id int) {
 	assert.Equal(t, b.LineCount(), 12, "lineCount")
 	assert.Equal(t, b.SrcLoc(), "test_data/file1.txt", "srcLoc")
-	assert.Equal(t, b.BufferLoc(), Ed.BufferFile(1), "bufferLoc")
 
 	s := Ed.RunesToString(b.Slice(1, 1, 1, 10))
 	assert.Equal(t, s, "1234567890", "slice1")
@@ -75,7 +78,7 @@ func testBackend(t *testing.T, b Backend) {
 	s = Ed.RunesToString(b.Slice(10, 3, 10, 4))
 	assert.Equal(t, s, "ab", "slice7")
 	// "backward" and mostly out of bounds slice
-	s = Ed.RunesToString(b.Slice(20, 21, 12, 10))
+	s = Ed.RunesToString(b.Slice(12, 21, 12, 10))
 	assert.Equal(t, s, `"wide" runes`, "slice8")
 
 	insertionTests(t, b)
@@ -85,20 +88,32 @@ func testBackend(t *testing.T, b Backend) {
 }
 
 func insertionTests(t *testing.T, b Backend) {
-	lines := b.LineCount()
-	whole := Ed.RunesToString(b.Slice(1, 1, 100, 100))
+	whole := Ed.RunesToString(b.Slice(1, 1, -1, -1))
 
 	// Some inserts
-	err := b.Insert(3, 3, "^\n^")
-	assert.Nil(t, err, "insert")
-	assert.Equal(t, b.LineCount(), lines+1, "lineCount")
-	s := Ed.RunesToString(b.Slice(3, 1, 4, 30))
-	expected := "ab^\n^cdefghijklmnopqrstuvwxyz"
-	assert.Equal(t, s, expected, "slice")
-
-	err = b.Remove(3, 3, "^\n^")
-	assert.Nil(t, err, "remove")
+	testInsertRm(t, b, "$", 0, "ab$cdefghijklmnopqrstuvwxyz")
+	//testInsertRm(t, b, "\n", 1, "ab\ncdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "@\n", 1, "ab@\ncdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "\n@", 1, "ab\n@cdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "^\n^", 1, "ab^\n^cdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "#\n##\n\n#", 3, "ab#\n##\n\n#cdefghijklmnopqrstuvwxyz")
 
 	whole2 := Ed.RunesToString(b.Slice(1, 1, -1, -1))
 	assert.Equal(t, whole2, whole, "whole")
+}
+
+const testLine3 = "abcdefghijklmnopqrstuvwxyz"
+
+func testInsertRm(t *testing.T, b Backend, add string, lns int, expected string) {
+	lines := b.LineCount()
+	err := b.Insert(3, 3, add)
+	assert.Nil(t, err, "insert "+add)
+	s := Ed.RunesToString(b.Slice(3, 1, 3+lns, 30))
+	assert.Equal(t, s, expected, "slice "+add)
+	assert.Equal(t, b.LineCount(), lines+lns, "lineCount "+add)
+	err = b.Remove(3, 3, add)
+	assert.Nil(t, err, "remove "+add)
+	s = Ed.RunesToString(b.Slice(3, 1, 3, 30))
+	assert.Equal(t, s, testLine3, "rm "+add)
+	assert.Equal(t, b.LineCount(), lines, "count "+add)
 }

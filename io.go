@@ -39,15 +39,13 @@ func CountLines(r io.Reader) (int, error) {
 
 	for {
 		c, err := r.Read(buf)
-		if err != nil && err != io.EOF {
+		if err != nil {
+			if err == io.EOF {
+				return count, nil
+			}
 			return count, err
 		}
-
 		count += bytes.Count(buf[:c], LineSep)
-
-		if err == io.EOF {
-			break
-		}
 	}
 
 	return count, nil

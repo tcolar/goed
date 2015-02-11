@@ -166,12 +166,13 @@ func (e Editor) RunesToString(runes [][]rune) string {
 	return string(r)
 }
 
-func (e Editor) StringToRunes(s []byte) [][]rune {
-	lines := bytes.Split(s, []byte("\n"))
+func (e Editor) StringToRunes(s string) [][]rune {
+	b := []byte(s)
+	lines := bytes.Split(b, []byte("\n"))
 	runes := [][]rune{}
 	for i, l := range lines {
-		// Ignore last line if empty
-		if i != len(lines)-1 || len(l) != 0 {
+		if i != len(lines)-1 ||
+			(len(l) != 0 || strings.HasSuffix(s, "\n")) {
 			runes = append(runes, bytes.Runes(l))
 		}
 	}
