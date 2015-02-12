@@ -42,12 +42,12 @@ type Theme struct {
 	Close            StyledRune
 }
 
-func ReadTheme(path string) *Theme {
+func ReadTheme(path string) (*Theme, error) {
 	theme := defaultTheme()
 	if _, err := toml.DecodeFile(path, &theme); err != nil {
-		panic(err)
+		return nil, err
 	}
-	return theme
+	return theme, nil
 }
 
 func defaultTheme() *Theme {

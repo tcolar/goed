@@ -65,3 +65,24 @@ func TestQuitCheck(t *testing.T) {
 	assert.True(t, v2.lastCloseTs.After(then), "quitcheck ts")
 	assert.True(t, Ed.QuitCheck(), "quitcheck3")
 }
+
+func TestTheme(t *testing.T) {
+	th, err := ReadTheme("test_data/theme.toml")
+	assert.Nil(t, err, "theme")
+	s := Style{0}
+	s.UnmarshalText([]byte("99663311"))
+	assert.Equal(t, th.Bg, s, "theme bg")
+	sb := th.Statusbar
+	s.UnmarshalText([]byte("EB070000"))
+	s2 := Style{0}
+	s.UnmarshalText([]byte("EB000000"))
+	sr := StyledRune{
+		Rune: '❊',
+		Bg:   s,
+		Fg:   s2,
+	}
+	assert.Equal(t, sb, sr, "styled rune")
+	s = Style{0x41}
+	s = s.WithAttr(Bold)
+	assert.Equal(t, s, Style{0x0141}, "style attr2")
+}

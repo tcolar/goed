@@ -37,7 +37,10 @@ func (e *Editor) Start(loc string) {
 	e.initHome()
 	termbox.SetExtendedColors(*colors == 256)
 	e.evtState = &EvtState{}
-	e.Theme = ReadTheme("themes/default.toml")
+	e.Theme, err = ReadTheme("themes/default.toml")
+	if err != nil {
+		panic(err)
+	}
 	e.Fg = e.Theme.Fg
 	e.Bg = e.Theme.Bg
 
