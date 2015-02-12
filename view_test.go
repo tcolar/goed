@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/atotto/clipboard"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,7 +50,46 @@ func TestView(t *testing.T) {
 }
 
 func TestViewSelections(t *testing.T) {
-	// TODO: test selection stuff / copy/paste
+	var err error
+	v := Ed.NewView()
+	v.SetBounds(5, 5, 40, 30)
+	err = Ed.Open("test_data/file1.txt", v, "")
+	assert.Nil(t, err, "open")
+	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
+
+	s := &Selection{
+		LineFrom: 3,
+		ColFrom:  2,
+		LineTo:   4,
+		ColTo:    8,
+	}
+	v.Selections = append(v.Selections, *s)
+	assert.Equal(t, s.String(), "(3,2)-(4,8)", "string")
+	text := s.Text(v)
+	assert.Equal(t, len(text), 2, "text length")
+	assert.Equal(t, len(text[0]), 7, "text[0] length")
+	assert.Equal(t, len(text[1]), 7, "text[1] length")
+	assert.Equal(t, string(text[0]), "bcdefgh", "text[0]")
+	assert.Equal(t, string(text[1]), "BCDEFGH", "text[1]")
+	b, sel := v.Selected(4, 1)
+	assert.False(t, b, "4,1")
+	assert.Nil(t, sel, "sel 4,1")
+	b, sel = v.Selected(1, 3)
+	assert.False(t, b, "1,3")
+	assert.Nil(t, sel, "sel 1,3")
+	b, sel = v.Selected(4, 5)
+	assert.False(t, b, "4,5")
+	assert.Nil(t, sel, "sel 4,5")
+	b, sel = v.Selected(3, 3)
+	assert.True(t, b, "3, 3")
+	assert.Equal(t, sel.String(), s.String(), "sel 3,3")
+	v.Copy(*s)
+	cb, _ := clipboard.ReadAll()
+	assert.Equal(t, cb, "bcdefgh\nBCDEFGH", "copy")
+	s = v.PathSelection(1, 1)
+	assert.Nil(t, s, "path1")
+	//s = v.PathSelection(0, 3)
+	//assert.Equal(t, Ed.RunesToString(s.Text(v)), "1234567890", "path2")
 }
 
 func assertCursor(t *testing.T, v *View, x, y, offsetX, offsetY int, msg string) {

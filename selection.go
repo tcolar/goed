@@ -18,9 +18,10 @@ func (s Selection) String() string {
 }
 
 // Text returns the text contained in the selection of the given view
+// Note: **NOT** a rectangle but from pt1 to pt2
 func (s Selection) Text(v *View) [][]rune {
 	cf := s.ColFrom
-	ct := s.ColTo + 1
+	ct := s.ColTo
 	lt := s.LineTo
 	lf := s.LineFrom
 	slice := v.backend.Slice(lf, cf, lt, ct)
