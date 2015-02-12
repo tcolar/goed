@@ -1,9 +1,6 @@
 package main
 
-import (
-	"github.com/davecheney/profile"
-	"gopkg.in/alecthomas/kingpin.v1"
-)
+import "gopkg.in/alecthomas/kingpin.v1"
 
 var (
 	Version = "0.0.1"
@@ -14,7 +11,7 @@ var (
 )
 
 func main() {
-	defer profile.Start(profile.CPUProfile).Stop()
+	//defer profile.Start(profile.CPUProfile).Stop()
 	kingpin.Version("0.0.1")
 
 	kingpin.Parse()

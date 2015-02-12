@@ -11,11 +11,14 @@
 - use a channel(size 1) for save
 - Deal and/or reject files with CR/LF
 - Broken delete at EOF
-- Test backend/view
-- Test editor/Wm
-- reimpl memory buffer
+~ Test backend/view
+~ Test editor/Wm
+X reimpl memory buffer
+- mem buffer cmd (default??)
 - Dbl click
 - Redo/Undo
+- Replace lines/viewlines etc.. by uing the slice -> performance
+- Benchmark of editor scroll/cursor insert etc ... ?
 
 
 Most important now:

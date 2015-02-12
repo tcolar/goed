@@ -15,6 +15,8 @@ func TestView(t *testing.T) {
 	err = Ed.Open("test_data/file1.txt", v, "")
 	assert.Nil(t, err, "open")
 
+	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
+
 	assertCursor(t, v, 0, 0, 0, 0, "mc")
 	assert.True(t, strings.HasSuffix(v.backend.SrcLoc(), "test_data/file1.txt"), "srcloc")
 	assert.True(t, strings.HasSuffix(v.WorkDir, "test_data"), "workdir")
@@ -22,7 +24,7 @@ func TestView(t *testing.T) {
 	assert.False(t, v.Dirty, "dirty")
 	assert.Equal(t, v.Title(), "file1.txt")
 	assert.Equal(t, v.LineCount(), 12, "lineCount")
-	assert.Equal(t, v.lineCols(0), 10, "lineCols")
+	assert.Equal(t, v.lineCols(v.slice, 0), 10, "lineCols")
 	assert.Equal(t, v.LastViewLine(), 30-5-3, "lastViewLine")
 	assert.Equal(t, v.LastViewCol(), 40-5-3, "lastViewCol")
 	v.MoveCursor(0, 0)

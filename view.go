@@ -23,6 +23,7 @@ type View struct {
 	Selections       []Selection
 	title            string
 	lastCloseTs      time.Time // Timestamp of previous view close request
+	slice            *Slice    // curSlice
 }
 
 func (e *Editor) NewView() *View {
@@ -32,6 +33,7 @@ func (e *Editor) NewView() *View {
 		Id:          id,
 		HeightRatio: 0.5,
 		WorkDir:     d,
+		slice:       &Slice{text: [][]rune{}},
 	}
 	v.backend, _ = e.NewFileBackend("", v.Id)
 	return v
@@ -99,73 +101,39 @@ func (v *View) RenderClose() {
 	Ed.Char(v.x2-1, v.y1, Ed.Theme.Close.Rune)
 }
 
-// Gives us the lines to show in the view as text (\t as spaces)
-func (v *View) viewLines() [][]rune {
-	lines := [][]rune{}
-	for i := v.offy; i < v.LineCount() && i <= v.offy+v.LastViewLine(); i++ {
-		lines = append(lines, v.viewLine(i))
-	}
-	return lines
-}
-
-// single line to display (return only the relevant parts for display)
-func (v *View) viewLine(index int) []rune {
-	line := []rune{}
-	if index >= v.LineCount() {
-		return line
-	}
-	ln := v.Line(index)
-	x := 0
-	// Get what we can "See" in the viewport, plus an extra to the right so
-	// we can know if we have it the end of the line or not.
-	for i := 0; i < len(ln) && len(line) < v.LastViewCol()+1; i++ {
-		c := ln[i]
-		if x >= v.offx {
-			// we have skipped all that is to the left of the viewport
-			if len(line) == 0 {
-				// Special case for part of a tab showing at the beginning of the line
-				for j := v.offx; j < x; j++ {
-					line = append(line, ' ')
-				}
-			}
-			line = append(line, c)
-			if c == '\t' {
-				for j := 1; j < tabSize; j++ {
-					x += tabSize - 1
-					line = append(line, ' ')
-				}
-			}
-		}
-		x++
-		if c == '\t' {
-			x += tabSize - 1
-		}
-	}
-	return line
-}
-
 func (v *View) RenderText() {
 	y := v.y1 + 2
 	fg := Ed.Theme.Fg
 	bg := Ed.Theme.Bg
 	Ed.FB(fg, bg)
 	inSelection := false
+	tab := string(Ed.Theme.TabChar.Rune)
+	for j := 1; j < tabSize; j++ {
+		tab += " "
+	}
 	if v.offy > 0 {
 		// More text above
 		Ed.FB(Ed.Theme.MoreTextUp.Fg, Ed.Theme.MoreTextUp.Bg)
 		Ed.Char(v.x1+1, y-1, Ed.Theme.MoreTextUp.Rune)
 		Ed.FB(fg, bg)
 	}
-	for _, l := range v.viewLines() {
+	// TODO: no need to get slice again if not dirty and same coordinates / or "fits"
+	// Note: using full lines
+	v.slice = v.backend.Slice(v.offy+1, 1, v.offy+v.LastViewLine()+1, -1)
+	for _, l := range v.slice.text {
 		x := v.x1 + 2
+		if v.offx >= len(l) {
+			y++
+			continue
+		}
 		if v.offx > 0 {
 			// More text to our left
 			Ed.FB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
 			Ed.Char(x-1, y, Ed.Theme.MoreTextSide.Rune)
 			Ed.FB(fg, bg)
 		}
-		for _, c := range l {
-			selected, _ := v.Selected(v.CursorTextPos(v.offx+x-2-v.x1, v.offy+y-2-v.y1))
+		for _, c := range l[v.offx:] {
+			selected, _ := v.Selected(v.CursorTextPos(v.slice, v.offx+x-2-v.x1, v.offy+y-2-v.y1))
 			if selected != inSelection {
 				inSelection = selected
 				if selected {
@@ -177,7 +145,8 @@ func (v *View) RenderText() {
 			}
 			if c == '\t' {
 				Ed.FB(Ed.Theme.TabChar.Fg, bg)
-				Ed.Char(x, y, Ed.Theme.TabChar.Rune)
+				Ed.Str(x, y, tab)
+				x += tabSize - 1
 				Ed.FB(fg, bg)
 			} else {
 				Ed.Char(x, y, c)
@@ -217,6 +186,9 @@ func (v *View) LastViewCol() int {
 // also takes care to wrapping to previous/next line as needed
 // as well as scrolling the view as needed.
 func (v *View) MoveCursor(x, y int) {
+
+	slice := v.slice
+
 	curCol := v.CurCol()
 	curLine := v.CurLine()
 	lastLine := v.LineCount() - 1
@@ -224,18 +196,18 @@ func (v *View) MoveCursor(x, y int) {
 	if curLine+y < 0 || // before first line
 		curLine+y > lastLine || // after last line
 		(curLine <= 0 && curCol+x < 0) || // before beginning of file
-		(curLine >= lastLine && curCol+x > v.lineCols(lastLine)) { // after eof
+		(curLine >= lastLine && curCol+x > v.lineCols(slice, lastLine)) { // after eof
 		return
 	}
 
-	ln := v.lineCols(curLine + y)
+	ln := v.lineCols(slice, curLine+y)
 
 	if curCol+x < 0 {
 		// wrap to after end of previous line
 		y--
-		x = v.lineCols(curLine+y) - curCol
+		x = v.lineCols(slice, curLine+y) - curCol
 	} else if curCol+x > ln {
-		ln := v.lineCols(curLine + y)
+		ln := v.lineCols(slice, curLine+y)
 		if y == 0 {
 			// moved (right) passed eol, wrap to beginning of next line
 			x = -curCol
@@ -248,14 +220,14 @@ func (v *View) MoveCursor(x, y int) {
 
 	v.CursorX += x
 	v.CursorY += y
-	ln = v.LineLen(curLine + y)
+	ln = v.LineLen(slice, curLine+y)
 
 	// Special handling for tabs
 	c, textX, textY := v.CurChar()
 	if c != nil && *c == '\t' {
 		from := v.CursorX
 		// align cursor with beginning of tab
-		v.CursorX = v.lineColsTo(textY, textX) - v.offx
+		v.CursorX = v.lineColsTo(slice, textY, textX) - v.offx
 		x -= v.CursorX - from
 	}
 

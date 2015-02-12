@@ -19,35 +19,12 @@ func (s Selection) String() string {
 
 // Text returns the text contained in the selection of the given view
 func (s Selection) Text(v *View) [][]rune {
-	runes := [][]rune{}
 	cf := s.ColFrom
 	ct := s.ColTo + 1
 	lt := s.LineTo
 	lf := s.LineFrom
-	if v.LineCount() < s.LineFrom {
-		return runes
-	}
-	if lt > v.LineCount() {
-		lt = v.LineCount()
-	}
-	line := v.Line(s.LineFrom)
-	line2 := v.Line(s.LineTo)
-	if cf > len(line) {
-		cf = len(line)
-	}
-	if ct > len(line2) {
-		ct = len(line2)
-	}
-	if s.LineFrom == s.LineTo {
-		runes = append(runes, line[cf:ct])
-		return runes
-	}
-	runes = append(runes, line[cf:])
-	for i := lf + 1; i < lt; i++ {
-		runes = append(runes, v.Line(i))
-	}
-	runes = append(runes, line2[:ct])
-	return runes
+	slice := v.backend.Slice(lf, cf, lt, ct)
+	return slice.text
 }
 
 // Selected returns whether the text at line, col is current selected
@@ -89,8 +66,9 @@ var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?
 // Try to select a "location" from the given position
 // a location is a path with possibly a line number and maybe a column number as well
 func (v *View) PathSelection(line, col int) *Selection {
-	ln := string(v.Line(line))
-	c := v.lineRunesTo(line, col)
+	ln := string(v.Line(v.slice, line))
+	Ed.SetStatus(fmt.Sprintf("ps %s", ln))
+	c := v.lineRunesTo(v.slice, line, col)
 	matches := locationRegexp.FindAllStringIndex(string(ln), -1)
 	var best []int
 	// Find the "narrowest" match around the cursor

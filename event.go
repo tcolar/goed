@@ -113,7 +113,7 @@ func (v *View) Event(ev *termbox.Event) {
 			v.MoveCursor(offset, 0)
 		case termbox.KeyArrowLeft:
 			offset := 1
-			c, _, _ := v.CursorChar(v.CurCol()-1, v.CurLine())
+			c, _, _ := v.CursorChar(v.slice, v.CurCol()-1, v.CurLine())
 			if c != nil {
 				offset = v.runeSize(*c)
 			}
@@ -135,7 +135,7 @@ func (v *View) Event(ev *termbox.Event) {
 			}
 			v.MoveCursor(0, -dist)
 		case termbox.KeyEnd:
-			v.MoveCursor(v.lineCols(v.CurLine())-v.CurCol(), 0)
+			v.MoveCursor(v.lineCols(v.slice, v.CurLine())-v.CurCol(), 0)
 		case termbox.KeyHome:
 			v.MoveCursor(-v.CurCol(), 0)
 		case termbox.KeyTab:
@@ -225,8 +225,8 @@ func (v *View) Event(ev *termbox.Event) {
 				s := Selection{
 					LineFrom: y1,
 					LineTo:   y2,
-					ColFrom:  v.lineRunesTo(y1, x1),
-					ColTo:    v.lineRunesTo(y2, x2),
+					ColFrom:  v.lineRunesTo(v.slice, y1, x1),
+					ColTo:    v.lineRunesTo(v.slice, y2, x2),
 				}
 				// Deal with "reverse" selection
 				if s.LineFrom == s.LineTo && s.ColFrom > s.ColTo {

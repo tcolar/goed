@@ -54,7 +54,7 @@ func (e *Editor) Render() {
 	// cursor
 	v := Ed.CurView
 	cc, cl := v.CurCol(), v.CurLine()
-	c, _, _ := v.CursorChar(cc, cl)
+	c, _, _ := v.CurChar()
 	// With some terminals & color schemes the cursor might be "invisible" if we are at a
 	// location with no text (ie: end of line)
 	// so in that case put as space there to cause the cursor to appear.

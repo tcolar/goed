@@ -43,7 +43,7 @@ func (b *MemBackend) Save(loc string) error {
 				return fmt.Errorf("Saved Failed failed %v", err.Error())
 			}
 		}
-		if i != b.LineCount() || b.view.LineLen(i) != 0 {
+		if i != b.LineCount() || len(l) != 0 {
 			f.WriteString("\n")
 		}
 	}
@@ -125,9 +125,16 @@ func (b *MemBackend) Remove(row, col int, text string) error {
 	return nil
 }
 
-func (b *MemBackend) Slice(row, col, row2, col2 int) [][]rune {
+func (b *MemBackend) Slice(row, col, row2, col2 int) *Slice {
+	slice := &Slice{
+		text: [][]rune{},
+		r1:   row,
+		c1:   col,
+		r2:   row2,
+		c2:   col2,
+	}
 	if row < 1 || col < 1 {
-		return [][]rune{}
+		return slice
 	}
 	if row2 != -1 && row > row2 {
 		row, row2 = row2, row
@@ -135,14 +142,13 @@ func (b *MemBackend) Slice(row, col, row2, col2 int) [][]rune {
 	if col2 != -1 && col > col2 {
 		col, col2 = col2, col
 	}
-	runes := [][]rune{}
 	r := row
 	for ; row2 == -1 || r <= row2; r++ {
 		if r > len(b.text) {
 			break
 		}
 		if col2 == -1 {
-			runes = append(runes, b.text[r-1])
+			slice.text = append(slice.text, b.text[r-1])
 		} else {
 			c, c2, l := col-1, col2, len(b.text[r-1])
 			if c > l {
@@ -151,10 +157,10 @@ func (b *MemBackend) Slice(row, col, row2, col2 int) [][]rune {
 			if c2 > l {
 				c2 = l
 			}
-			runes = append(runes, b.text[r-1][c:c2])
+			slice.text = append(slice.text, b.text[r-1][c:c2])
 		}
 	}
-	return runes
+	return slice
 }
 
 func (b *MemBackend) LineCount() int {

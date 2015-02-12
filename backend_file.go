@@ -131,9 +131,16 @@ func (f *FileBackend) LineCount() int {
 
 // Slice returns the runes that are in the given rectangle.
 // row2 / col2 maybe -1, meaning all lines / whole lines
-func (f *FileBackend) Slice(row, col, row2, col2 int) [][]rune {
+func (f *FileBackend) Slice(row, col, row2, col2 int) *Slice {
+	slice := &Slice{
+		text: [][]rune{},
+		r1:   row,
+		c1:   col,
+		r2:   row2,
+		c2:   col2,
+	}
 	if row < 1 || col < 1 {
-		return [][]rune{}
+		return slice
 	}
 	if row2 != -1 && row > row2 {
 		row, row2 = row2, row
@@ -141,7 +148,6 @@ func (f *FileBackend) Slice(row, col, row2, col2 int) [][]rune {
 	if col2 != -1 && col > col2 {
 		col, col2 = col2, col
 	}
-	runes := [][]rune{}
 	r := row
 	for ; row2 == -1 || r <= row2; r++ {
 		err := f.seek(r, col)
@@ -149,23 +155,23 @@ func (f *FileBackend) Slice(row, col, row2, col2 int) [][]rune {
 			if err != io.EOF {
 				panic(err)
 			} else {
-				return runes
+				return slice
 			}
 		}
 		ln := []rune{}
 		for col2 == -1 || f.col <= col2 {
 			rune, _, err := f.readRune()
 			if err != nil {
-				return runes
+				return slice
 			}
 			if rune == '\n' {
 				break
 			}
 			ln = append(ln, rune)
 		}
-		runes = append(runes, ln)
+		slice.text = append(slice.text, ln)
 	}
-	return runes
+	return slice
 }
 
 func (f *FileBackend) Save(loc string) error {
