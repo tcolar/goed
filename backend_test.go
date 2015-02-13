@@ -8,7 +8,7 @@ import (
 
 func init() {
 	Ed = newMockEditor()
-	Ed.initHome()
+	Ed.Start("")
 }
 
 func TestFileBackend(t *testing.T) {

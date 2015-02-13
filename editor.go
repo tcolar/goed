@@ -91,7 +91,9 @@ func (e *Editor) Start(loc string) {
 
 	e.Render()
 
-	e.EventLoop()
+	if !e.testing {
+		e.EventLoop()
+	}
 }
 
 func (e *Editor) Open(loc string, view *View, rel string) error {
