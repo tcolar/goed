@@ -117,7 +117,6 @@ func (v *View) RenderText() {
 		Ed.Char(v.x1+1, y-1, Ed.Theme.MoreTextUp.Rune)
 		Ed.FB(fg, bg)
 	}
-	// TODO: no need to get slice again if not dirty and same coordinates / or "fits"
 	// Note: using full lines
 	v.slice = v.backend.Slice(v.offy+1, 1, v.offy+v.LastViewLine()+1, -1)
 	for _, l := range v.slice.text {
@@ -126,14 +125,28 @@ func (v *View) RenderText() {
 			y++
 			continue
 		}
+		start := 0
 		if v.offx > 0 {
 			// More text to our left
 			Ed.FB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
 			Ed.Char(x-1, y, Ed.Theme.MoreTextSide.Rune)
 			Ed.FB(fg, bg)
+			// skip letters until we get to or past offx
+			sz := 0
+			for sz < v.offx {
+				sz += v.runeSize(l[start])
+				start++
+			}
+			// if we went "past" offx it means there where some
+			// tabs leftover spaces taht we need to render
+			for i := v.offx; i != sz; i++ {
+				Ed.Char(x, y, ' ')
+				x++
+			}
 		}
-		for _, c := range l[v.offx:] {
-			selected, _ := v.Selected(v.CursorTextPos(v.slice, v.offx+x-2-v.x1, v.offy+y-2-v.y1))
+		for _, c := range l[start:] {
+			sx, sy := v.CursorTextPos(v.slice, v.offx+x-2-v.x1, v.offy+y-2-v.y1)
+			selected, _ := v.Selected(sx+1, sy+1)
 			if selected != inSelection {
 				inSelection = selected
 				if selected {
