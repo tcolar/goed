@@ -24,7 +24,7 @@ func (e *Editor) NewCol(width float64, views []*View) *Col {
 }
 
 func (e *Editor) WidgetAt(x, y int) Renderer {
-	_, h := e.Size()
+	_, h := e.term.Size()
 	if y == 0 {
 		return e.Cmdbar
 	}
@@ -42,8 +42,8 @@ func (e *Editor) WidgetAt(x, y int) Renderer {
 }
 
 func (e *Editor) Render() {
-	e.FB(e.Theme.Fg, e.Theme.Bg)
-	termbox.Clear(termbox.Attribute(e.Bg.uint16), termbox.Attribute(e.Bg.uint16))
+	e.TermFB(e.Theme.Fg, e.Theme.Bg)
+	e.term.Clear(e.Bg.uint16, e.Bg.uint16)
 
 	for _, c := range e.Cols {
 		for _, v := range c.Views {
@@ -64,14 +64,14 @@ func (e *Editor) Render() {
 	}
 	// Note theterminal inverse the colors where the cursor is
 	// this is why this statement might appear "backward"
-	Ed.FB(Ed.Theme.BgCursor, Ed.Theme.FgCursor)
-	Ed.Char(cc+v.x1-v.offx+2, cl+v.y1-v.offy+2, car)
-	Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+	Ed.TermFB(Ed.Theme.BgCursor, Ed.Theme.FgCursor)
+	Ed.TermChar(cc+v.x1-v.offx+2, cl+v.y1-v.offy+2, car)
+	Ed.TermFB(Ed.Theme.Fg, Ed.Theme.Bg)
 
 	e.Cmdbar.Render()
 	e.Statusbar.Render()
 
-	termbox.Flush()
+	e.term.Flush()
 }
 
 type Renderer interface {
@@ -131,7 +131,7 @@ func (e *Editor) Resize(width, height int) {
 
 // ViewMove handles moving & resizing views/columns, typically using the mouse
 func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
-	w, h := Ed.Size()
+	w, h := e.term.Size()
 	v1 := e.WidgetAt(x1, y1).(*View)
 	v2 := e.WidgetAt(x2, y2).(*View)
 	c1 := e.ViewColumn(v1)
@@ -215,7 +215,7 @@ func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
 		}
 	}
 	e.SetStatus("")
-	e.Resize(e.Size())
+	e.Resize(e.term.Size())
 }
 
 // ViewColumn returns the column that is holding a given view
@@ -264,7 +264,7 @@ func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	e.Cols[i] = c
 
 	e.ActivateView(nv, 0, 0)
-	e.Resize(e.Size())
+	e.Resize(e.term.Size())
 	return c
 }
 
@@ -295,7 +295,7 @@ func (e *Editor) AddViewSmart() *View {
 		nv = e.AddView(emptiestView, 0.5)
 	}
 	e.ActivateView(nv, 0, 0)
-	e.Resize(e.Size())
+	e.Resize(e.term.Size())
 	return nv
 }
 
@@ -325,7 +325,7 @@ func (e *Editor) InsertView(view, toView *View, ratio float64) {
 	col.Views = append(col.Views, nil)
 	copy(col.Views[i+1:], col.Views[i:])
 	col.Views[i] = view
-	e.Resize(e.Size())
+	e.Resize(e.term.Size())
 }
 
 func (e *Editor) ReplaceView(oldView, newView *View) {
@@ -367,7 +367,7 @@ func (e *Editor) DelCol(col *Col, terminateViews bool) {
 		}
 	}
 	col = nil
-	e.Resize(e.Size())
+	e.Resize(e.term.Size())
 }
 
 func (e *Editor) DelView(view *View, terminate bool) {
@@ -401,7 +401,7 @@ func (e *Editor) DelView(view *View, terminate bool) {
 		}
 		prev = c.Views[i]
 	}
-	e.Resize(e.Size())
+	e.Resize(e.term.Size())
 }
 
 func (e *Editor) TerminateView(v *View) {

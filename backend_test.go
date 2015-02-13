@@ -7,9 +7,7 @@ import (
 )
 
 func init() {
-	Ed = &Editor{
-		testing: true,
-	}
+	Ed = newMockEditor()
 	Ed.initHome()
 }
 

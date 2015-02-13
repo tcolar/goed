@@ -26,6 +26,6 @@ func main() {
 		*colors = 2
 	}
 
-	Ed = &Editor{}
+	Ed = NewEditor()
 	Ed.Start(*loc)
 }

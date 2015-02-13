@@ -6,34 +6,152 @@ import (
 	"github.com/tcolar/termbox-go"
 )
 
-func (e *Editor) Size() (int, int) {
+// Terminal interface
+type Term interface {
+	Close()
+	Clear(fg, bg uint16)
+	Char(x, y int, c rune)
+	Flush()
+	Init() error
+	SetExtendedColors(bool)
+	SetCursor(x, y int)
+	Size() (int, int)
+	SetMouseMode(termbox.MouseMode)
+	SetInputMode(termbox.InputMode)
+}
+
+// ==================== Termbox impl ===========================
+
+// Real Terinal implementation using termbox
+type TermBox struct {
+}
+
+func NewTermBox() *TermBox {
+	return &TermBox{}
+}
+
+func (t *TermBox) Init() error {
+	return termbox.Init()
+}
+
+func (t *TermBox) Clear(fg, bg uint16) {
+	termbox.Clear(termbox.Attribute(fg), termbox.Attribute(bg))
+}
+
+func (t *TermBox) Close() {
+	termbox.Close()
+}
+
+func (t *TermBox) Flush() {
+	termbox.Flush()
+}
+
+func (t *TermBox) SetExtendedColors(b bool) {
+	termbox.SetExtendedColors(b)
+}
+
+func (t *TermBox) SetCursor(x, y int) {
+	termbox.SetCursor(x, y)
+}
+
+func (t *TermBox) Char(x, y int, c rune) {
+	termbox.SetCell(x, y, c, termbox.Attribute(Ed.Fg.uint16), termbox.Attribute(Ed.Bg.uint16))
+}
+
+func (t *TermBox) Size() (int, int) {
 	return termbox.Size()
 }
 
-func (e *Editor) FB(fg, bg Style) {
+func (t *TermBox) SetMouseMode(m termbox.MouseMode) {
+	termbox.SetMouseMode(m)
+}
+
+func (t *TermBox) SetInputMode(m termbox.InputMode) {
+	termbox.SetInputMode(m)
+}
+
+// ==================== Mock impl ===========================
+
+// Mock  Terminal implementation for testing
+type MockTerm struct {
+	w, h             int
+	cursorX, cursorY int
+	text             [25][50]rune
+}
+
+func newMockTerm() *MockTerm {
+	return &MockTerm{
+		w:    50,
+		h:    25,
+		text: [25][50]rune{},
+	}
+}
+
+func (t *MockTerm) Init() error {
+	return nil
+}
+
+func (t *MockTerm) Close() {
+}
+
+func (t *MockTerm) Clear(fg, bg uint16) {
+	t.text = [25][50]rune{}
+}
+
+func (t *MockTerm) Flush() {
+}
+
+func (t *MockTerm) SetExtendedColors(b bool) {
+}
+
+func (t *MockTerm) SetCursor(x, y int) {
+	t.cursorX, t.cursorY = x, y
+}
+
+func (t *MockTerm) Char(x, y int, c rune) {
+	t.text[y][x] = c
+}
+
+func (t *MockTerm) Size() (int, int) {
+	return t.w, t.h
+}
+
+func (t *MockTerm) SetMouseMode(m termbox.MouseMode) {
+}
+
+func (t *MockTerm) SetInputMode(m termbox.InputMode) {
+}
+
+//=================== Utilities =============================
+
+// TermFB sets the "active" forground and backgrounds colors.
+func (e *Editor) TermFB(fg, bg Style) {
 	e.Fg = fg
 	e.Bg = bg
 }
 
-func (e *Editor) Char(x, y int, c rune) {
-	termbox.SetCell(x, y, c, termbox.Attribute(e.Fg.uint16), termbox.Attribute(e.Bg.uint16))
+func (e *Editor) TermChar(x, y int, c rune) {
+	e.term.Char(x, y, c)
 }
 
-func (e *Editor) Str(x, y int, s string) {
+// TermStr draws an horizonttal string to the terminal
+func (e *Editor) TermStr(x, y int, s string) {
 	for _, c := range s {
-		e.Char(x, y, c)
+		e.term.Char(x, y, c)
 		x++
 	}
 }
 
-func (e *Editor) Strv(x, y int, s string) {
+// TermStrv draws a vertical string to the terminal
+func (e *Editor) TermStrv(x, y int, s string) {
 	for _, c := range s {
-		e.Char(x, y, c)
+		e.term.Char(x, y, c)
 		y++
 	}
 }
 
-func (e *Editor) Fill(c rune, x1, y1, x2, y2 int) {
+// TermFill fills an area of the terminal
+func (e *Editor) TermFill(c rune, x1, y1, x2, y2 int) {
 	if x1 > x2 {
 		x1, x2 = x2, x1
 	}
@@ -42,7 +160,7 @@ func (e *Editor) Fill(c rune, x1, y1, x2, y2 int) {
 	}
 	for x := x1; x <= x2; x++ {
 		for y := y1; y <= y2; y++ {
-			e.Char(x, y, c)
+			e.term.Char(x, y, c)
 		}
 	}
 }

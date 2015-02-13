@@ -7,8 +7,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-
-	"github.com/tcolar/termbox-go"
 )
 
 var Ed *Editor
@@ -25,17 +23,32 @@ type Editor struct {
 	pctw, pcth float64
 	evtState   *EvtState
 	Home       string
+	term       Term
 	testing    bool
 }
 
+func NewEditor() *Editor {
+	return &Editor{
+		term: NewTermBox(),
+	}
+}
+
+// Edior with Mock terminal for testing
+func newMockEditor() *Editor {
+	return &Editor{
+		term:    newMockTerm(),
+		testing: true,
+	}
+}
+
 func (e *Editor) Start(loc string) {
-	err := termbox.Init()
+	err := e.term.Init()
 	if err != nil {
 		panic(err)
 	}
-	defer termbox.Close()
+	defer e.term.Close()
 	e.initHome()
-	termbox.SetExtendedColors(*colors == 256)
+	e.term.SetExtendedColors(*colors == 256)
 	e.evtState = &EvtState{}
 	e.Theme, err = ReadTheme("themes/default.toml")
 	if err != nil {
@@ -44,7 +57,7 @@ func (e *Editor) Start(loc string) {
 	e.Fg = e.Theme.Fg
 	e.Bg = e.Theme.Bg
 
-	w, h := e.Size()
+	w, h := e.term.Size()
 	e.Cmdbar = &Cmdbar{}
 	e.Cmdbar.SetBounds(0, 0, w, 0)
 	e.Statusbar = &Statusbar{}
@@ -72,7 +85,7 @@ func (e *Editor) Start(loc string) {
 		e.Cols = append([]*Col{c2}, c)
 	}
 
-	e.Resize(e.Size())
+	e.Resize(e.term.Size())
 
 	e.CurView.MoveCursor(0, 0)
 

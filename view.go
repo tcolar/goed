@@ -3,8 +3,6 @@ package main
 import (
 	"path/filepath"
 	"time"
-
-	"github.com/tcolar/termbox-go"
 )
 
 const tabSize = 4
@@ -51,18 +49,18 @@ func (v *View) Reset() {
 }
 
 func (v *View) Render() {
-	Ed.FB(Ed.Theme.Viewbar.Fg, Ed.Theme.Viewbar.Bg)
-	Ed.Fill(Ed.Theme.Viewbar.Rune, v.x1+1, v.y1, v.x2, v.y1)
+	Ed.TermFB(Ed.Theme.Viewbar.Fg, Ed.Theme.Viewbar.Bg)
+	Ed.TermFill(Ed.Theme.Viewbar.Rune, v.x1+1, v.y1, v.x2, v.y1)
 	fg := Ed.Theme.ViewbarText
 	if v.Id == Ed.CurView.Id {
 		fg = fg.WithAttr(Bold)
 	}
-	Ed.FB(fg, Ed.Theme.Viewbar.Bg)
+	Ed.TermFB(fg, Ed.Theme.Viewbar.Bg)
 	t := v.Title()
 	if v.x1+len(t) > v.x2-4 {
 		t = t[:v.x2-v.x1-4]
 	}
-	Ed.Str(v.x1+2, v.y1, t)
+	Ed.TermStr(v.x1+2, v.y1, t)
 	v.RenderClose()
 	v.RenderScroll()
 	v.RenderIsDirty()
@@ -75,16 +73,16 @@ func (v *View) Render() {
 func (v *View) RenderMargin() {
 	if v.offx < 80 && v.offx+v.LastViewCol() >= 80 {
 		for i := 0; i <= v.LastViewLine(); i++ {
-			Ed.FB(Ed.Theme.Margin.Fg, Ed.Theme.Margin.Bg)
-			Ed.Char(v.x1+2+80-v.offx, v.y1+2+i, Ed.Theme.Margin.Rune)
-			Ed.FB(Ed.Theme.Fg, Ed.Theme.Bg)
+			Ed.TermFB(Ed.Theme.Margin.Fg, Ed.Theme.Margin.Bg)
+			Ed.TermChar(v.x1+2+80-v.offx, v.y1+2+i, Ed.Theme.Margin.Rune)
+			Ed.TermFB(Ed.Theme.Fg, Ed.Theme.Bg)
 		}
 	}
 }
 
 func (v *View) RenderScroll() {
-	Ed.FB(Ed.Theme.Scrollbar.Fg, Ed.Theme.Scrollbar.Bg)
-	Ed.Fill(Ed.Theme.Scrollbar.Rune, v.x1, v.y1+1, v.x1, v.y2)
+	Ed.TermFB(Ed.Theme.Scrollbar.Fg, Ed.Theme.Scrollbar.Bg)
+	Ed.TermFill(Ed.Theme.Scrollbar.Rune, v.x1, v.y1+1, v.x1, v.y2)
 }
 
 func (v *View) RenderIsDirty() {
@@ -92,20 +90,20 @@ func (v *View) RenderIsDirty() {
 	if v.Dirty {
 		style = Ed.Theme.FileDirty
 	}
-	Ed.FB(style.Fg, style.Bg)
-	Ed.Char(v.x1, v.y1, style.Rune)
+	Ed.TermFB(style.Fg, style.Bg)
+	Ed.TermChar(v.x1, v.y1, style.Rune)
 }
 
 func (v *View) RenderClose() {
-	Ed.FB(Ed.Theme.Close.Fg, Ed.Theme.Close.Bg)
-	Ed.Char(v.x2-1, v.y1, Ed.Theme.Close.Rune)
+	Ed.TermFB(Ed.Theme.Close.Fg, Ed.Theme.Close.Bg)
+	Ed.TermChar(v.x2-1, v.y1, Ed.Theme.Close.Rune)
 }
 
 func (v *View) RenderText() {
 	y := v.y1 + 2
 	fg := Ed.Theme.Fg
 	bg := Ed.Theme.Bg
-	Ed.FB(fg, bg)
+	Ed.TermFB(fg, bg)
 	inSelection := false
 	tab := string(Ed.Theme.TabChar.Rune)
 	for j := 1; j < tabSize; j++ {
@@ -113,9 +111,9 @@ func (v *View) RenderText() {
 	}
 	if v.offy > 0 {
 		// More text above
-		Ed.FB(Ed.Theme.MoreTextUp.Fg, Ed.Theme.MoreTextUp.Bg)
-		Ed.Char(v.x1+1, y-1, Ed.Theme.MoreTextUp.Rune)
-		Ed.FB(fg, bg)
+		Ed.TermFB(Ed.Theme.MoreTextUp.Fg, Ed.Theme.MoreTextUp.Bg)
+		Ed.TermChar(v.x1+1, y-1, Ed.Theme.MoreTextUp.Rune)
+		Ed.TermFB(fg, bg)
 	}
 	// Note: using full lines
 	v.slice = v.backend.Slice(v.offy+1, 1, v.offy+v.LastViewLine()+1, -1)
@@ -128,9 +126,9 @@ func (v *View) RenderText() {
 		start := 0
 		if v.offx > 0 {
 			// More text to our left
-			Ed.FB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
-			Ed.Char(x-1, y, Ed.Theme.MoreTextSide.Rune)
-			Ed.FB(fg, bg)
+			Ed.TermFB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
+			Ed.TermChar(x-1, y, Ed.Theme.MoreTextSide.Rune)
+			Ed.TermFB(fg, bg)
 			// skip letters until we get to or past offx
 			sz := 0
 			for sz < v.offx {
@@ -140,7 +138,7 @@ func (v *View) RenderText() {
 			// if we went "past" offx it means there where some
 			// tabs leftover spaces taht we need to render
 			for i := v.offx; i != sz; i++ {
-				Ed.Char(x, y, ' ')
+				Ed.TermChar(x, y, ' ')
 				x++
 			}
 		}
@@ -154,22 +152,22 @@ func (v *View) RenderText() {
 				} else {
 					fg, bg = Ed.Theme.Fg, Ed.Theme.Bg
 				}
-				Ed.FB(fg, bg)
+				Ed.TermFB(fg, bg)
 			}
 			if c == '\t' {
-				Ed.FB(Ed.Theme.TabChar.Fg, bg)
-				Ed.Str(x, y, tab)
+				Ed.TermFB(Ed.Theme.TabChar.Fg, bg)
+				Ed.TermStr(x, y, tab)
 				x += tabSize - 1
-				Ed.FB(fg, bg)
+				Ed.TermFB(fg, bg)
 			} else {
-				Ed.Char(x, y, c)
+				Ed.TermChar(x, y, c)
 			}
 			x++
 			if x > v.x2-1 {
 				// More text to our right
-				Ed.FB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
-				Ed.Char(x-1, y, Ed.Theme.MoreTextSide.Rune)
-				Ed.FB(fg, bg)
+				Ed.TermFB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
+				Ed.TermChar(x-1, y, Ed.Theme.MoreTextSide.Rune)
+				Ed.TermFB(fg, bg)
 				break
 			}
 		}
@@ -180,9 +178,9 @@ func (v *View) RenderText() {
 	}
 	if v.offy+v.LastViewLine() < v.LineCount()-1 {
 		// More text below
-		Ed.FB(Ed.Theme.MoreTextDown.Fg, Ed.Theme.MoreTextDown.Bg)
-		Ed.Char(v.x1+1, y, Ed.Theme.MoreTextDown.Rune)
-		Ed.FB(fg, bg)
+		Ed.TermFB(Ed.Theme.MoreTextDown.Fg, Ed.Theme.MoreTextDown.Bg)
+		Ed.TermChar(v.x1+1, y, Ed.Theme.MoreTextDown.Rune)
+		Ed.TermFB(fg, bg)
 	}
 }
 
@@ -311,7 +309,5 @@ func (v *View) canClose() bool {
 }
 
 func (v *View) setCursor(x, y int) {
-	if !Ed.testing {
-		termbox.SetCursor(x, y)
-	}
+	Ed.term.SetCursor(x, y)
 }

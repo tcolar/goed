@@ -15,8 +15,8 @@ type EvtState struct {
 
 func (e *Editor) EventLoop() {
 
-	termbox.SetMouseMode(termbox.MouseMotion)
-	termbox.SetInputMode(termbox.InputMouse)
+	e.term.SetMouseMode(termbox.MouseMotion)
+	e.term.SetInputMode(termbox.InputMouse)
 
 	for {
 		ev := termbox.PollEvent()

@@ -17,17 +17,17 @@ type Cmdbar struct {
 }
 
 func (c *Cmdbar) Render() {
-	Ed.FB(Ed.Theme.Cmdbar.Fg, Ed.Theme.Cmdbar.Bg)
-	Ed.Fill(Ed.Theme.Cmdbar.Rune, c.x1, c.y1, c.x2, c.y2)
+	Ed.TermFB(Ed.Theme.Cmdbar.Fg, Ed.Theme.Cmdbar.Bg)
+	Ed.TermFill(Ed.Theme.Cmdbar.Rune, c.x1, c.y1, c.x2, c.y2)
 	if Ed.CmdOn {
-		Ed.FB(Ed.Theme.CmdbarTextOn, Ed.Theme.Cmdbar.Bg)
-		Ed.Str(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
+		Ed.TermFB(Ed.Theme.CmdbarTextOn, Ed.Theme.Cmdbar.Bg)
+		Ed.TermStr(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
 	} else {
-		Ed.FB(Ed.Theme.CmdbarText, Ed.Theme.Cmdbar.Bg)
-		Ed.Str(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
+		Ed.TermFB(Ed.Theme.CmdbarText, Ed.Theme.Cmdbar.Bg)
+		Ed.TermStr(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
 	}
-	Ed.FB(Ed.Theme.CmdbarText, Ed.Theme.Cmdbar.Bg)
-	Ed.Str(c.x2-11, c.y1, fmt.Sprintf("|GoEd %s", Version))
+	Ed.TermFB(Ed.Theme.CmdbarText, Ed.Theme.Cmdbar.Bg)
+	Ed.TermStr(c.x2-11, c.y1, fmt.Sprintf("|GoEd %s", Version))
 }
 
 func (c *Cmdbar) RunCmd() {
