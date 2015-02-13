@@ -8,5 +8,5 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
 ΑΒΞΔΕΦΓΗΙςΚΛΜΝΟΠΘΡΣΤΥΩΩΧΨΖ
 
 		abc
-
+aaa aaa.go /tmp/aaa.go aaa.go:23 /tmp/aaa.go:23:7
 // TODO: "wide" runes support / test

@@ -132,7 +132,7 @@ func (c *Cmdbar) open(args []string) error {
 func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 	newView = newView || v.Dirty
 	if len(v.Selections) == 0 {
-		selection := v.PathSelection(v.CurLine(), v.CurCol())
+		selection := v.PathSelection(v.CurLine()+1, v.CurCol()+1)
 		if selection == nil {
 			Ed.SetStatusErr("Could not expand location from cursor location.")
 			return

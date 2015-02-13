@@ -33,6 +33,16 @@ type Slice struct {
 	r1, c1, r2, c2 int //bounds
 }
 
+func NewSlice(r1, c1, r2, c2 int, text [][]rune) *Slice {
+	return &Slice{
+		r1:   r1,
+		c1:   c1,
+		r2:   r2,
+		c2:   c2,
+		text: text,
+	}
+}
+
 type Rwsc interface {
 	io.Reader
 	io.Writer

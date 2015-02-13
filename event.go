@@ -223,10 +223,10 @@ func (v *View) Event(ev *termbox.Event) {
 				}
 
 				s := Selection{
-					LineFrom: y1,
-					LineTo:   y2,
-					ColFrom:  v.lineRunesTo(v.slice, y1, x1),
-					ColTo:    v.lineRunesTo(v.slice, y2, x2),
+					LineFrom: y1 + 1,
+					LineTo:   y2 + 1,
+					ColFrom:  v.lineRunesTo(v.slice, y1, x1) + 1,
+					ColTo:    v.lineRunesTo(v.slice, y2, x2) + 1,
 				}
 				// Deal with "reverse" selection
 				if s.LineFrom == s.LineTo && s.ColFrom > s.ColTo {

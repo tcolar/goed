@@ -19,6 +19,7 @@ X reimpl memory buffer
 - Redo/Undo
 - Replace lines/viewlines etc.. by uing the slice -> performance
 - Benchmark of editor scroll/cursor insert etc ... ?
+- Normalize 0 vs 1 index also line,col vs col,line & row
 
 
 Most important now:

@@ -52,17 +52,14 @@ func TestView(t *testing.T) {
 func TestViewSelections(t *testing.T) {
 	var err error
 	v := Ed.NewView()
-	v.SetBounds(5, 5, 40, 30)
+	v.SetBounds(5, 5, 140, 30)
 	err = Ed.Open("test_data/file1.txt", v, "")
 	assert.Nil(t, err, "open")
 	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
 
-	s := &Selection{
-		LineFrom: 3,
-		ColFrom:  2,
-		LineTo:   4,
-		ColTo:    8,
-	}
+	s := NewSelection(1, 1, 1, 1)
+	assert.Equal(t, Ed.RunesToString(s.Text(v)), "1")
+	s = NewSelection(3, 2, 4, 8)
 	v.Selections = append(v.Selections, *s)
 	assert.Equal(t, s.String(), "(3,2)-(4,8)", "string")
 	text := s.Text(v)
@@ -86,10 +83,22 @@ func TestViewSelections(t *testing.T) {
 	v.Copy(*s)
 	cb, _ := clipboard.ReadAll()
 	assert.Equal(t, cb, "bcdefgh\nBCDEFGH", "copy")
-	s = v.PathSelection(1, 1)
-	assert.Nil(t, s, "path1")
-	//s = v.PathSelection(0, 3)
-	//assert.Equal(t, Ed.RunesToString(s.Text(v)), "1234567890", "path2")
+	s = v.PathSelection(1, 3)
+	assert.Equal(t, Ed.RunesToString(s.Text(v)), "1234567890", "path2")
+	s = v.PathSelection(11, 1)
+	assert.Equal(t, Ed.RunesToString(s.Text(v)), "aaa", "ps1")
+	s = v.PathSelection(11, 6)
+	assert.Equal(t, Ed.RunesToString(s.Text(v)), "aaa.go", "ps2")
+	s = v.PathSelection(11, 22)
+	assert.Equal(t, Ed.RunesToString(s.Text(v)), "/tmp/aaa.go", "ps3")
+	s = v.PathSelection(11, 27)
+	assert.Equal(t, Ed.RunesToString(s.Text(v)), "aaa.go:23", "ps4")
+	s = v.PathSelection(11, 39)
+	assert.Equal(t, Ed.RunesToString(s.Text(v)), "/tmp/aaa.go:23:7", "ps5")
+	loc, ln, col := v.selToLoc(*s)
+	assert.Equal(t, loc, "/tmp/aaa.go", "loc")
+	assert.Equal(t, ln, 23, "ln")
+	assert.Equal(t, col, 7, "col")
 }
 
 func assertCursor(t *testing.T, v *View, x, y, offsetX, offsetY int, msg string) {

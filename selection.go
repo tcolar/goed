@@ -8,9 +8,19 @@ import (
 	"github.com/atotto/clipboard"
 )
 
+// Selection : 1 indexed
 type Selection struct {
 	LineFrom, ColFrom int // selection start point
 	LineTo, ColTo     int // selection end point (colto=-1 means whole lines)
+}
+
+func NewSelection(l1, c1, l2, c2 int) *Selection {
+	return &Selection{
+		LineFrom: l1,
+		ColFrom:  c1,
+		LineTo:   l2,
+		ColTo:    c2,
+	}
 }
 
 func (s Selection) String() string {
@@ -67,10 +77,11 @@ var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?
 // Try to select a "location" from the given position
 // a location is a path with possibly a line number and maybe a column number as well
 func (v *View) PathSelection(line, col int) *Selection {
-	ln := string(v.Line(v.slice, line))
-	Ed.SetStatus(fmt.Sprintf("ps %s", ln))
-	c := v.lineRunesTo(v.slice, line, col)
-	matches := locationRegexp.FindAllStringIndex(string(ln), -1)
+	l := v.Line(v.slice, line-1)
+	ln := string(l)
+	slice := NewSlice(1, 1, 1, len(l)+1, [][]rune{l})
+	c := v.lineRunesTo(slice, 0, col)
+	matches := locationRegexp.FindAllStringIndex(ln, -1)
 	var best []int
 	// Find the "narrowest" match around the cursor
 	for _, s := range matches {
@@ -84,12 +95,7 @@ func (v *View) PathSelection(line, col int) *Selection {
 		return nil
 	}
 	// TODO: if a path like a go import, try to find that path up from curdir ?
-	return &Selection{
-		LineFrom: line,
-		ColFrom:  best[0],
-		LineTo:   line,
-		ColTo:    best[1] - 1,
-	}
+	return NewSelection(line, best[0]+1, line, best[1])
 }
 
 // Parses a selection into a location (file, line, col)

@@ -5,7 +5,7 @@ import "gopkg.in/alecthomas/kingpin.v1"
 var (
 	Version = "0.0.1"
 	app     = kingpin.New("goed", "A code editor")
-	test    = kingpin.Flag("testterm", "Pints colors to the terminal to test it.").Bool()
+	test    = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
 	colors  = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
 	loc     = kingpin.Arg("location", "location to open").Default(".").String()
 )
