@@ -81,8 +81,8 @@ type MockTerm struct {
 
 func newMockTerm() *MockTerm {
 	return &MockTerm{
-		w:    49,
-		h:    24,
+		w:    50,
+		h:    25,
 		text: [25][50]rune{},
 	}
 }
@@ -109,11 +109,9 @@ func (t *MockTerm) SetCursor(x, y int) {
 }
 
 func (t *MockTerm) Char(x, y int, c rune) {
-	if x >= 50 || y >= 25 {
-		fmt.Printf("OOB X: %d Y: %d", x, y)
-		return
+	if x < t.w && y < t.h {
+		t.text[y][x] = c
 	}
-	t.text[y][x] = c
 }
 
 func (t *MockTerm) Size() (int, int) {

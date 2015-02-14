@@ -133,7 +133,8 @@ func (e *Editor) Open(loc string, view *View, rel string) error {
 
 func (e *Editor) openDir(loc string, view *View) error {
 	args := []string{"ls", "-a", "--color=no"}
-	backend, err := e.NewFileBackendCmd(args, loc, view.Id)
+	title := filepath.Base(loc) + "/"
+	backend, err := e.NewFileBackendCmd(args, loc, view.Id, &title)
 	if err != nil {
 		return err
 	}

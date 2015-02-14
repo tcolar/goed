@@ -192,9 +192,34 @@ func (v *View) LastViewCol() int {
 	return v.x2 - v.x1 - 3
 }
 
+// Same as MoveCursor but with "rolling" to next/prev line if overflowed.
+func (v *View) MoveCursorRoll(x, y int) {
+	slice := v.slice
+	curCol := v.CurCol()
+	curLine := v.CurLine()
+	lastLine := v.LineCount() - 1
+	ln := v.lineCols(slice, curLine+y)
+
+	if curCol+x < 0 {
+		// wrap to after end of previous line
+		y--
+		x = v.lineCols(slice, curLine+y) - curCol
+	} else if curCol+x > ln {
+		ln = v.lineCols(slice, curLine+y)
+		if y == 0 && curLine+y < lastLine {
+			// moved (right) passed eol, wrap to beginning of next line
+			x = -curCol
+			y++
+		} else {
+			// when movin up/down, don't go passed eol
+			x = ln - curCol
+		}
+	}
+	v.MoveCursor(x, y)
+}
+
 // MoveCursor : Move the cursor from it's current position by the x,y offsets (**in runes**)
 // This makes all the checks to make sure it's in a valid location
-// also takes care to wrapping to previous/next line as needed
 // as well as scrolling the view as needed.
 func (v *View) MoveCursor(x, y int) {
 
@@ -204,34 +229,22 @@ func (v *View) MoveCursor(x, y int) {
 	curLine := v.CurLine()
 	lastLine := v.LineCount() - 1
 
-	if curLine+y < 0 || // before first line
-		curLine+y > lastLine || // after last line
-		(curLine <= 0 && curCol+x < 0) || // before beginning of file
-		(curLine >= lastLine && curCol+x > v.lineCols(slice, lastLine)) { // after eof
-		return
+	// check for overflows
+	if curLine+y < 0 {
+		y = -curLine
+	} else if curLine+y > lastLine {
+		y = lastLine - curLine
 	}
-
-	ln := v.lineCols(slice, curLine+y)
-
 	if curCol+x < 0 {
-		// wrap to after end of previous line
-		y--
-		x = v.lineCols(slice, curLine+y) - curCol
-	} else if curCol+x > ln {
-		ln := v.lineCols(slice, curLine+y)
-		if y == 0 {
-			// moved (right) passed eol, wrap to beginning of next line
-			x = -curCol
-			y++
-		} else {
-			// when movin up/down, don't go passed eol
-			x = ln - curCol
-		}
+		x = -curCol
+	}
+	ln := v.lineCols(slice, curLine+y)
+	if curCol+x > ln {
+		x = ln - curCol // put at EOL
 	}
 
 	v.CursorX += x
 	v.CursorY += y
-	ln = v.LineLen(slice, curLine+y)
 
 	// Special handling for tabs
 	c, textX, textY := v.CurChar()

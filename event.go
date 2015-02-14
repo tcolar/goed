@@ -110,14 +110,14 @@ func (v *View) Event(ev *termbox.Event) {
 			if c != nil {
 				offset = v.runeSize(*c)
 			}
-			v.MoveCursor(offset, 0)
+			v.MoveCursorRoll(offset, 0)
 		case termbox.KeyArrowLeft:
 			offset := 1
 			c, _, _ := v.CursorChar(v.slice, v.CurCol()-1, v.CurLine())
 			if c != nil {
 				offset = v.runeSize(*c)
 			}
-			v.MoveCursor(-offset, 0)
+			v.MoveCursorRoll(-offset, 0)
 		case termbox.KeyArrowUp:
 			v.MoveCursor(0, -1)
 		case termbox.KeyArrowDown:

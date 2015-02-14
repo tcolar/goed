@@ -13,9 +13,11 @@ type FileBackendCmd struct {
 	FileBackend
 	dir    string
 	runner *exec.Cmd
+	title  *string
 }
 
-func (e *Editor) NewFileBackendCmd(args []string, dir string, viewId int) (*FileBackendCmd, error) {
+// if title == nil then will show the command name
+func (e *Editor) NewFileBackendCmd(args []string, dir string, viewId int, title *string) (*FileBackendCmd, error) {
 	b, err := e.NewFileBackend(e.BufferFile(viewId), viewId)
 	if err != nil {
 		return nil, err
@@ -24,6 +26,7 @@ func (e *Editor) NewFileBackendCmd(args []string, dir string, viewId int) (*File
 		FileBackend: *b,
 		dir:         dir,
 		runner:      exec.Command(args[0], args[1:]...),
+		title:       title,
 	}
 	go fb.start()
 	return fb, nil
@@ -46,18 +49,21 @@ func (f *FileBackendCmd) start() {
 	f.runner.Stdout = f.file
 	f.runner.Stderr = f.file
 	f.runner.Dir = workDir
-	title := strings.Join(f.runner.Args, " ")
-	v.title = fmt.Sprintf("[RUNNING] %s", title)
+	if f.title == nil {
+		title := strings.Join(f.runner.Args, " ")
+		f.title = &title
+	}
+	v.title = fmt.Sprintf("[RUNNING] %s", *f.title)
 	Ed.Render()
 	err := f.runner.Run()
-	// TODO: autorefresh every n seconds or new output available ....
+	// TODO: autorefresh every n seconds or new output available ?
 	Ed.Open(f.srcLoc, v, "")
 	v.WorkDir = workDir // open() would have modified this
 	if err != nil {
-		v.title = fmt.Sprintf("[FAILED] %s", title)
+		v.title = fmt.Sprintf("[FAILED] %s", *f.title)
 		Ed.SetStatusErr(err.Error())
 	} else {
-		v.title = fmt.Sprintf("[DONE] %s", title)
+		v.title = *f.title
 	}
 	Ed.Render()
 }

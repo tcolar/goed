@@ -11,7 +11,7 @@ import (
 func TestView(t *testing.T) {
 	var err error
 	v := Ed.NewView()
-	v.SetBounds(5, 5, 40, 30)
+	v.SetBounds(0, 0, 40, 25)
 
 	err = Ed.Open("test_data/file1.txt", v, "")
 	assert.Nil(t, err, "open")
@@ -26,8 +26,8 @@ func TestView(t *testing.T) {
 	assert.Equal(t, v.Title(), "file1.txt")
 	assert.Equal(t, v.LineCount(), 12, "lineCount")
 	assert.Equal(t, v.lineCols(v.slice, 0), 10, "lineCols")
-	assert.Equal(t, v.LastViewLine(), 30-5-3, "lastViewLine")
-	assert.Equal(t, v.LastViewCol(), 40-5-3, "lastViewCol")
+	assert.Equal(t, v.LastViewLine(), 25-3, "lastViewLine")
+	assert.Equal(t, v.LastViewCol(), 40-3, "lastViewCol")
 	v.MoveCursor(0, 0)
 	assertCursor(t, v, 0, 0, 0, 0, "mc1")
 	v.MoveCursor(5, 0)
@@ -43,10 +43,18 @@ func TestView(t *testing.T) {
 	v.MoveCursor(2, -1)
 	// Note: x=0 because line "1" is blank
 	assertCursor(t, v, 0, 1, 0, 0, "mc6")
-	v.MoveCursor(-10, -10) // should do nothing
-	assertCursor(t, v, 0, 1, 0, 0, "mc7")
-	v.MoveCursor(100, 100) // should do nothing
-	assertCursor(t, v, 0, 1, 0, 0, "mc8")
+	v.MoveCursor(-10, -10)
+	assertCursor(t, v, 0, 0, 0, 0, "mc7")
+	v.MoveCursor(100, 100)
+	assertCursor(t, v, 36, 11, 0, 0, "mc8")
+	v.MoveCursor(-100, -100)
+	assertCursor(t, v, 0, 0, 0, 0, "mc9")
+	v.MoveCursorRoll(10, 0)
+	assertCursor(t, v, 10, 0, 0, 0, "mc10")
+	v.MoveCursorRoll(1, 0)
+	assertCursor(t, v, 0, 1, 0, 0, "mc11")
+	v.MoveCursorRoll(-2, 0)
+	assertCursor(t, v, 10, 0, 0, 0, "mc11")
 }
 
 func TestViewSelections(t *testing.T) {

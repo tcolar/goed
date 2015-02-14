@@ -78,11 +78,11 @@ func (c *Cmdbar) RunCmd() {
 
 func (c *Cmdbar) paste(args []string) {
 	v := Ed.CurView
-	v.MoveCursor(-v.CurCol(), 1)
+	v.MoveCursorRoll(-v.CurCol(), 1)
 	l := v.CurLine()
 	v.Paste()
 	v.Insert("\n")
-	v.MoveCursor(-v.CurCol(), l-v.CurLine())
+	v.MoveCursorRoll(-v.CurCol(), l-v.CurLine())
 	v.Dirty = true
 }
 
@@ -231,7 +231,7 @@ func (c *Cmdbar) exec(args []string) {
 		workDir = Ed.CurView.WorkDir
 	}
 	v := Ed.AddViewSmart()
-	b, err := Ed.NewFileBackendCmd(args, workDir, v.Id)
+	b, err := Ed.NewFileBackendCmd(args, workDir, v.Id, nil)
 	if err != nil {
 		Ed.SetStatusErr(err.Error())
 	}

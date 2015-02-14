@@ -6,6 +6,7 @@
 - Command bar: up/down, left, right, copy, paste
 - Open -> if already opened don't reopen
 - / foo -> grep -nr foo $curfile
+- / foo [path] .... 
 - : 25 -> goto line 25
   -> make commands like that by configuration ?
 - use a channel(size 1) for save
@@ -15,9 +16,9 @@
 ~ Test editor/Wm
 X reimpl memory buffer
 - mem buffer cmd (default??)
-- Dbl click
+- Dbl click instead of right click to open 
 - Redo/Undo
-- Replace lines/viewlines etc.. by uing the slice -> performance
+X Replace lines/viewlines etc.. by uing the slice -> performance
 - Benchmark of editor scroll/cursor insert etc ... ?
 - Normalize 0 vs 1 index also line,col vs col,line & row
 
@@ -29,14 +30,14 @@ X Copy/paste
 X List / open files
 - GoFmt
 - Configured events/shortcuts
-- Dirty status should be kept from buffer status (insert, delete etc....)
+X Dirty status should be kept from buffer status (insert, delete etc....)
 - Syntax highlighting
-- closeView/Col with dirty check allow if twice in row ? 
-- closeView icon
-+ Select section (mouse and/or Kb) -> with scrolling
-- Warn on dirty view close
+X closeView/Col with dirty check allow if twice in row ? 
+X closeView icon
+- Select section (mouse and/or Kb) -> with scrolling
+X Warn on dirty view close
 - Undo / Redo
-- File buffers ?
+X File buffers
 
 ### Core
 X Terminal support
@@ -47,26 +48,26 @@ X Edit buffer -> insert
 X Edit buffer -> delete
 X save file (C^s)
 X open file(edit tag??)
-- create buffer copy in folder
-- use file copy as buffer (use interface for i/o) Backend interface
+X create buffer copy in folder
+X use file copy as buffer (use interface for i/o) Backend interface
 
 ->-> Minimum "usable" product
 
 - redo/undo (disallow for large files ?), keep undos on disk ?
-- open a folder (listing)
-- plumber -> clickable line numbers
-- plumber -> click file paths
+X open a folder (listing)
+X plumber -> clickable line numbers
+X plumber -> click file paths
 - Keyboard mapping
 
 ## Extended
 X theme/colors
 - Hexadecimal mode
-- large file, in place mode (no copy ?)
+X large file, in place mode (no copy ?)
 - sed/sam like cmd language
 
 ## Commands
-- execute (gofmt)
-- command creates window
++ execute (gofmt)
+X command creates window
 - search
 - search/replace/next/
 
@@ -80,13 +81,13 @@ X  delcol -> check dirty
 X newview
 X delview > check dirty
 X resize cols
-~ exit -> check dirty
+X exit -> check dirty
 - dbl click to "collapse" / fold (single line)
 - fullscreen view option ?
 
 ### UI
 X 256 colors cant see cursor when on white space
-- Color scheme when on white shell
+X Color scheme when on white shell
 - code highlights
 - scrollbar indicator
 

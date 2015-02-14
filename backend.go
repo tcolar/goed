@@ -69,7 +69,7 @@ func (v *View) Insert(s string) {
 		Ed.SetStatusErr("Insert Failed " + err.Error())
 		return
 	}
-	v.MoveCursor(v.strSize(s), 0)
+	v.MoveCursorRoll(v.strSize(s), 0)
 }
 
 // InsertNewLine inserts a "newline"(Enter key) in the buffer
@@ -94,7 +94,7 @@ func (v *View) Backspace() {
 	if v.CursorY == 0 && v.CursorX == 0 {
 		return
 	}
-	v.MoveCursor(-1, 0)
+	v.MoveCursorRoll(-1, 0)
 	c, _, _ := v.CurChar()
 	if c == nil {
 		return
