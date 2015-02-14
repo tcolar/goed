@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"os/exec"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -179,8 +181,24 @@ func (f *FileBackend) Save(loc string) error {
 		return nil // editing in place
 	}
 	f.srcLoc = loc
+	err := CopyFile(f.bufferLoc, loc)
 	// some sort of rsync would be nice ?
-	return CopyFile(f.bufferLoc, loc)
+	if err != nil {
+		return err
+	}
+	// temporary test hack for go format
+	// this should eventually go trough eventing
+	if strings.HasSuffix(loc, ".go") {
+		err := exec.Command("goimports", "-w", loc).Run()
+		// ignore if it fails for now
+		if err == nil {
+			v := Ed.ViewById(f.viewId)
+			x, y := v.CurCol(), v.CurLine()
+			Ed.Open(loc, v, "")
+			v.MoveCursor(x, y)
+		}
+	}
+	return nil
 }
 
 // seek moves the offest to the given row/col
