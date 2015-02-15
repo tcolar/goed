@@ -1,6 +1,9 @@
 package main
 
-import "io"
+import (
+	"bytes"
+	"io"
+)
 
 type Backend interface {
 	SrcLoc() string    // "original" source
@@ -70,7 +73,15 @@ func (v *View) Insert(row, col int, s string) {
 		Ed.SetStatusErr("Insert Failed " + err.Error())
 		return
 	}
-	// TODO: move cursor ??
+	// move the cursor to after insertion
+	b := []byte(s)
+	offy := bytes.Count(b, LineSep)
+	idx := bytes.LastIndex(b, LineSep)
+	if idx < 0 {
+		idx = 0
+	}
+	offx := v.strSize(string(b[idx:]))
+	v.MoveCursor(offx, offy)
 }
 
 // InsertNewLine inserts a "newline"(Enter key) in the buffer

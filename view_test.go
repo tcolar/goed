@@ -145,15 +145,31 @@ func TestViewEdition(t *testing.T) {
 	var err error
 	v := Ed.NewView()
 	v.SetBounds(5, 5, 140, 30)
-	err = Ed.Open("test_data/empty.txt", v, "")
+	err = Ed.Open("test_data/file1.txt", v, "")
+	//err = Ed.Open("test_data/empty.txt", v, "")
 	assert.Nil(t, err, "open")
 	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
 
-	assert.Equal(t, v.LineCount(), 0, "lineCount")
-	// TODO : insert
-	// TODO : insertnewline
-	// TODO : delete
-	// TODO : backspace
+	v.Insert(0, 0, "a")
+	v.Render()
+	testChar(t, v, 0, 0, 'a')
+	v.Backspace()
+	v.Render()
+	testChar(t, v, 0, 0, '1')
+	v.Delete(0, 0, 0, 1)
+	v.Render()
+	testChar(t, v, 0, 0, '3')
+}
+
+func testChar(t *testing.T, v *View, y, x int, c rune) {
+	if y+1 >= v.slice.r1 && y+1 <= v.slice.r2 {
+		assert.Equal(t, v.slice.text[y+1-v.slice.r1][x+1-v.slice.c1], c, "testchar slice "+string(c))
+	} else {
+		s := v.backend.Slice(y+1, x+1, y+1, x+1)
+		assert.Equal(t, s.text[0][0], c, "testchar slice "+string(c))
+	}
+	c2, _, _ := v.CursorChar(v.slice, x, y)
+	assert.Equal(t, *c2, c, "testchar cursorchar "+string(c))
 }
 
 // TODO: test scrolling etc...
