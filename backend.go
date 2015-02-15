@@ -7,7 +7,7 @@ type Backend interface {
 	BufferLoc() string // buffer location
 
 	Insert(row, col int, text string) error
-	Remove(row, col int, text string) error
+	Remove(row1, col1, row, col2 int) error
 
 	LineCount() int
 
@@ -23,7 +23,7 @@ type Backend interface {
 	//IsBufferStale() bool // whether the buffer has changed under us
 
 	//SourceMd5 or ts?
-	//BufferMd5 or ts ?
+	//BufferMd5 or ts?
 
 	//Reset() // TODO: refresh from content (rerun command or refresh src file)
 }
@@ -61,28 +61,24 @@ func (v *View) Save() {
 	v.Dirty = false
 	Ed.SetStatus("Saved " + v.backend.SrcLoc())
 }
-func (v *View) Insert(s string) {
+func (v *View) Insert(y, x int, s string) {
 	// backend is 1-based indexed
-	_, x, y := v.CurChar()
 	err := v.backend.Insert(y+1, x+1, s)
 	if err != nil {
 		Ed.SetStatusErr("Insert Failed " + err.Error())
 		return
 	}
-	v.MoveCursorRoll(v.strSize(s), 0)
+	// TODO: move cursor ??
 }
 
 // InsertNewLine inserts a "newline"(Enter key) in the buffer
-func (v *View) InsertNewLine() {
-	v.Insert("\n")
+func (v *View) InsertNewLine(y, x int) {
+	v.Insert(y, x, "\n")
 }
 
 // Delete removes characters at the current location
-func (v *View) Delete(s string) {
-	_, x, y := v.CurChar()
-	Ed.SetStatus("Removing " + s)
-	// backend is 1-based indexed
-	err := v.backend.Remove(y+1, x+1, s)
+func (v *View) Delete(y1, x1, y2, x2 int) {
+	err := v.backend.Remove(y1+1, x1+1, y2+1, x2+1)
 	if err != nil {
 		Ed.SetStatusErr("Delete Failed " + err.Error())
 		return
@@ -95,11 +91,7 @@ func (v *View) Backspace() {
 		return
 	}
 	v.MoveCursorRoll(-1, 0)
-	c, _, _ := v.CurChar()
-	if c == nil {
-		return
-	}
-	v.Delete(string(*c))
+	v.Delete(v.CursorY, v.CursorX, v.CursorY, v.CursorX)
 }
 
 // LineCount return the number of lines in the  buffer

@@ -95,12 +95,14 @@ func insertionTests(t *testing.T, b Backend) {
 	whole := Ed.RunesToString(b.Slice(1, 1, -1, -1).text)
 
 	// Some inserts
-	testInsertRm(t, b, "$", 0, "ab$cdefghijklmnopqrstuvwxyz")
-	//testInsertRm(t, b, "\n", 1, "ab\ncdefghijklmnopqrstuvwxyz")
-	testInsertRm(t, b, "@\n", 1, "ab@\ncdefghijklmnopqrstuvwxyz")
-	testInsertRm(t, b, "\n@", 1, "ab\n@cdefghijklmnopqrstuvwxyz")
-	testInsertRm(t, b, "^\n^", 1, "ab^\n^cdefghijklmnopqrstuvwxyz")
-	testInsertRm(t, b, "#\n##\n\n#", 3, "ab#\n##\n\n#cdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "$", 0, 3, 3, "ab$cdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "\n", 1, 3, 3, "ab\ncdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "@\n", 1, 3, 4, "ab@\ncdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "\n*", 1, 4, 1, "ab\n*cdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "!\n!\n", 2, 4, 2, "ab!\n!\ncdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "\n-\n-", 2, 5, 1, "ab\n-\n-cdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "^\n^", 1, 4, 1, "ab^\n^cdefghijklmnopqrstuvwxyz")
+	testInsertRm(t, b, "#\n##\n\n#", 3, 6, 1, "ab#\n##\n\n#cdefghijklmnopqrstuvwxyz")
 
 	whole2 := Ed.RunesToString(b.Slice(1, 1, -1, -1).text)
 	assert.Equal(t, whole2, whole, "whole")
@@ -108,14 +110,14 @@ func insertionTests(t *testing.T, b Backend) {
 
 const testLine3 = "abcdefghijklmnopqrstuvwxyz"
 
-func testInsertRm(t *testing.T, b Backend, add string, lns int, expected string) {
+func testInsertRm(t *testing.T, b Backend, add string, lns, rl, rc int, expected string) {
 	lines := b.LineCount()
 	err := b.Insert(3, 3, add)
 	assert.Nil(t, err, "insert "+add)
 	s := Ed.RunesToString(b.Slice(3, 1, 3+lns, 30).text)
 	assert.Equal(t, s, expected, "slice "+add)
 	assert.Equal(t, b.LineCount(), lines+lns, "lineCount "+add)
-	err = b.Remove(3, 3, add)
+	err = b.Remove(3, 3, rl, rc)
 	assert.Nil(t, err, "remove "+add)
 	s = Ed.RunesToString(b.Slice(3, 1, 3, 30).text)
 	assert.Equal(t, s, testLine3, "rm "+add)

@@ -112,18 +112,34 @@ func (f *FileBackend) Insert(row, col int, text string) error {
 	return err
 }
 
-func (f *FileBackend) Remove(row, col int, text string) error {
-	b := []byte(text)
-	ln := int64(len(b))
-	err := f.seek(row, col)
+func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {
+	err := f.seek(row2, col2)
 	if err != nil {
 		return err
 	}
-	err = f.shiftFileBits(-ln)
+	end := f.offset
+	if end >= f.length {
+		return nil
+	}
+	err = f.seek(row1, col1)
 	if err != nil {
 		return err
 	}
-	f.lnCount -= bytes.Count(b, LineSep)
+	ln := end - f.offset + 1
+	if ln <= 0 {
+		return nil
+	}
+	buf := make([]byte, ln)
+	n := 0
+	n, err = f.file.ReadAt(buf, f.offset)
+	if err != nil {
+		return err
+	}
+	err = f.shiftFileBits(-int64(n))
+	if err != nil {
+		return err
+	}
+	f.lnCount -= bytes.Count(buf[:n], LineSep)
 	return nil
 }
 

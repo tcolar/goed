@@ -139,15 +139,15 @@ func (v *View) Event(ev *termbox.Event) {
 		case termbox.KeyHome:
 			v.MoveCursor(-v.CurCol(), 0)
 		case termbox.KeyTab:
-			v.Insert("\t")
+			v.Insert(v.CurLine(), v.CurCol(), "\t")
 			dirty = true
 		case termbox.KeyEnter:
-			v.InsertNewLine()
+			v.InsertNewLine(v.CurLine(), v.CurCol())
 			dirty = true
 		case termbox.KeyDelete:
-			c, _, _ := v.CurChar()
+			c, x, y := v.CurChar()
 			if c != nil {
-				v.Delete(string(*c))
+				v.Delete(y, x, y, x)
 				dirty = true
 			}
 		case termbox.KeyBackspace, termbox.KeyBackspace2:
@@ -171,7 +171,7 @@ func (v *View) Event(ev *termbox.Event) {
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
-				v.Insert(string(ev.Ch))
+				v.Insert(v.CurLine(), v.CurCol(), string(ev.Ch))
 				dirty = true
 			}
 		}

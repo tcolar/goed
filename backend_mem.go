@@ -97,31 +97,27 @@ func (b *MemBackend) Insert(row, col int, text string) error {
 	return nil
 }
 
-func (b *MemBackend) Remove(row, col int, text string) error {
-	row-- // 1 index to 0 index
-	col--
-	runes := Ed.StringToRunes(text)
-	drop := 0
-	last := len(runes) - 1
-	for i, ln := range runes {
-		line := b.text[row+i]
-		if i == 0 && last == 0 {
-			copy(line[col:], line[col+len(ln):])
-			line = line[:len(line)-len(ln)]
-		} else if i == 0 {
-			line = line[:col]
-		} else if i == last {
-			b.text[row] = append(b.text[row], line[len(ln):]...)
-			drop++
-		} else {
-			drop++
-		}
-		b.text[row+i] = line
+func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
+
+	// convert to 0-index for simplicity
+	row1--
+	row2--
+	col1--
+	col2--
+
+	if col2 >= len(b.text[row2]) {
+		// that is, if at end of line, then start from beginning of next row
+		row2++
+		col2 = -1
 	}
+	b.text[row1] = append(b.text[row1][:col1], b.text[row2][col2+1:]...)
+
+	drop := row2 - row1
 	if drop > 0 {
-		copy(b.text[row+1:], b.text[row+1+drop:])
+		copy(b.text[row1+1:], b.text[row1+1+drop:])
 		b.text = b.text[:len(b.text)-drop]
 	}
+
 	return nil
 }
 
@@ -177,22 +173,3 @@ func (b *MemBackend) LineCount() int {
 func (b *MemBackend) Close() error {
 	return nil // Noop
 }
-
-/*
-// Delete removes a character at the current location
-func (v *View) Delete() {
-	l := v.CurLine()
-	i := v.lineRunesTo(l, v.CurCol())
-	if l >= len(v.Buffer.text) {
-		return
-	}
-	line := v.Buffer.text[l]
-	if i < len(line) {
-		// remove a char
-		v.Buffer.text[l] = append(line[:i], line[i+1:]...)
-	} else if l+1 < v.LineCount() {
-		// at end of line, pull the next line up to end of current line
-		v.Buffer.text[l] = append(line, v.Buffer.text[l+1]...)
-		v.Buffer.text = append(v.Buffer.text[:l+1], v.Buffer.text[l+2:]...)
-	}
-}*/

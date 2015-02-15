@@ -69,7 +69,7 @@ func (v *View) Paste() {
 		Ed.SetStatusErr(err.Error())
 		return
 	}
-	v.Insert(text)
+	v.Insert(v.CurLine(), v.CurCol(), text)
 }
 
 var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?(:\d+)?`)

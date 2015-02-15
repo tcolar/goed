@@ -81,8 +81,9 @@ func (c *Cmdbar) paste(args []string) {
 	v.MoveCursorRoll(-v.CurCol(), 1)
 	l := v.CurLine()
 	v.Paste()
-	v.Insert("\n")
-	v.MoveCursorRoll(-v.CurCol(), l-v.CurLine())
+	x, y := v.CurCol(), v.CurLine()
+	v.Insert(y, x, "\n")
+	v.MoveCursorRoll(-x, l-y)
 	v.Dirty = true
 }
 
