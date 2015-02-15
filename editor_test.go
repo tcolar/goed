@@ -8,10 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWm(t *testing.T) {
-	// TODO: test window manager
-}
-
 func TestCountLines(t *testing.T) {
 	// CountLines
 	f, err := os.Open("test_data/file1.txt")

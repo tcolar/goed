@@ -28,10 +28,35 @@ func TestView(t *testing.T) {
 	assert.Equal(t, v.lineCols(v.slice, 0), 10, "lineCols")
 	assert.Equal(t, v.LastViewLine(), 25-3, "lastViewLine")
 	assert.Equal(t, v.LastViewCol(), 40-3, "lastViewCol")
+	assert.Equal(t, string(v.Line(v.slice, 0)), "1234567890", "line")
+	assert.Equal(t, v.LineLen(v.slice, 3), 26, "lineLen")
+	assert.Equal(t, v.lineColsTo(v.slice, 0, 4), 4, "lineColsTo1")
+	assert.Equal(t, v.lineColsTo(v.slice, 9, 4), 10, "lineColsTo2") //\t\t a
+	assert.Equal(t, v.lineRunesTo(v.slice, 0, 4), 4, "lineRunesTo1")
+	assert.Equal(t, v.lineRunesTo(v.slice, 9, 10), 4, "lineRunesTo2")
+	x, y := v.CursorTextPos(v.slice, 4, 0)
+	assert.Equal(t, x, 4, "cursortextpos_x1")
+	assert.Equal(t, y, 0, "cursortextpos_y1")
+	x, y = v.CursorTextPos(v.slice, 10, 9)
+	assert.Equal(t, x, 4, "cursortextpos_x2")
+	assert.Equal(t, y, 9, "cursortextpos_y2")
+	c, x, y := v.CursorChar(v.slice, 3, 3)
+	assert.Equal(t, *c, 'D', "cursorchar_c")
+	assert.Equal(t, x, 3, "cursorchar_x")
+	assert.Equal(t, y, 3, "cursorchar_y")
+	assert.Equal(t, v.runeSize('a'), 1, "runSize1")
+	assert.Equal(t, v.runeSize('\t'), tabSize, "runSize2")
+	assert.Equal(t, v.strSize("abc"), 3, "strSize1")
+	assert.Equal(t, v.strSize("a\tb\tc"), 3+2*tabSize, "strSize2")
 	v.MoveCursor(0, 0)
 	assertCursor(t, v, 0, 0, 0, 0, "mc1")
+	//cursortextpos
 	v.MoveCursor(5, 0)
 	assertCursor(t, v, 5, 0, 0, 0, "mc2")
+	c, x, y = v.CurChar()
+	assert.Equal(t, x, 5, "curchar_x")
+	assert.Equal(t, y, 0, "curchar_y")
+	assert.Equal(t, *c, '6', "curchar_c")
 	v.MoveCursor(-3, 0)
 	assertCursor(t, v, 2, 0, 0, 0, "mc3")
 	v.MoveCursor(2, 3)
@@ -55,6 +80,13 @@ func TestView(t *testing.T) {
 	assertCursor(t, v, 0, 1, 0, 0, "mc11")
 	v.MoveCursorRoll(-2, 0)
 	assertCursor(t, v, 10, 0, 0, 0, "mc11")
+}
+
+func assertCursor(t *testing.T, v *View, x, y, offsetX, offsetY int, msg string) {
+	assert.Equal(t, v.CursorX, x, msg+" CursorX")
+	assert.Equal(t, v.CursorY, y, msg+" CursorY")
+	assert.Equal(t, v.offx, offsetX, msg+" offsetX")
+	assert.Equal(t, v.offy, offsetY, msg+" offsetY")
 }
 
 func TestViewSelections(t *testing.T) {
@@ -109,9 +141,24 @@ func TestViewSelections(t *testing.T) {
 	assert.Equal(t, col, 7, "col")
 }
 
-func assertCursor(t *testing.T, v *View, x, y, offsetX, offsetY int, msg string) {
-	assert.Equal(t, v.CursorX, x, msg+" CursorX")
-	assert.Equal(t, v.CursorY, y, msg+" CursorY")
-	assert.Equal(t, v.offx, offsetX, msg+" offsetX")
-	assert.Equal(t, v.offy, offsetY, msg+" offsetY")
+func TestViewEdition(t *testing.T) {
+	var err error
+	v := Ed.NewView()
+	v.SetBounds(5, 5, 140, 30)
+	err = Ed.Open("test_data/empty.txt", v, "")
+	assert.Nil(t, err, "open")
+	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
+
+	assert.Equal(t, v.LineCount(), 0, "lineCount")
+	// TODO : insert
+	// TODO : insertnewline
+	// TODO : delete
+	// TODO : backspace
 }
+
+// TODO: test scrolling etc...
+func TestViewScrolling(t *testing.T) {
+}
+
+// TODO: test term mock
+// TODO: save etc ....
