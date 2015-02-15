@@ -61,9 +61,11 @@ func (v *View) Save() {
 	v.Dirty = false
 	Ed.SetStatus("Saved " + v.backend.SrcLoc())
 }
-func (v *View) Insert(y, x int, s string) {
+
+// Insert inserts text at the given text location
+func (v *View) Insert(row, col int, s string) {
 	// backend is 1-based indexed
-	err := v.backend.Insert(y+1, x+1, s)
+	err := v.backend.Insert(row+1, col+1, s)
 	if err != nil {
 		Ed.SetStatusErr("Insert Failed " + err.Error())
 		return
@@ -72,13 +74,13 @@ func (v *View) Insert(y, x int, s string) {
 }
 
 // InsertNewLine inserts a "newline"(Enter key) in the buffer
-func (v *View) InsertNewLine(y, x int) {
-	v.Insert(y, x, "\n")
+func (v *View) InsertNewLine(row, col int) {
+	v.Insert(row, col, "\n")
 }
 
-// Delete removes characters at the current location
-func (v *View) Delete(y1, x1, y2, x2 int) {
-	err := v.backend.Remove(y1+1, x1+1, y2+1, x2+1)
+// Delete removes characters at the given text location
+func (v *View) Delete(row1, col1, row2, col2 int) {
+	err := v.backend.Remove(row1+1, col1+1, row2+1, col2+1)
 	if err != nil {
 		Ed.SetStatusErr("Delete Failed " + err.Error())
 		return
@@ -91,7 +93,8 @@ func (v *View) Backspace() {
 		return
 	}
 	v.MoveCursorRoll(-1, 0)
-	v.Delete(v.CursorY, v.CursorX, v.CursorY, v.CursorX)
+	_, x, y := v.CurChar()
+	v.Delete(y, x, y, x)
 }
 
 // LineCount return the number of lines in the  buffer

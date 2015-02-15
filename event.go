@@ -103,6 +103,7 @@ func (v *View) Event(ev *termbox.Event) {
 			return
 		}
 		// Not alt
+		c, x, y := v.CurChar()
 		switch ev.Key {
 		case termbox.KeyArrowRight:
 			offset := 1
@@ -139,13 +140,12 @@ func (v *View) Event(ev *termbox.Event) {
 		case termbox.KeyHome:
 			v.MoveCursor(-v.CurCol(), 0)
 		case termbox.KeyTab:
-			v.Insert(v.CurLine(), v.CurCol(), "\t")
+			v.Insert(y, x, "\t")
 			dirty = true
 		case termbox.KeyEnter:
-			v.InsertNewLine(v.CurLine(), v.CurCol())
+			v.InsertNewLine(y, x)
 			dirty = true
 		case termbox.KeyDelete:
-			c, x, y := v.CurChar()
 			if c != nil {
 				v.Delete(y, x, y, x)
 				dirty = true
@@ -171,7 +171,7 @@ func (v *View) Event(ev *termbox.Event) {
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
-				v.Insert(v.CurLine(), v.CurCol(), string(ev.Ch))
+				v.Insert(y, x, string(ev.Ch))
 				dirty = true
 			}
 		}
