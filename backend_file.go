@@ -73,6 +73,9 @@ func (e *Editor) NewFileBackend(loc string, viewId int) (*FileBackend, error) {
 
 	// get base line count
 	b.lnCount, _ = CountLines(b.file)
+	if b.lnCount == 0 {
+		b.lnCount = 1
+	}
 
 	b.reset()
 	return b, nil
@@ -180,6 +183,9 @@ func (f *FileBackend) Slice(row, col, row2, col2 int) *Slice {
 		for col2 == -1 || f.col <= col2 {
 			rune, _, err := f.readRune()
 			if err != nil {
+				if err == io.EOF && len(ln) > 0 {
+					slice.text = append(slice.text, ln)
+				}
 				return slice
 			}
 			if rune == '\n' {
@@ -392,6 +398,7 @@ func (f *FileBackend) shiftFileBits(shift int64) error {
 		os.Truncate(f.bufferLoc, f.length)
 		return nil
 	}
+	os.Truncate(f.bufferLoc, f.length)
 	// Expanding
 	for end > f.offset {
 		from := end - f.bufferSize

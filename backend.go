@@ -81,6 +81,7 @@ func (v *View) Insert(row, col int, s string) {
 		idx = 0
 	}
 	offx := v.strSize(string(b[idx:]))
+	v.Render()
 	v.MoveCursor(offx, offy)
 }
 
@@ -96,6 +97,7 @@ func (v *View) Delete(row1, col1, row2, col2 int) {
 		Ed.SetStatusErr("Delete Failed " + err.Error())
 		return
 	}
+	v.Render()
 }
 
 // Backspace removes a character before the current location
