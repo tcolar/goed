@@ -124,6 +124,11 @@ func (t *MockTerm) SetMouseMode(m termbox.MouseMode) {
 func (t *MockTerm) SetInputMode(m termbox.InputMode) {
 }
 
+// for testing
+func (t *MockTerm) charAt(x, y int) rune {
+	return t.text[y][x]
+}
+
 //=================== Utilities =============================
 
 // TermFB sets the "active" forground and backgrounds colors.

@@ -33,7 +33,7 @@ func (e *Editor) NewView() *View {
 		WorkDir:     d,
 		slice:       &Slice{text: [][]rune{}},
 	}
-	v.backend, _ = e.NewFileBackend("", v.Id)
+	v.backend, _ = e.NewMemBackend("", v.Id)
 	return v
 }
 
@@ -45,7 +45,7 @@ func (e *Editor) NewFileView(path string) *View {
 
 func (v *View) Reset() {
 	v.CursorX, v.CursorY, v.offx, v.offy = 0, 0, 0, 0
-	v.Selections = []Selection{}
+	v.ClearSelections()
 }
 
 func (v *View) Render() {
