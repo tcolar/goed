@@ -1,27 +1,37 @@
 ## TODO
 
+- reload view / rerun command
+X ctrl+x
+- delete/backspace/overwrite selection
+- undo/redo
 - split event in multiple files, event, ui folder
 - copy indentation to next line on return
-- ctrl + x
 - Command bar: up/down, left, right, copy, paste
 - Open -> if already opened don't reopen
 - / foo -> grep -nr foo $curfile
 - / foo [path] .... 
 - : 25 -> goto line 25
   -> make commands like that by configuration ?
-- use a channel(size 1) for save
+- use a channel(size 1) for save / view render
 - Deal and/or reject files with CR/LF
-- Broken delete at EOF
-~ Test backend/view
+X Broken delete at EOF
+X Test backend/view
 ~ Test editor/Wm
 X reimpl memory buffer
-- mem buffer cmd (default??)
-- Dbl click instead of right click to open 
-- Redo/Undo
+X mem buffer cmd (default for dir listings)
+- View ID : <goed start timestamp>_id ?
 X Replace lines/viewlines etc.. by uing the slice -> performance
 - Benchmark of editor scroll/cursor insert etc ... ?
 - Normalize 0 vs 1 index also line,col vs col,line & row
 - goed package
+- tests : view.Save, scrolling, copy/yank, paste
+- tests cmdbar : runCmd, paste, yank, open, newview, newcol,  exec
+- tests editor : Opendir, setstatus, setstatuserr
+- tests event.go ?
+- tests io.go : copyfile
+- test wm : widgetat, viewMove, viewColumn, ViewIndex, ColIndex, AddCol,
+	AddViewSmart, InsertViewSmart, AddView, InsertView, ReplaceView,
+	DelCol, DelView, TerminateView, DelColCheck, ActivaeView, ViewById
 
 
 Most important now:
@@ -29,7 +39,7 @@ Most important now:
 X Move /resize window
 X Copy/paste
 X List / open files
-- GoFmt
++ GoFmt
 - Configured events/shortcuts
 X Dirty status should be kept from buffer status (insert, delete etc....)
 - Syntax highlighting
@@ -94,14 +104,14 @@ X Color scheme when on white shell
 
 ### Events
 - scrolling selection support
-- CTRL+ O -> open selection
+X CTRL+ O -> open selection
 - ctrl + enter = execute current line
 - select + ctrl + enter = execute   ALT+E ?
-- -> execute goes to new window, closing that window kills the process ??
+X -> execute goes to new window, closing that window kills the process ??
 + escape or caps or hh then,
 - h help/commands (Ctrl+h)
 X copy/paste (ctrl+c, ctrl+v)
-- cut (ctrl+x)
+X cut (ctrl+x)
 - bl ? ^U -> Delete from cursor to start of line.
 - bw ? ^W -> Delete word before the cursor.
 - bs, delete/backspace on selection -> delete selection
