@@ -21,6 +21,11 @@ type Backend interface {
 
 	Close() error
 
+	ViewId() int
+
+	// Completely clears the buffer (empty)
+	Wipe()
+
 	//Sync() error         // sync from source ?
 	//IsStale() bool       // whether the source as changed under us (fsnotify)
 	//IsBufferStale() bool // whether the buffer has changed under us
@@ -28,7 +33,7 @@ type Backend interface {
 	//SourceMd5 or ts?
 	//BufferMd5 or ts?
 
-	//Reset() // TODO: refresh from content (rerun command or refresh src file)
+	//Refresh() // TODO: refresh from content (rerun command or refresh src file)
 }
 
 type Slice struct {

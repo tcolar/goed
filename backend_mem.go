@@ -8,21 +8,29 @@ import (
 )
 
 type MemBackend struct {
-	text [][]rune
-	file string
-	view *View
+	text   [][]rune
+	file   string
+	viewId int
 }
 
 func (e *Editor) NewMemBackend(path string, viewId int) (*MemBackend, error) {
+	m := &MemBackend{
+		text:   [][]rune{[]rune{}},
+		file:   path,
+		viewId: viewId,
+	}
+	if len(path) == 0 {
+		return m, nil
+	}
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	runes := Ed.StringToRunes(string(data))
-	return &MemBackend{
-		text: runes,
-		file: path,
-	}, nil
+	m.text = Ed.StringToRunes(string(data))
+	if len(m.text) == 0 {
+		m.text = append(m.text, []rune{})
+	}
+	return m, nil
 }
 
 func (b *MemBackend) Save(loc string) error {
@@ -172,4 +180,12 @@ func (b *MemBackend) LineCount() int {
 
 func (b *MemBackend) Close() error {
 	return nil // Noop
+}
+
+func (b *MemBackend) ViewId() int {
+	return b.viewId
+}
+
+func (b *MemBackend) Wipe() {
+	b.text = [][]rune{[]rune{}}
 }

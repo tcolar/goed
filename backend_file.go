@@ -223,6 +223,10 @@ func (f *FileBackend) Save(loc string) error {
 	return nil
 }
 
+func (f *FileBackend) ViewId() int {
+	return f.viewId
+}
+
 // seek moves the offest to the given row/col
 func (f *FileBackend) seek(row, col int) error {
 	if row == f.ln && col == f.col {
@@ -417,4 +421,15 @@ func (f *FileBackend) shiftFileBits(shift int64) error {
 	}
 	f.length += shift
 	return nil
+}
+
+func (f *FileBackend) Wipe() {
+	os.Truncate(f.bufferLoc, 0)
+	f.file.Seek(0, 0)
+	f.offset = 0
+	f.ln = 1
+	f.col = 1
+	f.prevCol = 1
+	f.lnCount = 1
+	f.length = 0
 }

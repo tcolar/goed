@@ -103,7 +103,6 @@ func insertionTests(t *testing.T, b Backend) {
 	testInsertRm(t, b, "\n-\n-", 2, 5, 1, "ab\n-\n-cdefghijklmnopqrstuvwxyz")
 	testInsertRm(t, b, "^\n^", 1, 4, 1, "ab^\n^cdefghijklmnopqrstuvwxyz")
 	testInsertRm(t, b, "#\n##\n\n#", 3, 6, 1, "ab#\n##\n\n#cdefghijklmnopqrstuvwxyz")
-
 	whole2 := Ed.RunesToString(b.Slice(1, 1, -1, -1).text)
 	assert.Equal(t, whole2, whole, "whole")
 }

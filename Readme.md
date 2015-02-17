@@ -7,7 +7,7 @@ The end goal is to be powerful yet easy to use.
 
 One of the main source of inspiration is Acme, however it will be more configurable and less mouse reliant.
 
-That is not to say it will necessarely be "keyboard only" and it won't rely on "modes" as Vi and Emacs do.
+That is not to say it will be "keyboard only" ant it will likely not rely on "modes" as Vi and Emacs do.
 
 Early screenshot (12/7/2014): 
 ![Screenshot](https://raw.github.com/tcolar/goed/master/screenshot.png)
