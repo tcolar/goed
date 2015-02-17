@@ -23,6 +23,10 @@ func NewSelection(l1, c1, l2, c2 int) *Selection {
 	}
 }
 
+func (v *View) ClearSelections() {
+	v.Selections = []Selection{}
+}
+
 func (s Selection) String() string {
 	return fmt.Sprintf("(%d,%d)-(%d,%d)", s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
 }
@@ -34,8 +38,18 @@ func (s Selection) Text(v *View) [][]rune {
 	ct := s.ColTo
 	lt := s.LineTo
 	lf := s.LineFrom
-	slice := v.backend.Slice(lf, cf, lt, ct)
-	return slice.text
+	if lf == lt {
+		return v.backend.Slice(lf, cf, lt, ct).text
+	}
+	// first line
+	text := v.backend.Slice(lf, cf, lf, -1).text
+	for l := lf + 1; l < lt; l++ {
+		// middle
+		text = append(text, v.backend.Slice(l, 1, l, -1).text...)
+	}
+	// last line
+	text = append(text, v.backend.Slice(lt, 1, lt, ct).text...)
+	return text
 }
 
 // Selected returns whether the text at line, col is current selected
@@ -57,10 +71,14 @@ func (v *View) Selected(col, line int) (bool, *Selection) {
 	return false, nil
 }
 
-func (v *View) Copy(s Selection) {
+func (s Selection) Copy(v *View) {
 	t := s.Text(v)
 	Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
 	clipboard.WriteAll(Ed.RunesToString(t))
+}
+
+func (s Selection) Delete(v *View) {
+	v.Delete(s.LineFrom-1, s.ColFrom-1, s.LineTo-1, s.ColTo-1)
 }
 
 func (v *View) Paste() {
@@ -100,8 +118,8 @@ func (v *View) PathSelection(line, col int) *Selection {
 }
 
 // Parses a selection into a location (file, line, col)
-func (v *View) selToLoc(selection Selection) (loc string, line, col int) {
-	sub := locationRegexp.FindAllStringSubmatch(Ed.RunesToString(selection.Text(v)), 1)
+func (sel Selection) ToLoc(v *View) (loc string, line, col int) {
+	sub := locationRegexp.FindAllStringSubmatch(Ed.RunesToString(sel.Text(v)), 1)
 	if len(sub) == 0 {
 		return
 	}

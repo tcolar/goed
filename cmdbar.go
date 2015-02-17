@@ -97,12 +97,11 @@ func (c *Cmdbar) yank(args []string) error {
 		return fmt.Errorf("Expected a numericargument")
 	}
 	nb--
-	Ed.CurView.Copy(
-		Selection{
-			LineFrom: v.CurLine(),
-			LineTo:   v.CurLine() + nb,
-			ColTo:    -1,
-		})
+	Selection{
+		LineFrom: v.CurLine(),
+		LineTo:   v.CurLine() + nb,
+		ColTo:    -1,
+	}.Copy(Ed.CurView)
 	return nil
 }
 
@@ -140,15 +139,16 @@ func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 		}
 		v.Selections = []Selection{*selection}
 	}
-	loc, line, col := v.selToLoc(v.Selections[0])
-	loc = c.lookupLocation(v.WorkDir, loc)
+	loc, line, col := v.Selections[0].ToLoc(v)
+	isDir := false
+	loc, isDir = c.lookupLocation(v.WorkDir, loc)
 	v2 := Ed.NewView()
 	if err := Ed.Open(loc, v2, v.WorkDir); err != nil {
 		Ed.SetStatusErr(err.Error())
 		return
 	}
 	if newView {
-		if strings.HasSuffix(loc, string(os.PathSeparator)) {
+		if isDir {
 			Ed.InsertView(v2, v, 0.5)
 		} else {
 			Ed.InsertViewSmart(v2)
@@ -163,15 +163,15 @@ func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 // lookupLocation will try to locate the given location
 // if not found relative to dir, then try up the directory tree
 // this works great to open GO import path for example
-func (c *Cmdbar) lookupLocation(dir, loc string) string {
+func (c *Cmdbar) lookupLocation(dir, loc string) (string, bool) {
 	f := path.Join(dir, loc)
-	_, err := os.Stat(f)
+	stat, err := os.Stat(f)
 	if err == nil {
-		return f
+		return f, stat.IsDir()
 	}
 	dir = filepath.Dir(dir)
 	if strings.HasSuffix(dir, string(os.PathSeparator)) { //root
-		return loc
+		return loc, true
 	}
 	return c.lookupLocation(dir, loc)
 }

@@ -87,8 +87,6 @@ func (e *Editor) Start(loc string) {
 
 	e.Resize(e.term.Size())
 
-	e.CurView.MoveCursor(0, 0)
-
 	e.Render()
 
 	if !e.testing {
@@ -134,7 +132,7 @@ func (e *Editor) Open(loc string, view *View, rel string) error {
 func (e *Editor) openDir(loc string, view *View) error {
 	args := []string{"ls", "-a", "--color=no"}
 	title := filepath.Base(loc) + "/"
-	backend, err := e.NewFileBackendCmd(args, loc, view.Id, &title)
+	backend, err := e.NewMemBackendCmd(args, loc, view.Id, &title)
 	if err != nil {
 		return err
 	}
