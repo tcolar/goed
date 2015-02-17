@@ -161,7 +161,13 @@ func (v *View) Event(ev *termbox.Event) {
 			Ed.DelViewCheck(Ed.CurView)
 		case termbox.KeyCtrlC:
 			if len(v.Selections) > 0 {
-				v.Copy(v.Selections[0])
+				v.Selections[0].Copy(v)
+			}
+		case termbox.KeyCtrlX:
+			if len(v.Selections) > 0 {
+				v.Selections[0].Copy(v)
+				v.Selections[0].Delete(v)
+				v.ClearSelections()
 			}
 		case termbox.KeyCtrlV:
 			v.Paste()
@@ -182,7 +188,7 @@ func (v *View) Event(ev *termbox.Event) {
 		case termbox.MouseScrollDown:
 			v.MoveCursor(0, 1)
 		case termbox.MouseRight:
-			v.Selections = []Selection{}
+			v.ClearSelections()
 			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
 			Ed.Cmdbar.OpenSelection(v, true)
 		case termbox.MouseLeft:
@@ -246,7 +252,7 @@ func (v *View) Event(ev *termbox.Event) {
 				// reset drag
 				Ed.evtState.DragX1, Ed.evtState.DragY1 = 0, 0
 				Ed.evtState.DragX2, Ed.evtState.DragY2 = 0, 0
-				v.Selections = []Selection{}
+				v.ClearSelections()
 			}
 			Ed.CmdOn = false
 			// MoveCursor use text coordinates which starts at offset 2,2
