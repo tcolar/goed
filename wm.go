@@ -439,13 +439,27 @@ func (e *Editor) DelColCheck(c *Col) {
 func (e *Editor) ActivateView(v *View, cursorx, cursory int) {
 	Ed.CurView = v
 	Ed.CurCol = Ed.ViewColumn(v)
-	v.MoveCursor(cursorx, cursory)
+	v.MoveCursor(cursorx-v.CurCol(), cursory-v.CurLine())
 }
 
 func (e *Editor) ViewById(id int) *View {
 	for _, c := range e.Cols {
 		for _, v := range c.Views {
 			if v.Id == id {
+				return v
+			}
+		}
+	}
+	return nil
+}
+
+func (e *Editor) ViewByLoc(loc string) *View {
+	if len(loc) == 0 {
+		return nil
+	}
+	for _, c := range e.Cols {
+		for _, v := range c.Views {
+			if v.backend.SrcLoc() == loc {
 				return v
 			}
 		}
