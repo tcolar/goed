@@ -102,8 +102,7 @@ func (v *View) Event(ev *termbox.Event) {
 			}
 			return
 		}
-		// Not alt
-		c, x, y := v.CurChar()
+		// No Alt
 		switch ev.Key {
 		case termbox.KeyArrowRight:
 			offset := 1
@@ -140,16 +139,14 @@ func (v *View) Event(ev *termbox.Event) {
 		case termbox.KeyHome:
 			v.MoveCursor(-v.CurCol(), 0)
 		case termbox.KeyTab:
-			v.Insert(y, x, "\t")
+			v.InsertCur("\t")
 			dirty = true
 		case termbox.KeyEnter:
-			v.InsertNewLine(y, x)
+			v.InsertNewLineCur()
 			dirty = true
 		case termbox.KeyDelete:
-			if c != nil {
-				v.Delete(y, x, y, x)
-				dirty = true
-			}
+			v.DeleteCur()
+			dirty = true
 		case termbox.KeyBackspace, termbox.KeyBackspace2:
 			v.Backspace()
 			dirty = true
@@ -174,10 +171,12 @@ func (v *View) Event(ev *termbox.Event) {
 			dirty = true
 		case termbox.KeyCtrlQ:
 			return
+		case termbox.KeyCtrlR:
+			v.Reload()
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
-				v.Insert(y, x, string(ev.Ch))
+				v.InsertCur(string(ev.Ch))
 				dirty = true
 			}
 		}
@@ -246,7 +245,6 @@ func (v *View) Event(ev *termbox.Event) {
 				v.Selections = []Selection{
 					s,
 				}
-				Ed.SetStatus(s.String())
 				return
 			} else {
 				// reset drag
@@ -255,10 +253,7 @@ func (v *View) Event(ev *termbox.Event) {
 				v.ClearSelections()
 			}
 			Ed.CmdOn = false
-			// MoveCursor use text coordinates which starts at offset 2,2
-			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
-			// Make the clicked view active
-			Ed.ActivateView(v, 0, 0)
+			Ed.ActivateView(v, ev.MouseX-v.x1-2+v.offx, ev.MouseY-v.y1-2+v.offy)
 			Ed.SetStatus(fmt.Sprintf("[%d]%s", v.Id, v.WorkDir))
 		}
 	}

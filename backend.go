@@ -26,14 +26,15 @@ type Backend interface {
 	// Completely clears the buffer (empty)
 	Wipe()
 
+	// Reloads from source
+	Reload() error
+
 	//Sync() error         // sync from source ?
 	//IsStale() bool       // whether the source as changed under us (fsnotify)
 	//IsBufferStale() bool // whether the buffer has changed under us
 
 	//SourceMd5 or ts?
 	//BufferMd5 or ts?
-
-	//Refresh() // TODO: refresh from content (rerun command or refresh src file)
 }
 
 type Slice struct {
@@ -70,6 +71,18 @@ func (v *View) Save() {
 	Ed.SetStatus("Saved " + v.backend.SrcLoc())
 }
 
+func (v *View) InsertCur(s string) {
+	_, x, y := v.CurChar()
+	if len(v.Selections) > 0 {
+		s := v.Selections[0]
+		v.MoveCursorRoll(s.ColFrom-x-1, s.LineFrom-y-1)
+		s.Delete(v)
+		v.ClearSelections()
+	}
+	_, x, y = v.CurChar()
+	v.Insert(y, x, s)
+}
+
 // Insert inserts text at the given text location
 func (v *View) Insert(row, col int, s string) {
 	// backend is 1-based indexed
@@ -90,9 +103,20 @@ func (v *View) Insert(row, col int, s string) {
 	v.MoveCursor(offx, offy)
 }
 
+func (v *View) InsertNewLineCur() {
+	v.InsertCur("\n")
+}
+
 // InsertNewLine inserts a "newline"(Enter key) in the buffer
 func (v *View) InsertNewLine(row, col int) {
 	v.Insert(row, col, "\n")
+}
+
+func (v *View) Reload() {
+	err := v.backend.Reload()
+	if err != nil {
+		Ed.SetStatusErr(err.Error())
+	}
 }
 
 // Delete removes characters at the given text location
@@ -105,14 +129,30 @@ func (v *View) Delete(row1, col1, row2, col2 int) {
 	v.Render()
 }
 
-// Backspace removes a character before the current location
+// DeleteCur removes a selection or the curent character
+func (v *View) DeleteCur() {
+	c, x, y := v.CurChar()
+	if len(v.Selections) > 0 {
+		s := v.Selections[0]
+		v.MoveCursorRoll(s.ColFrom-x-1, s.LineFrom-y-1)
+		s.Delete(v)
+		v.ClearSelections()
+		return
+	}
+	if c != nil {
+		v.Delete(y, x, y, x)
+	}
+}
+
+// Backspace removes a selection or character before the current location
 func (v *View) Backspace() {
 	if v.CursorY == 0 && v.CursorX == 0 {
 		return
 	}
-	v.MoveCursorRoll(-1, 0)
-	_, x, y := v.CurChar()
-	v.Delete(y, x, y, x)
+	if len(v.Selections) == 0 {
+		v.MoveCursorRoll(-1, 0)
+	}
+	v.DeleteCur()
 }
 
 // LineCount return the number of lines in the  buffer
