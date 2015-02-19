@@ -36,49 +36,8 @@ func (e *Editor) NewFileBackend(loc string, viewId int) (*FileBackend, error) {
 		prevCol:    1,
 		bufferSize: 65536,
 	}
-	fb := Ed.BufferFile(viewId)
-	b.bufferLoc = fb
-	if fb != loc {
-		// unless we are opening the buffer directly,
-		// make sure there is no existing buffer content
-		os.Remove(fb)
-	}
-	if len(loc) > 0 && fb != loc {
-		f, err := os.Open(loc)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		stat, err := f.Stat()
-		if err != nil {
-			return nil, err
-		}
-		b.length = stat.Size()
-		if b.length > 10000000 {
-			b.bufferLoc = loc
-			Ed.SetStatusErr("EDITING IN PLACE ! (Large file)")
-		} else {
-			err = CopyFile(b.srcLoc, b.bufferLoc)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	var err error
-	// TODO: is sync necessary or better to call it selectively ??
-	b.file, err = os.OpenFile(b.bufferLoc, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0666)
-	if err != nil {
-		return nil, err
-	}
-
-	// get base line count
-	b.lnCount, _ = CountLines(b.file)
-	if b.lnCount == 0 {
-		b.lnCount = 1
-	}
-
-	b.reset()
-	return b, nil
+	err := b.Reload()
+	return b, err
 }
 
 func (f *FileBackend) SrcLoc() string {
@@ -90,7 +49,62 @@ func (f *FileBackend) BufferLoc() string {
 }
 
 func (f *FileBackend) Close() error {
-	return f.file.Close()
+	if f.file != nil {
+		return f.file.Close()
+	}
+	return nil
+}
+
+func (b *FileBackend) Reload() error {
+	// TODO : check dirty
+	b.Close()
+	fb := Ed.BufferFile(b.viewId)
+	b.bufferLoc = fb
+	if fb != b.srcLoc {
+		// unless we are opening the buffer directly,
+		// make sure there is no existing buffer content
+		os.Remove(fb)
+	}
+	if len(b.srcLoc) > 0 && fb != b.srcLoc {
+		f, err := os.Open(b.srcLoc)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		stat, err := f.Stat()
+		if err != nil {
+			return err
+		}
+		b.length = stat.Size()
+		if b.length > 10000000 {
+			b.bufferLoc = b.srcLoc
+			Ed.SetStatusErr("EDITING IN PLACE ! (Large file)")
+		} else {
+			err = CopyFile(b.srcLoc, b.bufferLoc)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	var err error
+	// TODO: is sync necessary or better to call it selectively ??
+	b.file, err = os.OpenFile(b.bufferLoc, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0666)
+	if err != nil {
+		return err
+	}
+
+	// get base line count
+	b.lnCount, _ = CountLines(b.file)
+	if b.lnCount == 0 {
+		b.lnCount = 1
+	}
+
+	b.reset()
+	v := Ed.ViewById(b.viewId)
+	if v != nil {
+		v.Dirty = false
+	}
+	return nil
 }
 
 func (f *FileBackend) Insert(row, col int, text string) error {

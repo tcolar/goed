@@ -48,8 +48,6 @@ func (c *Cmdbar) RunCmd() {
 		Ed.DelViewCheck(Ed.CurView)
 	case "e", "exec":
 		c.exec(args)
-	//case "gf", "gofmt":
-	//	Ed.SetStatus("TBD gofmt")
 	//case "h", "help":
 	//	Ed.SetStatus("TBD help")
 	case "nc", "newcol":
@@ -117,10 +115,8 @@ func (c *Cmdbar) open(args []string) error {
 	}
 	if Ed.CurView.Dirty {
 		Ed.InsertViewSmart(v)
-		Ed.SetStatus("insert")
 	} else {
 		Ed.ReplaceView(Ed.CurView, v)
-		Ed.SetStatus("replace")
 	}
 	Ed.ActivateView(v, 0, 0)
 	return nil
@@ -142,7 +138,13 @@ func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 	loc, line, col := v.Selections[0].ToLoc(v)
 	isDir := false
 	loc, isDir = c.lookupLocation(v.WorkDir, loc)
-	v2 := Ed.NewView()
+	v2 := Ed.ViewByLoc(loc)
+	if v2 != nil {
+		// Already open
+		Ed.ActivateView(v2, col-1, line-1)
+		return
+	}
+	v2 = Ed.NewView()
 	if err := Ed.Open(loc, v2, v.WorkDir); err != nil {
 		Ed.SetStatusErr(err.Error())
 		return

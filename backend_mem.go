@@ -19,18 +19,26 @@ func (e *Editor) NewMemBackend(path string, viewId int) (*MemBackend, error) {
 		file:   path,
 		viewId: viewId,
 	}
-	if len(path) == 0 {
-		return m, nil
+	err := m.Reload()
+	return m, err
+}
+
+func (m *MemBackend) Reload() error {
+	// TODO: check dirty ?
+	v := Ed.ViewById(m.viewId)
+	if len(m.file) == 0 {
+		return nil
 	}
-	data, err := ioutil.ReadFile(path)
+	data, err := ioutil.ReadFile(m.file)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	m.text = Ed.StringToRunes(string(data))
 	if len(m.text) == 0 {
 		m.text = append(m.text, []rune{})
 	}
-	return m, nil
+	v.Dirty = false
+	return nil
 }
 
 func (b *MemBackend) Save(loc string) error {

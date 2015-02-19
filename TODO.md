@@ -1,13 +1,13 @@
 ## TODO
 
-- reload view / rerun command
+X Open -> if already opened don't reopen
++ reload view / rerun command (TODO: dirty check)
 X ctrl+x
-- delete/backspace/overwrite selection
+X delete/backspace/overwrite selection
 - undo/redo
 - split event in multiple files, event, ui folder
 - copy indentation to next line on return
 - Command bar: up/down, left, right, copy, paste
-- Open -> if already opened don't reopen
 - / foo -> grep -nr foo $curfile
 - / foo [path] .... 
 - : 25 -> goto line 25

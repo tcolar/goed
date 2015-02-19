@@ -33,6 +33,7 @@ func (e *Editor) NewFileBackendCmd(args []string, dir string, viewId int, title 
 	}
 	c.Backend = b
 	c.starter = &fileCmdStarter{}
+
 	go c.start()
 	return c, nil
 }
@@ -60,6 +61,7 @@ func (e *Editor) newBackendCmd(args []string, dir string, viewId int, title *str
 		runner: exec.Command(args[0], args[1:]...),
 		title:  title,
 	}
+	c.runner.Dir = dir
 	if c.title == nil {
 		title := strings.Join(c.runner.Args, " ")
 		c.title = &title
@@ -67,9 +69,17 @@ func (e *Editor) newBackendCmd(args []string, dir string, viewId int, title *str
 	return c, nil
 }
 
-func (c *BackendCmd) ReRun() {
+func (c *BackendCmd) Reload() error {
+	args, dir := c.runner.Args, c.runner.Dir
 	c.stop()
+	// It does not seem we can reuse a command so create a new one
+	c.runner = exec.Command(args[0], args[1:]...)
+	c.runner.Dir = dir
+	c.Backend.Close()
+	os.Remove(c.BufferLoc())
+	c.Backend.Reload()
 	go c.start()
+	return nil
 }
 
 func (c *BackendCmd) Close() error {
@@ -102,6 +112,7 @@ func (c *BackendCmd) stop() {
 	if c.runner != nil && c.runner.Process != nil {
 		c.runner.Process.Release()
 		c.runner.Process.Kill()
+		c.runner.Process = nil
 	}
 }
 
@@ -118,7 +129,7 @@ func (s *fileCmdStarter) start(c *BackendCmd, v *View) error {
 	c.runner.Stdout = b.file
 	c.runner.Stderr = b.file
 	err := c.runner.Run()
-	Ed.Open(c.SrcLoc(), v, "")
+	b.Reload()
 	return err
 }
 
@@ -130,7 +141,7 @@ func (s *memCmdStarter) start(c *BackendCmd, v *View) error {
 
 	b := c.Backend.(*MemBackend)
 	out, err := c.runner.CombinedOutput()
-	// TODO: clear ??
+	b.Wipe()
 	b.Insert(1, 1, string(out))
 	return err
 }
