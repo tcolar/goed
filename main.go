@@ -1,6 +1,13 @@
 package main
 
-import "gopkg.in/alecthomas/kingpin.v1"
+import (
+	"fmt"
+	"io/ioutil"
+	"path"
+	"runtime/debug"
+
+	"gopkg.in/alecthomas/kingpin.v1"
+)
 
 var (
 	Version = "0.0.1"
@@ -27,5 +34,18 @@ func main() {
 	}
 
 	Ed = NewEditor()
+
+	defer func() {
+		if fail := recover(); fail != nil {
+			err := fail.(error)
+			// writing panic to file because shell will be garbled
+			fmt.Printf("Panicked with %s\n", err.Error())
+			f := path.Join(Ed.Home, "panic.txt")
+			fmt.Printf("Writing panic to %s \n", f)
+			data := debug.Stack()
+			ioutil.WriteFile(f, data, 0644)
+		}
+	}()
+
 	Ed.Start(*loc)
 }
