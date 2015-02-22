@@ -1,6 +1,13 @@
 ## TODO
 
 X Open -> if already opened don't reopen
+- Open -> if no file, show welcome/help pane
+- : 25 -> goto line 25
+- / foo -> grep -nr foo $curfile
+- / foo [path] .... 
+- "Local" file search with next/previous ?
+X Move view to close button -> panic !
+- Bug: logitech mouse scrollwheel outputtings "A" in the file when moving fast !!
 + reload view / rerun command (TODO: dirty check)
 X ctrl+x
 X delete/backspace/overwrite selection
@@ -8,9 +15,6 @@ X delete/backspace/overwrite selection
 - split event in multiple files, event, ui folder
 - copy indentation to next line on return
 - Command bar: up/down, left, right, copy, paste
-- / foo -> grep -nr foo $curfile
-- / foo [path] .... 
-- : 25 -> goto line 25
   -> make commands like that by configuration ?
 - use a channel(size 1) for save / view render
 - Deal and/or reject files with CR/LF
@@ -36,7 +40,7 @@ X Replace lines/viewlines etc.. by uing the slice -> performance
 
 Most important now:
 
-X Move /resize window
+X Move /resize windo
 X Copy/paste
 X List / open files
 + GoFmt
@@ -117,19 +121,19 @@ X cut (ctrl+x)
 - bs, delete/backspace on selection -> delete selection
 + home ^A -> Move cursor to start of the line.
 + end ^E -> Move cursor to end of the line.
-+ o open (Ctrl+o) -> show recent first, tab completion -> if dir then to new window
+X o open (Ctrl+o) -> show recent first, tab completion -> if dir then to new window
 - g goto (Ctrl+g)
 - f find (Ctrl+f)
 - next selection ? (Ctrl+n, Ctrl+Shift+n)
 X nc newcol 
 X nv niewview
 X dc, dv delcol delview
-- r refresh / reload -> Ctrl+r -> refresh buffer / dir listing ?
+X r refresh / reload -> Ctrl+r -> refresh buffer / dir listing ?
 - re replace ? -> +CtrlN for replace next ??
 - mh, mj, mk, ml move to view left right, up, down  (ctrl h,j,k,l)
 - rh, rj, rk, rl relocate the view left right, up, down  (ctrl+shift+ h,j,k,l)
 - sh,sj,sk,sl select l,r,u,d (alt h,j,k,l) or shift + arrows
-- e exec -> output to new "shell" window (ctrl +e) (remember prevs ?)
++ e exec -> output to new "shell" window (ctrl +e) (remember prevs ?)
 - redo, undo (ctrl+z, ctrl+y)
 - sa selectall ctrl+shift+a
 + supports thing like d, d 5, y 3, y, p ?
