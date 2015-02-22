@@ -57,7 +57,7 @@ func (v *View) Render() {
 	}
 	Ed.TermFB(fg, Ed.Theme.Viewbar.Bg)
 	t := v.Title()
-	if v.x1+len(t) > v.x2-4 {
+	if v.x2-v.x1 > 4 && v.x1+len(t) > v.x2-4 {
 		t = t[:v.x2-v.x1-4]
 	}
 	Ed.TermStr(v.x1+2, v.y1, t)
