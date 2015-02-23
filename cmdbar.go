@@ -60,6 +60,8 @@ func (c *Cmdbar) RunCmd() {
 		c.paste(args)
 	case "s", "save":
 		c.save(args)
+	case ":", "line":
+		c.line(args)
 	case "y", "yank": // as vi copy
 		err = c.yank(args)
 	case "yy":
@@ -181,6 +183,21 @@ func (c *Cmdbar) lookupLocation(dir, loc string) (string, bool) {
 func (c *Cmdbar) save(args []string) {
 	if Ed.CurView != nil {
 		Ed.CurView.Save()
+	}
+}
+
+func (c *Cmdbar) line(args []string) {
+	if len(args) < 0 {
+		Ed.SetStatusErr("Expected a line number argument.")
+		return
+	}
+	l, err := strconv.Atoi(args[0])
+	if err != nil {
+		Ed.SetStatusErr("Expected a line number argument.")
+		return
+	}
+	if Ed.CurView != nil {
+		Ed.CurView.MoveCursor(0, l-Ed.CurView.CurLine()-1)
 	}
 }
 
