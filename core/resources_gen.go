@@ -363,7 +363,7 @@ func resDefaultThemesDefaultToml() (*asset, error) {
 	return a, nil
 }
 
-var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\x35\xb5\xb0\x34\x37\x34\xb4\xe4\x02\x04\x00\x00\xff\xff\xf7\x72\x67\x62\x0b\x00\x00\x00")
+var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\xb5\x30\x30\xb4\x30\xb7\xb0\xe4\x02\x04\x00\x00\xff\xff\xae\x58\x34\x8e\x0b\x00\x00\x00")
 
 func resResources_versionTxtBytes() ([]byte, error) {
 	return bindataRead(
@@ -378,7 +378,7 @@ func resResources_versionTxt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1455897119, 0)}
+	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1458018789, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
