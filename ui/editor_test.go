@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"os"
@@ -6,50 +6,59 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tcolar/goed/core"
 )
+
+func init() {
+	core.Testing = true
+	core.InitHome()
+	core.Ed = newMockEditor()
+	core.Ed.Start("")
+}
 
 func TestCountLines(t *testing.T) {
 	// CountLines
-	f, err := os.Open("test_data/file1.txt")
+	f, err := os.Open("../test_data/file1.txt")
 	assert.Nil(t, err, "file")
 	defer f.Close()
-	lns, err := CountLines(f)
+	lns, err := core.CountLines(f)
 	assert.Nil(t, err, "CountLines")
 	assert.Equal(t, lns, 12, "CountLines")
 }
 
 func TestStringToRunes(t *testing.T) {
 	r := [][]rune{}
-	s := Ed.RunesToString(r)
+	s := core.RunesToString(r)
 	assert.Equal(t, s, "", "runestostring1")
-	assert.Equal(t, Ed.StringToRunes(s), r, "stringToRunes1")
+	assert.Equal(t, core.StringToRunes(s), r, "stringToRunes1")
 	r = [][]rune{
 		[]rune{'A', 'B', 'C'},
 	}
-	s = Ed.RunesToString(r)
+	s = core.RunesToString(r)
 	assert.Equal(t, s, "ABC", "runestostring2")
-	assert.Equal(t, Ed.StringToRunes(s), r, "stringToRunes2")
+	assert.Equal(t, core.StringToRunes(s), r, "stringToRunes2")
 	r = append(r, []rune{}, []rune{'1', '2'})
-	s = Ed.RunesToString(r)
+	s = core.RunesToString(r)
 	assert.Equal(t, s, "ABC\n\n12", "runestostring3")
-	assert.Equal(t, Ed.StringToRunes(s), r, "stringToRunes3")
+	assert.Equal(t, core.StringToRunes(s), r, "stringToRunes3")
 	r = [][]rune{
 		[]rune{},
 		[]rune{'2'},
 	}
-	s = Ed.RunesToString(r)
+	s = core.RunesToString(r)
 	assert.Equal(t, s, "\n2", "runestostring4")
-	assert.Equal(t, Ed.StringToRunes(s), r, "stringToRunes4")
+	assert.Equal(t, core.StringToRunes(s), r, "stringToRunes4")
 	r = [][]rune{
 		[]rune{'1'},
 		[]rune{},
 	}
-	s = Ed.RunesToString(r)
+	s = core.RunesToString(r)
 	assert.Equal(t, s, "1\n", "runestostring5")
-	assert.Equal(t, Ed.StringToRunes(s), r, "stringToRunes5")
+	assert.Equal(t, core.StringToRunes(s), r, "stringToRunes5")
 }
 
 func TestQuitCheck(t *testing.T) {
+	Ed := core.Ed.(*Editor)
 	v := Ed.NewView()
 	v2 := Ed.NewView()
 	col := Ed.NewCol(1.0, []*View{v, v2})
@@ -63,22 +72,22 @@ func TestQuitCheck(t *testing.T) {
 }
 
 func TestTheme(t *testing.T) {
-	th, err := ReadTheme("test_data/theme.toml")
+	th, err := core.ReadTheme("../test_data/theme.toml")
 	assert.Nil(t, err, "theme")
-	s := Style{0}
+	s := core.NewStyle(0)
 	s.UnmarshalText([]byte("99663311"))
 	assert.Equal(t, th.Bg, s, "theme bg")
 	sb := th.Statusbar
 	s.UnmarshalText([]byte("EB070000"))
-	s2 := Style{0}
+	s2 := core.NewStyle(0)
 	s.UnmarshalText([]byte("EB000000"))
-	sr := StyledRune{
+	sr := core.StyledRune{
 		Rune: '❊',
 		Bg:   s,
 		Fg:   s2,
 	}
 	assert.Equal(t, sb, sr, "styled rune")
-	s = Style{0x41}
+	s = core.NewStyle(0x41)
 	s = s.WithAttr(Bold)
-	assert.Equal(t, s, Style{0x0141}, "style attr2")
+	assert.Equal(t, s, core.NewStyle(0x0141), "style attr2")
 }

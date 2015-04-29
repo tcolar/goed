@@ -1,6 +1,9 @@
-package main
+package ui
 
-import "github.com/tcolar/termbox-go"
+import (
+	"github.com/tcolar/goed/core"
+	"github.com/tcolar/termbox-go"
+)
 
 const (
 	Plain uint16 = iota + (1 << 8)
@@ -41,9 +44,9 @@ func (e *Editor) WidgetAt(x, y int) Renderer {
 	return nil
 }
 
-func (e *Editor) Render() {
-	e.TermFB(e.Theme.Fg, e.Theme.Bg)
-	e.term.Clear(e.Bg.uint16, e.Bg.uint16)
+func (e Editor) Render() {
+	e.TermFB(e.theme.Fg, e.theme.Bg)
+	e.term.Clear(e.Bg.Uint16(), e.Bg.Uint16())
 
 	for _, c := range e.Cols {
 		for _, v := range c.Views {
@@ -52,7 +55,7 @@ func (e *Editor) Render() {
 	}
 
 	// cursor
-	v := Ed.CurView
+	v := e.curView
 	cc, cl := v.CurCol(), v.CurLine()
 	c, _, _ := v.CurChar()
 	// With some terminals & color schemes the cursor might be "invisible" if we are at a
@@ -64,9 +67,9 @@ func (e *Editor) Render() {
 	}
 	// Note theterminal inverse the colors where the cursor is
 	// this is why this statement might appear "backward"
-	Ed.TermFB(Ed.Theme.BgCursor, Ed.Theme.FgCursor)
-	Ed.TermChar(cc+v.x1-v.offx+2, cl+v.y1-v.offy+2, car)
-	Ed.TermFB(Ed.Theme.Fg, Ed.Theme.Bg)
+	e.TermFB(e.theme.BgCursor, e.theme.FgCursor)
+	e.TermChar(cc+v.x1-v.offx+2, cl+v.y1-v.offy+2, car)
+	e.TermFB(e.theme.Fg, e.theme.Bg)
 
 	e.Cmdbar.Render()
 	e.Statusbar.Render()
@@ -78,23 +81,7 @@ type Renderer interface {
 	Bounds() (int, int, int, int)
 	Render()
 	SetBounds(x1, y1, x2, y2 int)
-	Event(*termbox.Event)
-}
-
-// Widget implements the base of UI widgets
-type Widget struct {
-	x1, x2, y1, y2 int
-}
-
-func (w *Widget) Bounds() (int, int, int, int) {
-	return w.x1, w.y1, w.x2, w.y2
-}
-
-func (w *Widget) SetBounds(x1, y1, x2, y2 int) {
-	w.x1 = x1
-	w.x2 = x2
-	w.y1 = y1
-	w.y2 = y2
+	Event(e *Editor, ev *termbox.Event)
 }
 
 // TODO: optimize, for example might only need to resize a single column
@@ -200,7 +187,7 @@ func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
 			// Expanding the column
 			ratio := float64(x1-x2) / float64(w)
 			c1.WidthRatio += ratio
-			Ed.Cols[c1i-1].WidthRatio -= ratio // taking space from prev col
+			e.Cols[c1i-1].WidthRatio -= ratio // taking space from prev col
 		} else {
 			//reorder
 			i1, i2 := c1i, c2i
@@ -274,7 +261,7 @@ func (e *Editor) AddViewSmart() *View {
 	for _, c := range e.Cols {
 		// if we have room for a new column,favor that
 		if c.Views[0].x2-c.Views[0].x1 > 120 {
-			nc := Ed.AddCol(c, 0.5)
+			nc := e.AddCol(c, 0.5)
 			nv = nc.Views[0]
 			break
 		}
@@ -387,13 +374,13 @@ func (e *Editor) DelView(view *View, terminate bool) {
 		if v == view {
 			if prev != nil {
 				prev.HeightRatio += v.HeightRatio
-				e.CurView = prev
+				e.curView = prev
 			} else {
 				c.Views[i+1].HeightRatio += v.HeightRatio
-				e.CurView = c.Views[i+1]
+				e.curView = c.Views[i+1]
 			}
 			c.Views = append(c.Views[:i], c.Views[i+1:]...)
-			e.ActivateView(e.CurView, 0, 0)
+			e.ActivateView(e.curView, 0, 0)
 			if terminate {
 				e.TerminateView(v)
 			}
@@ -417,7 +404,7 @@ func (e *Editor) TerminateView(v *View) {
 // Delete (close) a view, but with dirty check
 func (e *Editor) DelViewCheck(v *View) {
 	if !v.canClose() {
-		Ed.SetStatusErr("Unsaved changes. Save or request close again.")
+		e.SetStatusErr("Unsaved changes. Save or request close again.")
 		return
 	}
 	e.DelView(v, true)
@@ -430,22 +417,22 @@ func (e *Editor) DelColCheck(c *Col) {
 		ok = ok && v.canClose()
 	}
 	if !ok {
-		Ed.SetStatusErr("Unsaved changes. Save or request close again.")
+		e.SetStatusErr("Unsaved changes. Save or request close again.")
 		return
 	}
 	e.DelCol(c, true)
 }
 
 func (e *Editor) ActivateView(v *View, cursorx, cursory int) {
-	Ed.CurView = v
-	Ed.CurCol = Ed.ViewColumn(v)
+	e.curView = v
+	e.CurCol = e.ViewColumn(v)
 	v.MoveCursor(cursorx-v.CurCol(), cursory-v.CurLine())
 }
 
-func (e *Editor) ViewById(id int) *View {
+func (e Editor) ViewById(id int) core.Viewable {
 	for _, c := range e.Cols {
 		for _, v := range c.Views {
-			if v.Id == id {
+			if v.Id() == id {
 				return v
 			}
 		}

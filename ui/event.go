@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -27,26 +27,26 @@ func (e *Editor) EventLoop() {
 			switch ev.Key {
 			case termbox.KeyCtrlQ:
 				if !e.QuitCheck() {
-					Ed.SetStatusErr("Unsaved changes. Save or request close again.")
+					e.SetStatusErr("Unsaved changes. Save or request close again.")
 				} else {
 					return // the end
 				}
 			case termbox.KeyEsc:
-				if !Ed.CmdOn {
-					Ed.Cmdbar.Cmd = []rune{}
+				if !e.CmdOn {
+					e.Cmdbar.Cmd = []rune{}
 				}
-				Ed.CmdOn = !Ed.CmdOn
+				e.CmdOn = !e.CmdOn
 			default:
 				if e.CmdOn {
-					e.Cmdbar.Event(&ev)
+					e.Cmdbar.Event(e, &ev)
 				} else if e.CurView != nil {
-					e.CurView.Event(&ev)
+					e.curView.Event(e, &ev)
 				}
 			}
 		case termbox.EventMouse:
 			w := e.WidgetAt(ev.MouseX, ev.MouseY)
 			if w != nil {
-				w.Event(&ev)
+				w.Event(e, &ev)
 			}
 		}
 		e.Render()
@@ -56,7 +56,7 @@ func (e *Editor) EventLoop() {
 // ##################### CmdBar ########################################
 
 // Event handler for Cmdbar
-func (m *Cmdbar) Event(ev *termbox.Event) {
+func (m *Cmdbar) Event(e *Editor, ev *termbox.Event) {
 	switch ev.Type {
 	case termbox.EventKey:
 		switch ev.Key {
@@ -75,7 +75,7 @@ func (m *Cmdbar) Event(ev *termbox.Event) {
 	case termbox.EventMouse:
 		switch ev.Key {
 		case termbox.MouseLeft:
-			Ed.CmdOn = true
+			e.CmdOn = true
 		}
 	}
 }
@@ -83,14 +83,14 @@ func (m *Cmdbar) Event(ev *termbox.Event) {
 // ##################### StatusBar ########################################
 
 // Event handler for Statusbar
-func (s *Statusbar) Event(ev *termbox.Event) {
+func (s *Statusbar) Event(e *Editor, ev *termbox.Event) {
 	// Anyhting ??
 }
 
 // ##################### View       ########################################
 
 // Event handler for View
-func (v *View) Event(ev *termbox.Event) {
+func (v *View) Event(e *Editor, ev *termbox.Event) {
 	dirty := false
 	switch ev.Type {
 	case termbox.EventKey:
@@ -98,7 +98,7 @@ func (v *View) Event(ev *termbox.Event) {
 		if ev.Mod == termbox.ModAlt {
 			switch ev.Ch {
 			case 'o':
-				Ed.Cmdbar.OpenSelection(v, false)
+				e.Cmdbar.OpenSelection(v, false)
 			}
 			return
 		}
@@ -153,9 +153,9 @@ func (v *View) Event(ev *termbox.Event) {
 		case termbox.KeyCtrlS:
 			v.Save()
 		case termbox.KeyCtrlO:
-			Ed.Cmdbar.OpenSelection(v, true)
+			e.Cmdbar.OpenSelection(v, true)
 		case termbox.KeyCtrlW:
-			Ed.DelViewCheck(Ed.CurView)
+			e.DelViewCheck(e.curView)
 		case termbox.KeyCtrlC:
 			if len(v.Selections) > 0 {
 				v.Selections[0].Copy(v)
@@ -176,6 +176,7 @@ func (v *View) Event(ev *termbox.Event) {
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
+				e.SetStatusErr(fmt.Sprintf("%v", ev))
 				v.InsertCur(string(ev.Ch))
 				dirty = true
 			}
@@ -189,36 +190,36 @@ func (v *View) Event(ev *termbox.Event) {
 		case termbox.MouseRight:
 			v.ClearSelections()
 			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
-			Ed.Cmdbar.OpenSelection(v, true)
+			e.Cmdbar.OpenSelection(v, true)
 		case termbox.MouseLeft:
-			if Ed.evtState.MovingView {
-				Ed.evtState.MovingView = false
-				Ed.ViewMove(Ed.evtState.X, Ed.evtState.Y, ev.MouseX, ev.MouseY)
+			if e.evtState.MovingView {
+				e.evtState.MovingView = false
+				e.ViewMove(e.evtState.X, e.evtState.Y, ev.MouseX, ev.MouseY)
 				return
 			}
 			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 {
-				Ed.DelViewCheck(v)
+				e.DelViewCheck(v)
 				return
 			}
 			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
 				// handle
-				Ed.evtState.MovingView = true
-				Ed.evtState.X = ev.MouseX
-				Ed.evtState.Y = ev.MouseY
-				Ed.SetStatusErr("Starting move, click new position.")
+				e.evtState.MovingView = true
+				e.evtState.X = ev.MouseX
+				e.evtState.Y = ev.MouseY
+				e.SetStatusErr("Starting move, click new position.")
 				return
 			}
 			if ev.DragOn {
-				if Ed.evtState.DragX1 == 0 {
+				if e.evtState.DragX1 == 0 {
 					// start drag
-					Ed.evtState.DragX1, Ed.evtState.DragY1 = ev.MouseX, ev.MouseY
+					e.evtState.DragX1, e.evtState.DragY1 = ev.MouseX, ev.MouseY
 				}
 				// continued drag
-				Ed.evtState.DragX2, Ed.evtState.DragY2 = ev.MouseX, ev.MouseY
-				x1 := Ed.evtState.DragX1 - v.x1 + v.offx - 2
-				x2 := Ed.evtState.DragX2 - v.x1 + v.offx - 2
-				y1 := Ed.evtState.DragY1 - v.y1 + v.offy - 2
-				y2 := Ed.evtState.DragY2 - v.y1 + v.offy - 2
+				e.evtState.DragX2, e.evtState.DragY2 = ev.MouseX, ev.MouseY
+				x1 := e.evtState.DragX1 - v.x1 + v.offx - 2
+				x2 := e.evtState.DragX2 - v.x1 + v.offx - 2
+				y1 := e.evtState.DragY1 - v.y1 + v.offy - 2
+				y2 := e.evtState.DragY2 - v.y1 + v.offy - 2
 
 				if (y1 == y1 && x1 > x2) ||
 					(y1 > y2) {
@@ -248,13 +249,13 @@ func (v *View) Event(ev *termbox.Event) {
 				return
 			} else {
 				// reset drag
-				Ed.evtState.DragX1, Ed.evtState.DragY1 = 0, 0
-				Ed.evtState.DragX2, Ed.evtState.DragY2 = 0, 0
+				e.evtState.DragX1, e.evtState.DragY1 = 0, 0
+				e.evtState.DragX2, e.evtState.DragY2 = 0, 0
 				v.ClearSelections()
 			}
-			Ed.CmdOn = false
-			Ed.ActivateView(v, ev.MouseX-v.x1-2+v.offx, ev.MouseY-v.y1-2+v.offy)
-			Ed.SetStatus(fmt.Sprintf("[%d]%s", v.Id, v.WorkDir))
+			e.CmdOn = false
+			e.ActivateView(v, ev.MouseX-v.x1-2+v.offx, ev.MouseY-v.y1-2+v.offy)
+			e.SetStatus(fmt.Sprintf("[%d]%s", v.Id, v.WorkDir()))
 		}
 	}
 	if dirty {

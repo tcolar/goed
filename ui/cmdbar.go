@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/tcolar/goed/backend"
+	"github.com/tcolar/goed/core"
 )
 
 // Cmdbar widget
@@ -17,20 +20,23 @@ type Cmdbar struct {
 }
 
 func (c *Cmdbar) Render() {
-	Ed.TermFB(Ed.Theme.Cmdbar.Fg, Ed.Theme.Cmdbar.Bg)
-	Ed.TermFill(Ed.Theme.Cmdbar.Rune, c.x1, c.y1, c.x2, c.y2)
-	if Ed.CmdOn {
-		Ed.TermFB(Ed.Theme.CmdbarTextOn, Ed.Theme.Cmdbar.Bg)
-		Ed.TermStr(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
+	ed := core.Ed.(*Editor)
+	t := ed.Theme()
+	ed.TermFB(t.Cmdbar.Fg, t.Cmdbar.Bg)
+	ed.TermFill(t.Cmdbar.Rune, c.x1, c.y1, c.x2, c.y2)
+	if ed.CmdOn {
+		ed.TermFB(t.CmdbarTextOn, t.Cmdbar.Bg)
+		ed.TermStr(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
 	} else {
-		Ed.TermFB(Ed.Theme.CmdbarText, Ed.Theme.Cmdbar.Bg)
-		Ed.TermStr(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
+		ed.TermFB(t.CmdbarText, t.Cmdbar.Bg)
+		ed.TermStr(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
 	}
-	Ed.TermFB(Ed.Theme.CmdbarText, Ed.Theme.Cmdbar.Bg)
-	Ed.TermStr(c.x2-11, c.y1, fmt.Sprintf("|GoEd %s", Version))
+	ed.TermFB(t.CmdbarText, t.Cmdbar.Bg)
+	ed.TermStr(c.x2-11, c.y1, fmt.Sprintf("|GoEd %s", core.Version))
 }
 
 func (c *Cmdbar) RunCmd() {
+	ed := core.Ed.(*Editor)
 	// TODO: This is temporary until I create real fs based events & actions
 	s := string(c.Cmd)
 	parts := strings.Fields(s)
@@ -43,13 +49,13 @@ func (c *Cmdbar) RunCmd() {
 	//case "d", "del": // as vi del
 	//case "dd":
 	case "dc", "delcol":
-		Ed.DelColCheck(Ed.CurCol)
+		ed.DelColCheck(ed.CurCol)
 	case "dv", "delview":
-		Ed.DelViewCheck(Ed.CurView)
+		ed.DelViewCheck(ed.curView)
 	case "e", "exec":
 		c.exec(args)
 	//case "h", "help":
-	//	Ed.SetStatus("TBD help")
+	//	ed.SetStatus("TBD help")
 	case "nc", "newcol":
 		c.newCol(args)
 	case "nv", "newview":
@@ -62,22 +68,25 @@ func (c *Cmdbar) RunCmd() {
 		c.save(args)
 	case ":", "line":
 		c.line(args)
+	case "/", "search":
+		c.search(args)
 	case "y", "yank": // as vi copy
 		err = c.yank(args)
 	case "yy":
 		err = c.yank([]string{"1"})
 	default:
-		Ed.SetStatusErr("Unexpected command " + parts[0])
+		ed.SetStatusErr("Unexpected command " + parts[0])
 	}
 	if err == nil {
-		Ed.CmdOn = false
+		ed.CmdOn = false
 	} else {
-		Ed.SetStatus(err.Error())
+		ed.SetStatus(err.Error())
 	}
 }
 
 func (c *Cmdbar) paste(args []string) {
-	v := Ed.CurView
+	ed := core.Ed.(*Editor)
+	v := ed.curView
 	v.MoveCursorRoll(-v.CurCol(), 1)
 	l := v.CurLine()
 	v.Paste()
@@ -88,7 +97,8 @@ func (c *Cmdbar) paste(args []string) {
 }
 
 func (c *Cmdbar) yank(args []string) error {
-	v := Ed.CurView
+	ed := core.Ed.(*Editor)
+	v := ed.curView
 	if len(args) == 0 {
 		return fmt.Errorf("Expected an argument")
 	}
@@ -101,7 +111,7 @@ func (c *Cmdbar) yank(args []string) error {
 		LineFrom: v.CurLine(),
 		LineTo:   v.CurLine() + nb,
 		ColTo:    -1,
-	}.Copy(Ed.CurView)
+	}.Copy(ed.curView)
 	return nil
 }
 
@@ -110,17 +120,18 @@ func (c *Cmdbar) open(args []string) error {
 		// try to expand a location from the current view
 		return fmt.Errorf("No path provided")
 	}
-	v := Ed.NewView()
-	err := Ed.Open(args[0], v, "")
+	ed := core.Ed.(*Editor)
+	v := ed.NewView()
+	err := ed.Open(args[0], v, "")
 	if err != nil {
 		return err
 	}
-	if Ed.CurView.Dirty {
-		Ed.InsertViewSmart(v)
+	if ed.curView.Dirty {
+		ed.InsertViewSmart(v)
 	} else {
-		Ed.ReplaceView(Ed.CurView, v)
+		ed.ReplaceView(ed.curView, v)
 	}
-	Ed.ActivateView(v, 0, 0)
+	ed.ActivateView(v, 0, 0)
 	return nil
 }
 
@@ -128,40 +139,41 @@ func (c *Cmdbar) open(args []string) error {
 // if newView is true then open in a new view, otherwise
 // replace content of v
 func (c *Cmdbar) OpenSelection(v *View, newView bool) {
+	ed := core.Ed.(*Editor)
 	newView = newView || v.Dirty
 	if len(v.Selections) == 0 {
 		selection := v.PathSelection(v.CurLine()+1, v.CurCol()+1)
 		if selection == nil {
-			Ed.SetStatusErr("Could not expand location from cursor location.")
+			ed.SetStatusErr("Could not expand location from cursor location.")
 			return
 		}
 		v.Selections = []Selection{*selection}
 	}
 	loc, line, col := v.Selections[0].ToLoc(v)
 	isDir := false
-	loc, isDir = c.lookupLocation(v.WorkDir, loc)
-	v2 := Ed.ViewByLoc(loc)
+	loc, isDir = c.lookupLocation(v.WorkDir(), loc)
+	v2 := ed.ViewByLoc(loc)
 	if v2 != nil {
 		// Already open
-		Ed.ActivateView(v2, col-1, line-1)
+		ed.ActivateView(v2, col-1, line-1)
 		return
 	}
-	v2 = Ed.NewView()
-	if err := Ed.Open(loc, v2, v.WorkDir); err != nil {
-		Ed.SetStatusErr(err.Error())
+	v2 = ed.NewView()
+	if err := ed.Open(loc, v2, v.WorkDir()); err != nil {
+		ed.SetStatusErr(err.Error())
 		return
 	}
 	if newView {
 		if isDir {
-			Ed.InsertView(v2, v, 0.5)
+			ed.InsertView(v2, v, 0.5)
 		} else {
-			Ed.InsertViewSmart(v2)
+			ed.InsertViewSmart(v2)
 		}
 	} else {
-		Ed.ReplaceView(v, v2)
+		ed.ReplaceView(v, v2)
 	}
 	// note:  x, y are zero based, line, col are 1 based
-	Ed.ActivateView(v2, col-1, line-1)
+	ed.ActivateView(v2, col-1, line-1)
 }
 
 // lookupLocation will try to locate the given location
@@ -181,24 +193,29 @@ func (c *Cmdbar) lookupLocation(dir, loc string) (string, bool) {
 }
 
 func (c *Cmdbar) save(args []string) {
-	if Ed.CurView != nil {
-		Ed.CurView.Save()
+	ed := core.Ed.(*Editor)
+	if ed.CurView != nil {
+		ed.curView.Save()
 	}
 }
 
 func (c *Cmdbar) line(args []string) {
+	ed := core.Ed.(*Editor)
 	if len(args) < 0 {
-		Ed.SetStatusErr("Expected a line number argument.")
+		ed.SetStatusErr("Expected a line number argument.")
 		return
 	}
 	l, err := strconv.Atoi(args[0])
 	if err != nil {
-		Ed.SetStatusErr("Expected a line number argument.")
+		ed.SetStatusErr("Expected a line number argument.")
 		return
 	}
-	if Ed.CurView != nil {
-		Ed.CurView.MoveCursor(0, l-Ed.CurView.CurLine()-1)
+	if ed.CurView != nil {
+		ed.curView.MoveCursor(0, l-ed.curView.CurLine()-1)
 	}
+}
+
+func (c *Cmdbar) search(args []string) {
 }
 
 func (c *Cmdbar) newCol(args []string) {
@@ -219,9 +236,10 @@ func (c *Cmdbar) newCol(args []string) {
 			loc = strings.Join(args, " ")
 		}
 	}
-	v := Ed.AddCol(Ed.CurCol, float64(pct)/100.0).Views[0]
+	ed := core.Ed.(*Editor)
+	v := ed.AddCol(ed.CurCol, float64(pct)/100.0).Views[0]
 	if len(loc) > 0 {
-		Ed.Open(loc, v, "")
+		ed.Open(loc, v, "")
 	}
 }
 
@@ -239,21 +257,23 @@ func (c *Cmdbar) newView(args []string) {
 			loc = strings.Join(args, " ")
 		}
 	}
-	v := Ed.AddView(Ed.CurView, float64(pct)/100.0)
+	ed := core.Ed.(*Editor)
+	v := ed.AddView(ed.curView, float64(pct)/100.0)
 	if len(loc) > 0 {
-		Ed.Open(loc, v, "")
+		ed.Open(loc, v, "")
 	}
 }
 
 func (c *Cmdbar) exec(args []string) {
+	ed := core.Ed.(*Editor)
 	workDir := "."
-	if Ed.CurView != nil {
-		workDir = Ed.CurView.WorkDir
+	if ed.curView != nil {
+		workDir = ed.CurView().WorkDir()
 	}
-	v := Ed.AddViewSmart()
-	b, err := Ed.NewFileBackendCmd(args, workDir, v.Id, nil)
+	v := ed.AddViewSmart()
+	b, err := backend.NewFileBackendCmd(args, workDir, v.Id(), nil)
 	if err != nil {
-		Ed.SetStatusErr(err.Error())
+		ed.SetStatusErr(err.Error())
 	}
 	v.backend = b
 }

@@ -1,10 +1,12 @@
-package main
+package backend
 
 import (
 	"fmt"
 	"io/ioutil"
 	"os"
 	"unicode/utf8"
+
+	"github.com/tcolar/goed/core"
 )
 
 type MemBackend struct {
@@ -13,7 +15,7 @@ type MemBackend struct {
 	viewId int
 }
 
-func (e *Editor) NewMemBackend(path string, viewId int) (*MemBackend, error) {
+func NewMemBackend(path string, viewId int) (*MemBackend, error) {
 	m := &MemBackend{
 		text:   [][]rune{[]rune{}},
 		file:   path,
@@ -25,7 +27,6 @@ func (e *Editor) NewMemBackend(path string, viewId int) (*MemBackend, error) {
 
 func (m *MemBackend) Reload() error {
 	// TODO: check dirty ?
-	v := Ed.ViewById(m.viewId)
 	if len(m.file) == 0 {
 		return nil
 	}
@@ -33,11 +34,14 @@ func (m *MemBackend) Reload() error {
 	if err != nil {
 		return err
 	}
-	m.text = Ed.StringToRunes(string(data))
+	m.text = core.StringToRunes(string(data))
 	if len(m.text) == 0 {
 		m.text = append(m.text, []rune{})
 	}
-	v.Dirty = false
+	if core.Ed != nil {
+		v := core.Ed.ViewById(m.viewId)
+		v.SetDirty(false)
+	}
 	return nil
 }
 
@@ -64,7 +68,7 @@ func (b *MemBackend) Save(loc string) error {
 		}
 	}
 	b.file = loc
-	Ed.SetStatus("Saved " + b.file)
+	core.Ed.SetStatus("Saved " + b.file)
 	return nil
 }
 
@@ -79,7 +83,7 @@ func (b *MemBackend) BufferLoc() string {
 func (b *MemBackend) Insert(row, col int, text string) error {
 	row-- // 1 index to 0 index
 	col--
-	runes := Ed.StringToRunes(text)
+	runes := core.StringToRunes(text)
 	if len(runes) == 0 {
 		return nil
 	}
@@ -137,14 +141,9 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 	return nil
 }
 
-func (b *MemBackend) Slice(row, col, row2, col2 int) *Slice {
-	slice := &Slice{
-		text: [][]rune{},
-		r1:   row,
-		c1:   col,
-		r2:   row2,
-		c2:   col2,
-	}
+func (b *MemBackend) Slice(row, col, row2, col2 int) *core.Slice {
+	slice := core.NewSlice(row, col, row2, col2, [][]rune{})
+	text := slice.Text()
 	if row < 1 || col < 1 {
 		return slice
 	}
@@ -160,7 +159,7 @@ func (b *MemBackend) Slice(row, col, row2, col2 int) *Slice {
 			break
 		}
 		if col2 == -1 {
-			slice.text = append(slice.text, b.text[r-1])
+			*text = append(*text, b.text[r-1])
 		} else {
 			c, c2, l := col-1, col2, len(b.text[r-1])
 			if c > l {
@@ -169,7 +168,7 @@ func (b *MemBackend) Slice(row, col, row2, col2 int) *Slice {
 			if c2 > l {
 				c2 = l
 			}
-			slice.text = append(slice.text, b.text[r-1][c:c2])
+			*text = append(*text, b.text[r-1][c:c2])
 		}
 	}
 	return slice
@@ -179,7 +178,7 @@ func (b *MemBackend) LineCount() int {
 	count := len(b.text)
 	if count > 0 {
 		last := len(b.text) - 1
-		if len(b.text[last]) == 0 {
+		if last > 0 && len(b.text[last]) == 0 {
 			count--
 		}
 	}

@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"bytes"
@@ -7,13 +7,15 @@ import (
 	"os/exec"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/tcolar/goed/core"
 )
 
 // File backend uses a plain unbeffered file as its buffer.
 type FileBackend struct {
 	srcLoc    string
 	bufferLoc string
-	file      Rwsc //ReaderWriterSeekerCloser
+	file      core.Rwsc //ReaderWriterSeekerCloser
 	viewId    int
 
 	bufferSize int64 // Internal buffer size for file ops
@@ -26,7 +28,7 @@ type FileBackend struct {
 }
 
 // File backend, the source is a file, the buffer is a copy of the file in the buffer dir.
-func (e *Editor) NewFileBackend(loc string, viewId int) (*FileBackend, error) {
+func NewFileBackend(loc string, viewId int) (*FileBackend, error) {
 	b := &FileBackend{
 		viewId:     viewId,
 		srcLoc:     loc,
@@ -58,7 +60,7 @@ func (f *FileBackend) Close() error {
 func (b *FileBackend) Reload() error {
 	// TODO : check dirty
 	b.Close()
-	fb := Ed.BufferFile(b.viewId)
+	fb := BufferFile(b.viewId)
 	b.bufferLoc = fb
 	if fb != b.srcLoc {
 		// unless we are opening the buffer directly,
@@ -78,9 +80,11 @@ func (b *FileBackend) Reload() error {
 		b.length = stat.Size()
 		if b.length > 10000000 {
 			b.bufferLoc = b.srcLoc
-			Ed.SetStatusErr("EDITING IN PLACE ! (Large file)")
+			if core.Ed != nil {
+				core.Ed.SetStatusErr("EDITING IN PLACE ! (Large file)")
+			}
 		} else {
-			err = CopyFile(b.srcLoc, b.bufferLoc)
+			err = core.CopyFile(b.srcLoc, b.bufferLoc)
 			if err != nil {
 				return err
 			}
@@ -94,15 +98,17 @@ func (b *FileBackend) Reload() error {
 	}
 
 	// get base line count
-	b.lnCount, _ = CountLines(b.file)
+	b.lnCount, _ = core.CountLines(b.file)
 	if b.lnCount == 0 {
 		b.lnCount = 1
 	}
 
 	b.reset()
-	v := Ed.ViewById(b.viewId)
-	if v != nil {
-		v.Dirty = false
+	if core.Ed != nil {
+		v := core.Ed.ViewById(b.viewId)
+		if v != nil {
+			v.SetDirty(false)
+		}
 	}
 	return nil
 }
@@ -125,7 +131,7 @@ func (f *FileBackend) Insert(row, col int, text string) error {
 		return err
 	}
 	// Update line Count
-	f.lnCount += bytes.Count(b, LineSep)
+	f.lnCount += bytes.Count(b, core.LineSep)
 	return err
 }
 
@@ -156,7 +162,7 @@ func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {
 	if err != nil {
 		return err
 	}
-	f.lnCount -= bytes.Count(buf[:n], LineSep)
+	f.lnCount -= bytes.Count(buf[:n], core.LineSep)
 	return nil
 }
 
@@ -166,14 +172,9 @@ func (f *FileBackend) LineCount() int {
 
 // Slice returns the runes that are in the given rectangle.
 // row2 / col2 maybe -1, meaning all lines / whole lines
-func (f *FileBackend) Slice(row, col, row2, col2 int) *Slice {
-	slice := &Slice{
-		text: [][]rune{},
-		r1:   row,
-		c1:   col,
-		r2:   row2,
-		c2:   col2,
-	}
+func (f *FileBackend) Slice(row, col, row2, col2 int) *core.Slice {
+	slice := core.NewSlice(row, col, row2, col2, [][]rune{})
+	text := slice.Text()
 	if row < 1 || col < 1 {
 		return slice
 	}
@@ -198,7 +199,7 @@ func (f *FileBackend) Slice(row, col, row2, col2 int) *Slice {
 			rune, _, err := f.readRune()
 			if err != nil {
 				if err == io.EOF && len(ln) > 0 {
-					slice.text = append(slice.text, ln)
+					*text = append(*text, ln)
 				}
 				return slice
 			}
@@ -207,7 +208,7 @@ func (f *FileBackend) Slice(row, col, row2, col2 int) *Slice {
 			}
 			ln = append(ln, rune)
 		}
-		slice.text = append(slice.text, ln)
+		*text = append(*text, ln)
 	}
 	return slice
 }
@@ -217,7 +218,7 @@ func (f *FileBackend) Save(loc string) error {
 		return nil // editing in place
 	}
 	f.srcLoc = loc
-	err := CopyFile(f.bufferLoc, loc)
+	err := core.CopyFile(f.bufferLoc, loc)
 	// some sort of rsync would be nice ?
 	if err != nil {
 		return err
@@ -228,9 +229,9 @@ func (f *FileBackend) Save(loc string) error {
 		err := exec.Command("goimports", "-w", loc).Run()
 		// ignore if it fails for now
 		if err == nil {
-			v := Ed.ViewById(f.viewId)
+			v := core.Ed.ViewById(f.viewId)
 			x, y := v.CurCol(), v.CurLine()
-			Ed.Open(loc, v, "")
+			core.Ed.Open(loc, v, "")
 			v.MoveCursor(x, y)
 		}
 	}

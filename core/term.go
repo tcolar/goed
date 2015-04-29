@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 type Term interface {
 	Close()
 	Clear(fg, bg uint16)
-	Char(x, y int, c rune)
+	Char(x, y int, c rune, fg, bg Style)
 	Flush()
 	Init() error
 	SetExtendedColors(bool)
@@ -54,8 +54,8 @@ func (t *TermBox) SetCursor(x, y int) {
 	termbox.SetCursor(x, y)
 }
 
-func (t *TermBox) Char(x, y int, c rune) {
-	termbox.SetCell(x, y, c, termbox.Attribute(Ed.Fg.uint16), termbox.Attribute(Ed.Bg.uint16))
+func (t *TermBox) Char(x, y int, c rune, fg, bg Style) {
+	termbox.SetCell(x, y, c, termbox.Attribute(fg.Uint16()), termbox.Attribute(bg.Uint16()))
 }
 
 func (t *TermBox) Size() (int, int) {
@@ -79,7 +79,7 @@ type MockTerm struct {
 	text             [25][50]rune
 }
 
-func newMockTerm() *MockTerm {
+func NewMockTerm() *MockTerm {
 	return &MockTerm{
 		w:    50,
 		h:    25,
@@ -108,7 +108,7 @@ func (t *MockTerm) SetCursor(x, y int) {
 	t.cursorX, t.cursorY = x, y
 }
 
-func (t *MockTerm) Char(x, y int, c rune) {
+func (t *MockTerm) Char(x, y int, c rune, fg, bg Style) {
 	if x < t.w && y < t.h {
 		t.text[y][x] = c
 	}
@@ -125,55 +125,14 @@ func (t *MockTerm) SetInputMode(m termbox.InputMode) {
 }
 
 // for testing
-func (t *MockTerm) charAt(x, y int) rune {
+func (t *MockTerm) CharAt(x, y int) rune {
 	return t.text[y][x]
 }
 
 //=================== Utilities =============================
 
-// TermFB sets the "active" forground and backgrounds colors.
-func (e *Editor) TermFB(fg, bg Style) {
-	e.Fg = fg
-	e.Bg = bg
-}
-
-func (e *Editor) TermChar(x, y int, c rune) {
-	e.term.Char(x, y, c)
-}
-
-// TermStr draws an horizonttal string to the terminal
-func (e *Editor) TermStr(x, y int, s string) {
-	for _, c := range s {
-		e.term.Char(x, y, c)
-		x++
-	}
-}
-
-// TermStrv draws a vertical string to the terminal
-func (e *Editor) TermStrv(x, y int, s string) {
-	for _, c := range s {
-		e.term.Char(x, y, c)
-		y++
-	}
-}
-
-// TermFill fills an area of the terminal
-func (e *Editor) TermFill(c rune, x1, y1, x2, y2 int) {
-	if x1 > x2 {
-		x1, x2 = x2, x1
-	}
-	if y1 > y2 {
-		y1, y2 = y2, y1
-	}
-	for x := x1; x <= x2; x++ {
-		for y := y1; y <= y2; y++ {
-			e.term.Char(x, y, c)
-		}
-	}
-}
-
 // Print colors to terminal to try it.
-func testTerm() {
+func TestTerm() {
 	fmt.Printf("Standard Colors (16):\n Plain      : ")
 	for i := 0; i != 16; i++ {
 		fmt.Printf("\033[3%dm%02X ", i, i)
@@ -193,7 +152,7 @@ func testTerm() {
 	fmt.Println("\n\nAscii Chars: a A 6 ¼ Ø \nUnicode chars: \u0E5B  ಠﭛಠ")
 }
 
-func detectColors() int {
+func DetectColors() int {
 	// TBD
 	return 256
 }

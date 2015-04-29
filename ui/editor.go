@@ -1,43 +1,40 @@
-package main
+package ui
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
-)
 
-var Ed *Editor
+	backend "github.com/tcolar/goed/backend"
+	core "github.com/tcolar/goed/core"
+)
 
 type Editor struct {
 	Cmdbar     *Cmdbar
 	Statusbar  *Statusbar
-	Fg, Bg     Style
-	Theme      *Theme
+	Fg, Bg     core.Style
+	theme      *core.Theme
 	Cols       []*Col
-	CurView    *View
+	curView    *View
 	CurCol     *Col
 	CmdOn      bool
 	pctw, pcth float64
 	evtState   *EvtState
-	Home       string
-	term       Term
-	testing    bool
+	term       core.Term
 }
 
 func NewEditor() *Editor {
 	return &Editor{
-		term: NewTermBox(),
+		term: core.NewTermBox(),
 	}
 }
 
 // Edior with Mock terminal for testing
 func newMockEditor() *Editor {
 	return &Editor{
-		term:    newMockTerm(),
-		testing: true,
+		term: core.NewMockTerm(),
 	}
 }
 
@@ -47,15 +44,14 @@ func (e *Editor) Start(loc string) {
 		panic(err)
 	}
 	defer e.term.Close()
-	e.initHome()
-	e.term.SetExtendedColors(*colors == 256)
+	e.term.SetExtendedColors(core.Colors == 256)
 	e.evtState = &EvtState{}
-	e.Theme, err = ReadTheme("themes/default.toml")
+	e.theme, err = core.ReadTheme("themes/default.toml")
 	if err != nil {
 		panic(err)
 	}
-	e.Fg = e.Theme.Fg
-	e.Bg = e.Theme.Bg
+	e.Fg = e.theme.Fg
+	e.Bg = e.theme.Bg
 
 	w, h := e.term.Size()
 	e.Cmdbar = &Cmdbar{}
@@ -63,10 +59,10 @@ func (e *Editor) Start(loc string) {
 	e.Statusbar = &Statusbar{}
 	e.Statusbar.SetBounds(0, h-1, w, h-1)
 	view1 := e.NewView()
-	e.CurView = view1
+	e.curView = view1
 	e.Open(loc, view1, "")
 	if view1.backend == nil { // new file that does not exist yet
-		view1.backend, _ = e.NewFileBackend("", view1.Id)
+		view1.backend, _ = backend.NewFileBackend("", view1.Id())
 	}
 	view1.HeightRatio = 1.0
 
@@ -89,14 +85,14 @@ func (e *Editor) Start(loc string) {
 
 	e.Render()
 
-	if !e.testing {
+	if !core.Testing {
 		e.EventLoop()
 	}
 }
 
-func (e *Editor) Open(loc string, view *View, rel string) error {
+func (e Editor) Open(loc string, view core.Viewable, rel string) error {
 	if view == nil {
-		return fmt.Errorf("No view selected !")
+		return fmt.Errorf("Invalid view !")
 	}
 	if len(rel) > 0 && !strings.HasPrefix(loc, string(os.PathSeparator)) {
 		loc = path.Join(rel, loc)
@@ -119,41 +115,41 @@ func (e *Editor) Open(loc string, view *View, rel string) error {
 		title += string(os.PathSeparator)
 	}
 	view.Reset()
-	view.title = title
+	view.SetTitle(title)
 	if stat.IsDir() {
 		err = e.openDir(loc, view)
 	} else {
 		err = e.openFile(loc, view)
 	}
-	view.WorkDir = filepath.Dir(loc)
+	view.SetWorkDir(filepath.Dir(loc))
 	return nil
 }
 
-func (e *Editor) openDir(loc string, view *View) error {
+func (e *Editor) openDir(loc string, view core.Viewable) error {
 	args := []string{"ls", "-a", "--color=no"}
 	title := filepath.Base(loc) + "/"
-	backend, err := e.NewMemBackendCmd(args, loc, view.Id, &title)
+	backend, err := backend.NewMemBackendCmd(args, loc, view.Id(), &title)
 	if err != nil {
 		return err
 	}
-	view.backend = backend
-	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id, view.WorkDir))
-	view.Dirty = false
+	view.SetBackend(backend)
+	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id, view.WorkDir()))
+	view.SetDirty(false)
 	return nil
 }
 
-func (e *Editor) openFile(loc string, view *View) error {
-	backend, err := e.NewFileBackend(loc, view.Id)
+func (e *Editor) openFile(loc string, view core.Viewable) error {
+	backend, err := backend.NewFileBackend(loc, view.Id())
 	if err != nil {
 		return err
 	}
-	view.backend = backend
+	view.SetBackend(backend)
 	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id, view.WorkDir))
-	view.Dirty = false
+	view.SetDirty(false)
 	return nil
 }
 
-func (e *Editor) SetStatusErr(s string) {
+func (e Editor) SetStatusErr(s string) {
 	if e.Statusbar == nil {
 		return
 	}
@@ -161,7 +157,7 @@ func (e *Editor) SetStatusErr(s string) {
 	e.Statusbar.isErr = true
 	e.Statusbar.Render()
 }
-func (e *Editor) SetStatus(s string) {
+func (e Editor) SetStatus(s string) {
 	if e.Statusbar == nil {
 		return
 	}
@@ -169,31 +165,6 @@ func (e *Editor) SetStatus(s string) {
 	e.Statusbar.msg = s
 	e.Statusbar.isErr = false
 	e.Statusbar.Render()
-}
-
-// RunesToString returns a rune section as a srting.
-func (e Editor) RunesToString(runes [][]rune) string {
-	r := []rune{}
-	for i, line := range runes {
-		if i != 0 && i != len(runes) {
-			r = append(r, '\n')
-		}
-		r = append(r, line...)
-	}
-	return string(r)
-}
-
-func (e Editor) StringToRunes(s string) [][]rune {
-	b := []byte(s)
-	lines := bytes.Split(b, []byte("\n"))
-	runes := [][]rune{}
-	for i, l := range lines {
-		if i != len(lines)-1 ||
-			(len(l) != 0 || strings.HasSuffix(s, "\n")) {
-			runes = append(runes, bytes.Runes(l))
-		}
-	}
-	return runes
 }
 
 // QuitCheck check if it's ok to quit
@@ -207,4 +178,35 @@ func (e *Editor) QuitCheck() bool {
 		}
 	}
 	return ok
+}
+
+func (e *Editor) NewView() *View {
+	id++
+	d, _ := filepath.Abs(".")
+	v := &View{
+		id:          id,
+		HeightRatio: 0.5,
+		workDir:     d,
+		slice:       core.NewSlice(0, 0, 0, 0, [][]rune{}),
+	}
+	v.backend, _ = backend.NewMemBackend("", v.Id())
+	return v
+}
+
+func (e *Editor) NewFileView(path string) *View {
+	v := e.NewView()
+	e.Open(path, v, "")
+	return v
+}
+
+func (e Editor) Theme() *core.Theme {
+	return e.theme
+}
+
+func (e Editor) CurView() core.Viewable {
+	return e.curView
+}
+
+func (e Editor) SetCursor(x, y int) {
+	e.term.SetCursor(x, y)
 }

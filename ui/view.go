@@ -1,8 +1,10 @@
-package main
+package ui
 
 import (
 	"path/filepath"
 	"time"
+
+	"github.com/tcolar/goed/core"
 )
 
 const tabSize = 4
@@ -11,36 +13,17 @@ var id int = 0
 
 type View struct {
 	Widget
-	Id               int
+	id               int
 	Dirty            bool
-	backend          Backend
-	WorkDir          string
+	backend          core.Backend
+	workDir          string
 	CursorX, CursorY int // realtive position of cursor in view (0 index)
 	offx, offy       int // absolute view offset (scrolled down/right) (0 index)
 	HeightRatio      float64
 	Selections       []Selection
 	title            string
-	lastCloseTs      time.Time // Timestamp of previous view close request
-	slice            *Slice    // curSlice
-}
-
-func (e *Editor) NewView() *View {
-	id++
-	d, _ := filepath.Abs(".")
-	v := &View{
-		Id:          id,
-		HeightRatio: 0.5,
-		WorkDir:     d,
-		slice:       &Slice{text: [][]rune{}},
-	}
-	v.backend, _ = e.NewMemBackend("", v.Id)
-	return v
-}
-
-func (e *Editor) NewFileView(path string) *View {
-	v := e.NewView()
-	e.Open(path, v, "")
-	return v
+	lastCloseTs      time.Time   // Timestamp of previous view close request
+	slice            *core.Slice // curSlice
 }
 
 func (v *View) Reset() {
@@ -49,18 +32,20 @@ func (v *View) Reset() {
 }
 
 func (v *View) Render() {
-	Ed.TermFB(Ed.Theme.Viewbar.Fg, Ed.Theme.Viewbar.Bg)
-	Ed.TermFill(Ed.Theme.Viewbar.Rune, v.x1+1, v.y1, v.x2, v.y1)
-	fg := Ed.Theme.ViewbarText
-	if v.Id == Ed.CurView.Id {
+	e := core.Ed
+	t := e.Theme()
+	e.TermFB(t.Viewbar.Fg, t.Viewbar.Bg)
+	e.TermFill(t.Viewbar.Rune, v.x1+1, v.y1, v.x2, v.y1)
+	fg := t.ViewbarText
+	if v.Id() == e.CurView().Id() {
 		fg = fg.WithAttr(Bold)
 	}
-	Ed.TermFB(fg, Ed.Theme.Viewbar.Bg)
-	t := v.Title()
-	if v.x2-v.x1 > 4 && v.x1+len(t) > v.x2-4 {
-		t = t[:v.x2-v.x1-4]
+	e.TermFB(fg, t.Viewbar.Bg)
+	ti := v.Title()
+	if v.x2-v.x1 > 4 && v.x1+len(ti) > v.x2-4 {
+		ti = ti[:v.x2-v.x1-4]
 	}
-	Ed.TermStr(v.x1+2, v.y1, t)
+	e.TermStr(v.x1+2, v.y1, ti)
 	v.RenderClose()
 	v.RenderScroll()
 	v.RenderIsDirty()
@@ -71,53 +56,63 @@ func (v *View) Render() {
 }
 
 func (v *View) RenderMargin() {
+	e := core.Ed
+	t := e.Theme()
 	if v.offx < 80 && v.offx+v.LastViewCol() >= 80 {
 		for i := 0; i <= v.LastViewLine(); i++ {
-			Ed.TermFB(Ed.Theme.Margin.Fg, Ed.Theme.Margin.Bg)
-			Ed.TermChar(v.x1+2+80-v.offx, v.y1+2+i, Ed.Theme.Margin.Rune)
-			Ed.TermFB(Ed.Theme.Fg, Ed.Theme.Bg)
+			e.TermFB(t.Margin.Fg, t.Margin.Bg)
+			e.TermChar(v.x1+2+80-v.offx, v.y1+2+i, t.Margin.Rune)
+			e.TermFB(t.Fg, t.Bg)
 		}
 	}
 }
 
 func (v *View) RenderScroll() {
-	Ed.TermFB(Ed.Theme.Scrollbar.Fg, Ed.Theme.Scrollbar.Bg)
-	Ed.TermFill(Ed.Theme.Scrollbar.Rune, v.x1, v.y1+1, v.x1, v.y2)
+	e := core.Ed
+	t := e.Theme()
+	e.TermFB(t.Scrollbar.Fg, t.Scrollbar.Bg)
+	e.TermFill(t.Scrollbar.Rune, v.x1, v.y1+1, v.x1, v.y2)
 }
 
 func (v *View) RenderIsDirty() {
-	style := Ed.Theme.FileClean
+	e := core.Ed
+	t := e.Theme()
+	style := t.FileClean
 	if v.Dirty {
-		style = Ed.Theme.FileDirty
+		style = t.FileDirty
 	}
-	Ed.TermFB(style.Fg, style.Bg)
-	Ed.TermChar(v.x1, v.y1, style.Rune)
+	e.TermFB(style.Fg, style.Bg)
+	e.TermChar(v.x1, v.y1, style.Rune)
 }
 
 func (v *View) RenderClose() {
-	Ed.TermFB(Ed.Theme.Close.Fg, Ed.Theme.Close.Bg)
-	Ed.TermChar(v.x2-1, v.y1, Ed.Theme.Close.Rune)
+	e := core.Ed
+	t := e.Theme()
+	e.TermFB(t.Close.Fg, t.Close.Bg)
+	e.TermChar(v.x2-1, v.y1, t.Close.Rune)
 }
 
 func (v *View) RenderText() {
+	e := core.Ed
+	t := e.Theme()
 	y := v.y1 + 2
-	fg := Ed.Theme.Fg
-	bg := Ed.Theme.Bg
-	Ed.TermFB(fg, bg)
+	fg := t.Fg
+	bg := t.Bg
+	e.TermFB(fg, bg)
 	inSelection := false
-	tab := string(Ed.Theme.TabChar.Rune)
+	tab := string(t.TabChar.Rune)
 	for j := 1; j < tabSize; j++ {
 		tab += " "
 	}
 	if v.offy > 0 {
 		// More text above
-		Ed.TermFB(Ed.Theme.MoreTextUp.Fg, Ed.Theme.MoreTextUp.Bg)
-		Ed.TermChar(v.x1+1, y-1, Ed.Theme.MoreTextUp.Rune)
-		Ed.TermFB(fg, bg)
+		e.TermFB(t.MoreTextUp.Fg, t.MoreTextUp.Bg)
+		e.TermChar(v.x1+1, y-1, t.MoreTextUp.Rune)
+		e.TermFB(fg, bg)
 	}
 	// Note: using full lines
 	v.slice = v.backend.Slice(v.offy+1, 1, v.offy+v.LastViewLine()+1, -1)
-	for _, l := range v.slice.text {
+	for _, l := range *v.slice.Text() {
 		x := v.x1 + 2
 		if v.offx >= len(l) {
 			y++
@@ -126,9 +121,9 @@ func (v *View) RenderText() {
 		start := 0
 		if v.offx > 0 {
 			// More text to our left
-			Ed.TermFB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
-			Ed.TermChar(x-1, y, Ed.Theme.MoreTextSide.Rune)
-			Ed.TermFB(fg, bg)
+			e.TermFB(t.MoreTextSide.Fg, t.MoreTextSide.Bg)
+			e.TermChar(x-1, y, t.MoreTextSide.Rune)
+			e.TermFB(fg, bg)
 			// skip letters until we get to or past offx
 			sz := 0
 			for sz < v.offx {
@@ -138,7 +133,7 @@ func (v *View) RenderText() {
 			// if we went "past" offx it means there where some
 			// tabs leftover spaces taht we need to render
 			for i := v.offx; i != sz; i++ {
-				Ed.TermChar(x, y, ' ')
+				e.TermChar(x, y, ' ')
 				x++
 			}
 		}
@@ -148,26 +143,26 @@ func (v *View) RenderText() {
 			if selected != inSelection {
 				inSelection = selected
 				if selected {
-					fg, bg = Ed.Theme.FgSelect, Ed.Theme.BgSelect
+					fg, bg = t.FgSelect, t.BgSelect
 				} else {
-					fg, bg = Ed.Theme.Fg, Ed.Theme.Bg
+					fg, bg = t.Fg, t.Bg
 				}
-				Ed.TermFB(fg, bg)
+				e.TermFB(fg, bg)
 			}
 			if c == '\t' {
-				Ed.TermFB(Ed.Theme.TabChar.Fg, bg)
-				Ed.TermStr(x, y, tab)
+				e.TermFB(t.TabChar.Fg, bg)
+				e.TermStr(x, y, tab)
 				x += tabSize - 1
-				Ed.TermFB(fg, bg)
+				e.TermFB(fg, bg)
 			} else {
-				Ed.TermChar(x, y, c)
+				e.TermChar(x, y, c)
 			}
 			x++
 			if x > v.x2-1 {
 				// More text to our right
-				Ed.TermFB(Ed.Theme.MoreTextSide.Fg, Ed.Theme.MoreTextSide.Bg)
-				Ed.TermChar(x-1, y, Ed.Theme.MoreTextSide.Rune)
-				Ed.TermFB(fg, bg)
+				e.TermFB(t.MoreTextSide.Fg, t.MoreTextSide.Bg)
+				e.TermChar(x-1, y, t.MoreTextSide.Rune)
+				e.TermFB(fg, bg)
 				break
 			}
 		}
@@ -178,9 +173,9 @@ func (v *View) RenderText() {
 	}
 	if v.offy+v.LastViewLine() < v.LineCount()-1 {
 		// More text below
-		Ed.TermFB(Ed.Theme.MoreTextDown.Fg, Ed.Theme.MoreTextDown.Bg)
-		Ed.TermChar(v.x1+1, y, Ed.Theme.MoreTextDown.Rune)
-		Ed.TermFB(fg, bg)
+		e.TermFB(t.MoreTextDown.Fg, t.MoreTextDown.Bg)
+		e.TermChar(v.x1+1, y, t.MoreTextDown.Rune)
+		e.TermFB(fg, bg)
 	}
 }
 
@@ -322,5 +317,33 @@ func (v *View) canClose() bool {
 }
 
 func (v *View) setCursor(x, y int) {
-	Ed.term.SetCursor(x, y)
+	core.Ed.SetCursor(x, y)
+}
+
+func (v *View) SetWorkDir(dir string) {
+	v.workDir = dir
+}
+
+func (v *View) WorkDir() string {
+	return v.workDir
+}
+
+func (v *View) SetTitle(title string) {
+	v.title = title
+}
+
+func (v *View) SetDirty(dirty bool) {
+	v.Dirty = dirty
+}
+
+func (v *View) SetBackend(b core.Backend) {
+	v.backend = b
+}
+
+func (v *View) Id() int {
+	return v.id
+}
+
+func (v *View) Slice() *core.Slice {
+	return v.slice
 }

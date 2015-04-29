@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/atotto/clipboard"
+	"github.com/tcolar/goed/core"
 )
 
 // Selection : 1 indexed
@@ -39,16 +40,16 @@ func (s Selection) Text(v *View) [][]rune {
 	lt := s.LineTo
 	lf := s.LineFrom
 	if lf == lt {
-		return v.backend.Slice(lf, cf, lt, ct).text
+		return *v.backend.Slice(lf, cf, lt, ct).Text()
 	}
 	// first line
-	text := v.backend.Slice(lf, cf, lf, -1).text
+	text := *v.backend.Slice(lf, cf, lf, -1).Text()
 	for l := lf + 1; l < lt; l++ {
 		// middle
-		text = append(text, v.backend.Slice(l, 1, l, -1).text...)
+		text = append(text, *v.backend.Slice(l, 1, l, -1).Text()...)
 	}
 	// last line
-	text = append(text, v.backend.Slice(lt, 1, lt, ct).text...)
+	text = append(text, *v.backend.Slice(lt, 1, lt, ct).Text()...)
 	return text
 }
 
@@ -73,8 +74,8 @@ func (v *View) Selected(col, line int) (bool, *Selection) {
 
 func (s Selection) Copy(v *View) {
 	t := s.Text(v)
-	Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
-	clipboard.WriteAll(Ed.RunesToString(t))
+	core.Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
+	clipboard.WriteAll(core.RunesToString(t))
 }
 
 func (s Selection) Delete(v *View) {
@@ -84,7 +85,7 @@ func (s Selection) Delete(v *View) {
 func (v *View) Paste() {
 	text, err := clipboard.ReadAll()
 	if err != nil {
-		Ed.SetStatusErr(err.Error())
+		core.Ed.SetStatusErr(err.Error())
 		return
 	}
 	_, x, y := v.CurChar()
@@ -98,7 +99,7 @@ var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?
 func (v *View) PathSelection(line, col int) *Selection {
 	l := v.Line(v.slice, line-1)
 	ln := string(l)
-	slice := NewSlice(1, 1, 1, len(l)+1, [][]rune{l})
+	slice := core.NewSlice(1, 1, 1, len(l)+1, [][]rune{l})
 	c := v.lineRunesTo(slice, 0, col)
 	matches := locationRegexp.FindAllStringIndex(ln, -1)
 	var best []int
@@ -119,7 +120,7 @@ func (v *View) PathSelection(line, col int) *Selection {
 
 // Parses a selection into a location (file, line, col)
 func (sel Selection) ToLoc(v *View) (loc string, line, col int) {
-	sub := locationRegexp.FindAllStringSubmatch(Ed.RunesToString(sel.Text(v)), 1)
+	sub := locationRegexp.FindAllStringSubmatch(core.RunesToString(sel.Text(v)), 1)
 	if len(sub) == 0 {
 		return
 	}

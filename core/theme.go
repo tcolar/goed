@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"strconv"
@@ -93,6 +93,16 @@ type Style struct {
 	uint16
 }
 
+func NewStyle(s uint16) Style {
+	return Style{
+		uint16: s,
+	}
+}
+
+func (s Style) Uint16() uint16 {
+	return s.uint16
+}
+
 func (s Style) WithAttr(attr uint16) Style {
 	return Style{s.uint16 | attr}
 }
@@ -101,7 +111,7 @@ func (s *Style) UnmarshalText(text []byte) error {
 	parsed, err := strconv.ParseUint(string(text), 16, 32)
 	var val = uint16(parsed & 0x3)
 	val = val << 8
-	switch *colors {
+	switch Colors {
 	case 256:
 		val = val | uint16((parsed&0xFF000000)>>24)
 	case 16:

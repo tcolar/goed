@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -7,28 +7,30 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/stretchr/testify/assert"
+	"github.com/tcolar/goed/core"
 )
 
 func TestView(t *testing.T) {
 	var err error
+	Ed := core.Ed.(*Editor)
 	v := Ed.NewView()
 	v.SetBounds(0, 0, 40, 25)
 
-	err = Ed.Open("test_data/file1.txt", v, "")
+	err = Ed.Open("../test_data/file1.txt", v, "")
 	assert.Nil(t, err, "open")
 
 	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
+	fmt.Printf("%v \n", v.slice.Text())
 
 	assertCursor(t, v, 0, 0, 0, 0, "mc")
-	assert.True(t, strings.HasSuffix(v.backend.SrcLoc(), "test_data/file1.txt"), "srcloc")
-	assert.True(t, strings.HasSuffix(v.WorkDir, "test_data"), "workdir")
-	assert.Equal(t, v.backend.BufferLoc(), Ed.BufferFile(v.Id), "bufferloc")
+	assert.True(t, strings.HasSuffix(v.backend.SrcLoc(), "/test_data/file1.txt"), fmt.Sprintf("srcloc %s", v.backend.SrcLoc()))
+	assert.True(t, strings.HasSuffix(v.workDir, "/test_data"), fmt.Sprintf("workdir %s", v.workDir))
 	assert.False(t, v.Dirty, "dirty")
 	assert.Equal(t, v.Title(), "file1.txt")
 	assert.Equal(t, v.LineCount(), 12, "lineCount")
-	assert.Equal(t, v.lineCols(v.slice, 0), 10, "lineCols")
 	assert.Equal(t, v.LastViewLine(), 25-3, "lastViewLine")
 	assert.Equal(t, v.LastViewCol(), 40-3, "lastViewCol")
+	assert.Equal(t, v.lineCols(v.slice, 0), 10, "lineCols")
 	assert.Equal(t, string(v.Line(v.slice, 0)), "1234567890", "line")
 	assert.Equal(t, v.LineLen(v.slice, 3), 26, "lineLen")
 	assert.Equal(t, v.lineColsTo(v.slice, 0, 4), 4, "lineColsTo1")
@@ -93,14 +95,15 @@ func assertCursor(t *testing.T, v *View, x, y, offsetX, offsetY int, msg string)
 
 func TestViewSelections(t *testing.T) {
 	var err error
+	Ed := core.Ed.(*Editor)
 	v := Ed.NewView()
 	v.SetBounds(5, 5, 140, 30)
-	err = Ed.Open("test_data/file1.txt", v, "")
+	err = Ed.Open("../test_data/file1.txt", v, "")
 	assert.Nil(t, err, "open")
 	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
 
 	s := NewSelection(1, 1, 1, 1)
-	assert.Equal(t, Ed.RunesToString(s.Text(v)), "1")
+	assert.Equal(t, core.RunesToString(s.Text(v)), "1")
 	s = NewSelection(3, 2, 4, 8)
 	v.Selections = append(v.Selections, *s)
 	assert.Equal(t, s.String(), "(3,2)-(4,8)", "string")
@@ -126,17 +129,17 @@ func TestViewSelections(t *testing.T) {
 	cb, _ := clipboard.ReadAll()
 	assert.Equal(t, cb, "bcdefghijklmnopqrstuvwxyz\nABCDEFGH", "copy")
 	s = v.PathSelection(1, 3)
-	assert.Equal(t, Ed.RunesToString(s.Text(v)), "1234567890", "path2")
+	assert.Equal(t, core.RunesToString(s.Text(v)), "1234567890", "path2")
 	s = v.PathSelection(11, 1)
-	assert.Equal(t, Ed.RunesToString(s.Text(v)), "aaa", "ps1")
+	assert.Equal(t, core.RunesToString(s.Text(v)), "aaa", "ps1")
 	s = v.PathSelection(11, 6)
-	assert.Equal(t, Ed.RunesToString(s.Text(v)), "aaa.go", "ps2")
+	assert.Equal(t, core.RunesToString(s.Text(v)), "aaa.go", "ps2")
 	s = v.PathSelection(11, 22)
-	assert.Equal(t, Ed.RunesToString(s.Text(v)), "/tmp/aaa.go", "ps3")
+	assert.Equal(t, core.RunesToString(s.Text(v)), "/tmp/aaa.go", "ps3")
 	s = v.PathSelection(11, 27)
-	assert.Equal(t, Ed.RunesToString(s.Text(v)), "aaa.go:23", "ps4")
+	assert.Equal(t, core.RunesToString(s.Text(v)), "aaa.go:23", "ps4")
 	s = v.PathSelection(11, 39)
-	assert.Equal(t, Ed.RunesToString(s.Text(v)), "/tmp/aaa.go:23:7", "ps5")
+	assert.Equal(t, core.RunesToString(s.Text(v)), "/tmp/aaa.go:23:7", "ps5")
 	loc, ln, col := s.ToLoc(v)
 	assert.Equal(t, loc, "/tmp/aaa.go", "loc")
 	assert.Equal(t, ln, 23, "ln")
@@ -145,9 +148,10 @@ func TestViewSelections(t *testing.T) {
 
 func TestViewEdition(t *testing.T) {
 	var err error
+	Ed := core.Ed.(*Editor)
 	v := Ed.NewView()
 	v.SetBounds(5, 5, 140, 30)
-	err = Ed.Open("test_data/empty.txt", v, "")
+	err = Ed.Open("../test_data/empty.txt", v, "")
 	assert.Nil(t, err, "open")
 	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
 
@@ -185,14 +189,15 @@ func TestViewEdition(t *testing.T) {
 }
 
 func testChar(t *testing.T, v *View, y, x int, c rune) {
+	Ed := core.Ed.(*Editor)
 	s := v.backend.Slice(y+1, x+1, y+1, x+1)
-	assert.Equal(t, s.text[0][0], c, "testchar slice "+string(c))
+	assert.Equal(t, (*s.Text())[0][0], c, "testchar slice "+string(c))
 	c2, _, _ := v.CursorChar(v.slice, x, y)
 	assert.Equal(t, *c2, c, "testchar cursorchar "+string(c))
 	// Test mock term matches after rendering
-	term := Ed.term.(*MockTerm)
+	term := Ed.term.(*core.MockTerm)
 	v.Render()
-	tc := term.charAt(x+v.x1+2, y+v.y1+2)
+	tc := term.CharAt(x+v.x1+2, y+v.y1+2)
 	assert.Equal(t, tc, c, fmt.Sprintf("term.charAt %s, x,y"+string(c), x, y))
 }
 
