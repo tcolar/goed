@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	backend "github.com/tcolar/goed/backend"
-	core "github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/backend"
+	"github.com/tcolar/goed/core"
 )
 
 type Editor struct {
@@ -19,7 +19,7 @@ type Editor struct {
 	Cols       []*Col
 	curView    *View
 	CurCol     *Col
-	CmdOn      bool
+	cmdOn      bool
 	pctw, pcth float64
 	evtState   *EvtState
 	term       core.Term
@@ -209,4 +209,12 @@ func (e Editor) CurView() core.Viewable {
 
 func (e Editor) SetCursor(x, y int) {
 	e.term.SetCursor(x, y)
+}
+
+func (e Editor) CmdOn() bool {
+	return e.cmdOn
+}
+
+func (e *Editor) SetCmdOn(v bool) {
+	e.cmdOn = v
 }

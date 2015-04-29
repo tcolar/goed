@@ -32,12 +32,12 @@ func (e *Editor) EventLoop() {
 					return // the end
 				}
 			case termbox.KeyEsc:
-				if !e.CmdOn {
+				if !e.cmdOn {
 					e.Cmdbar.Cmd = []rune{}
 				}
-				e.CmdOn = !e.CmdOn
+				e.cmdOn = !e.cmdOn
 			default:
-				if e.CmdOn {
+				if e.cmdOn {
 					e.Cmdbar.Event(e, &ev)
 				} else if e.CurView != nil {
 					e.curView.Event(e, &ev)
@@ -75,7 +75,7 @@ func (m *Cmdbar) Event(e *Editor, ev *termbox.Event) {
 	case termbox.EventMouse:
 		switch ev.Key {
 		case termbox.MouseLeft:
-			e.CmdOn = true
+			e.cmdOn = true
 		}
 	}
 }
@@ -253,7 +253,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				e.evtState.DragX2, e.evtState.DragY2 = 0, 0
 				v.ClearSelections()
 			}
-			e.CmdOn = false
+			e.cmdOn = false
 			e.ActivateView(v, ev.MouseX-v.x1-2+v.offx, ev.MouseY-v.y1-2+v.offy)
 			e.SetStatus(fmt.Sprintf("[%d]%s", v.Id, v.WorkDir()))
 		}

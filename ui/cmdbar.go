@@ -20,11 +20,11 @@ type Cmdbar struct {
 }
 
 func (c *Cmdbar) Render() {
-	ed := core.Ed.(*Editor)
+	ed := core.Ed
 	t := ed.Theme()
 	ed.TermFB(t.Cmdbar.Fg, t.Cmdbar.Bg)
 	ed.TermFill(t.Cmdbar.Rune, c.x1, c.y1, c.x2, c.y2)
-	if ed.CmdOn {
+	if ed.CmdOn() {
 		ed.TermFB(t.CmdbarTextOn, t.Cmdbar.Bg)
 		ed.TermStr(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
 	} else {
@@ -78,7 +78,7 @@ func (c *Cmdbar) RunCmd() {
 		ed.SetStatusErr("Unexpected command " + parts[0])
 	}
 	if err == nil {
-		ed.CmdOn = false
+		ed.cmdOn = false
 	} else {
 		ed.SetStatus(err.Error())
 	}
