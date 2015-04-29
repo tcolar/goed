@@ -8,6 +8,12 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+const (
+	Plain uint16 = iota + (1 << 8)
+	Bold
+	Underlined
+)
+
 type Theme struct {
 	Bg       Style // default to term bg
 	Fg       Style // default to term fg
