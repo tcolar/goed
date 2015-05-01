@@ -46,7 +46,7 @@ func (e *Editor) Start(loc string) {
 	defer e.term.Close()
 	e.term.SetExtendedColors(core.Colors == 256)
 	e.evtState = &EvtState{}
-	e.theme, err = core.ReadTheme("themes/default.toml")
+	e.theme, err = core.ReadDefaultTheme()
 	if err != nil {
 		panic(err)
 	}

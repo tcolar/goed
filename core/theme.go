@@ -1,6 +1,9 @@
 package core
 
 import (
+	"io/ioutil"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -48,46 +51,26 @@ type Theme struct {
 	Close            StyledRune
 }
 
-func ReadTheme(path string) (*Theme, error) {
-	theme := defaultTheme()
-	if _, err := toml.DecodeFile(path, &theme); err != nil {
-		return nil, err
+func ReadDefaultTheme() (*Theme, error) {
+	dir := path.Join(Home, "themes")
+	loc := path.Join(dir, "default.toml")
+	// If the theme does not exist yet(first start ?), create it
+	if _, err := os.Stat(loc); os.IsNotExist(err) {
+		os.MkdirAll(dir, 0755)
+		err := ioutil.WriteFile(loc, []byte(defaultTheme), 0755)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return theme, nil
+	return ReadTheme(loc)
 }
 
-func defaultTheme() *Theme {
-	fg := Style{0x0001}
-	bg := Style{0x0000}
-	return &Theme{
-		Bg:               bg,
-		Fg:               fg,
-		BgSelect:         fg,
-		FgSelect:         bg,
-		BgCursor:         fg,
-		FgCursor:         bg,
-		Comment:          fg,
-		String:           fg,
-		Keyword:          fg,
-		StatusbarText:    fg,
-		StatusbarTextErr: Style{0x0101},
-		CmdbarText:       fg,
-		CmdbarTextOn:     Style{0x0101},
-		ViewbarText:      fg,
-		FileClean:        StyledRune{'✔', fg, bg},
-		FileDirty:        StyledRune{'✗', fg, bg},
-		Scrollbar:        StyledRune{'░', fg, bg},
-		ScrollTab:        StyledRune{'▒', fg, bg},
-		Statusbar:        StyledRune{'❊', fg, bg},
-		Cmdbar:           StyledRune{'❊', fg, bg},
-		Viewbar:          StyledRune{'–', fg, bg},
-		MoreTextSide:     StyledRune{'…', fg, bg},
-		MoreTextUp:       StyledRune{'⇡', fg, bg},
-		MoreTextDown:     StyledRune{'⇣', fg, bg},
-		TabChar:          StyledRune{'⇨', fg, bg},
-		Margin:           StyledRune{'|', fg, bg},
-		Close:            StyledRune{'✕', fg, bg},
+func ReadTheme(loc string) (*Theme, error) {
+	var theme Theme
+	if _, err := toml.DecodeFile(loc, &theme); err != nil {
+		return nil, err
 	}
+	return &theme, nil
 }
 
 // The format of a style as stored in a file is 4 bytes, HexaDecimal as follows:
@@ -146,3 +129,32 @@ func (s *StyledRune) UnmarshalText(text []byte) error {
 	s.Bg = st
 	return nil
 }
+
+var defaultTheme = `
+Bg="EA000000"
+Fg="DF030F01"
+BgSelect="DF030F00"
+FgSelect="EA000001"
+BgCursor="21060F00"
+FgCursor="EA000001"
+Comment="F2070F00"
+String="28020F00"
+Keyword="C4010F01"
+Statusbar = "❊,EB070000,EB000000"
+StatusbarText = "BD660000"
+StatusbarTextErr = "01C50001"
+Cmdbar = "❊,EB070000,EB000000"
+CmdbarText = "BD030000"
+CmdbarTextOn = "BF660001"
+Viewbar = "–,ED070000,ED000000"
+ViewbarText = "E7020000"
+FileClean = "✔,1C020000,E9000000"
+FileDirty = "✗,A0010001,E9000000"
+Scrollbar = "░,66060000,66000000"
+ScrollTab = "▒,64060000,64000000"
+MoreTextSide = "…,1F040000,EA000000"
+MoreTextUp = "⇡,1F040000,EA000000"
+MoreTextDown = "⇣,1F040000,EA000000"
+TabChar = "⇨,EF000000,EA080000"
+Margin = "|,EF000000,EA080000"
+Close = "✕,33060000,EC080000"`
