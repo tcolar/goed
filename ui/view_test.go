@@ -20,7 +20,6 @@ func TestView(t *testing.T) {
 	assert.Nil(t, err, "open")
 
 	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
-	fmt.Printf("%v \n", v.slice.Text())
 
 	assertCursor(t, v, 0, 0, 0, 0, "mc")
 	assert.True(t, strings.HasSuffix(v.backend.SrcLoc(), "/test_data/file1.txt"), fmt.Sprintf("srcloc %s", v.backend.SrcLoc()))
