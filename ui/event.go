@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 
+	"github.com/tcolar/goed/core"
 	"github.com/tcolar/termbox-go"
 )
 
@@ -173,6 +174,11 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			return
 		case termbox.KeyCtrlR:
 			v.Reload()
+		case termbox.KeyCtrlF:
+			if len(v.Selections) > 0 {
+				text := core.RunesToString(v.Selections[0].Text(v))
+				e.Cmdbar.Search(text)
+			}
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo

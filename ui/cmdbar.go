@@ -69,7 +69,11 @@ func (c *Cmdbar) RunCmd() {
 	case ":", "line":
 		c.line(args)
 	case "/", "search":
-		c.search(args)
+		if len(c.Cmd) < 2 {
+			break
+		}
+		query := string(c.Cmd[2:])
+		c.Search(query)
 	case "y", "yank": // as vi copy
 		err = c.yank(args)
 	case "yy":
@@ -215,7 +219,8 @@ func (c *Cmdbar) line(args []string) {
 	}
 }
 
-func (c *Cmdbar) search(args []string) {
+func (c *Cmdbar) Search(query string) {
+	c.exec([]string{"grep", "-rn", query})
 }
 
 func (c *Cmdbar) newCol(args []string) {

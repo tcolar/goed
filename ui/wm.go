@@ -255,6 +255,7 @@ func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	return c
 }
 
+// TODO: Not all that smart yet
 func (e *Editor) AddViewSmart() *View {
 	var nv *View
 	var emptiestCol *Col
