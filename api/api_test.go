@@ -69,6 +69,10 @@ func TestApiGets(t *testing.T) {
 	body, err = get("/v1/view/1/selections")
 	assert.Nil(t, err)
 	assert.Equal(t, body, "1 1 2 10\n3 3 5 5\n")
+
+	body, err = get("/v1/view/1/line_count")
+	assert.Nil(t, err)
+	assert.Equal(t, body, "12")
 }
 
 func get(url string) (string, error) {
