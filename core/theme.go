@@ -98,6 +98,9 @@ func (s Style) WithAttr(attr uint16) Style {
 
 func (s *Style) UnmarshalText(text []byte) error {
 	parsed, err := strconv.ParseUint(string(text), 16, 32)
+	if err != nil {
+		return err
+	}
 	var val = uint16(parsed & 0x3)
 	val = val << 8
 	switch Colors {
@@ -109,7 +112,7 @@ func (s *Style) UnmarshalText(text []byte) error {
 		val = val | uint16((parsed&0x0F00)>>8)
 	}
 	s.uint16 = val
-	return err
+	return nil
 }
 
 type StyledRune struct {

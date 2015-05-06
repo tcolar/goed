@@ -1,7 +1,9 @@
 package core
 
+const Version = "0.0.1"
+const ApiVersion = "v1"
+
+var Ed Editable // Editor singleton
 var Colors int
-var Version = "0.0.1"
-var Ed Editable
 var Home string
 var Testing bool

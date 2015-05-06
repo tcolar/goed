@@ -5,12 +5,6 @@ import (
 	"github.com/tcolar/termbox-go"
 )
 
-const (
-	Plain uint16 = iota + (1 << 8)
-	Bold
-	Underlined
-)
-
 type Col struct {
 	WidthRatio float64
 	Views      []*View

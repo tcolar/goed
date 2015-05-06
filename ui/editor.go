@@ -32,7 +32,7 @@ func NewEditor() *Editor {
 }
 
 // Edior with Mock terminal for testing
-func newMockEditor() *Editor {
+func NewMockEditor() *Editor {
 	return &Editor{
 		term: core.NewMockTerm(),
 	}

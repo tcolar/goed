@@ -9,32 +9,13 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-// Selection : 1 indexed
-type Selection struct {
-	LineFrom, ColFrom int // selection start point
-	LineTo, ColTo     int // selection end point (colto=-1 means whole lines)
-}
-
-func NewSelection(l1, c1, l2, c2 int) *Selection {
-	return &Selection{
-		LineFrom: l1,
-		ColFrom:  c1,
-		LineTo:   l2,
-		ColTo:    c2,
-	}
-}
-
 func (v *View) ClearSelections() {
-	v.Selections = []Selection{}
-}
-
-func (s Selection) String() string {
-	return fmt.Sprintf("(%d,%d)-(%d,%d)", s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
+	v.selections = []core.Selection{}
 }
 
 // Text returns the text contained in the selection of the given view
 // Note: **NOT** a rectangle but from pt1 to pt2
-func (s Selection) Text(v *View) [][]rune {
+func (v *View) SelectionText(s *core.Selection) [][]rune {
 	cf := s.ColFrom
 	ct := s.ColTo
 	lt := s.LineTo
@@ -55,8 +36,8 @@ func (s Selection) Text(v *View) [][]rune {
 
 // Selected returns whether the text at line, col is current selected
 // also returns the matching selection, if any.
-func (v *View) Selected(col, line int) (bool, *Selection) {
-	for _, s := range v.Selections {
+func (v *View) Selected(col, line int) (bool, *core.Selection) {
+	for _, s := range v.selections {
 		if line < s.LineFrom || line > s.LineTo {
 			continue
 		} else if line > s.LineFrom && line < s.LineTo {
@@ -72,13 +53,13 @@ func (v *View) Selected(col, line int) (bool, *Selection) {
 	return false, nil
 }
 
-func (s Selection) Copy(v *View) {
-	t := s.Text(v)
+func (v *View) SelectionCopy(s *core.Selection) {
+	t := v.SelectionText(s)
 	core.Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
 	clipboard.WriteAll(core.RunesToString(t))
 }
 
-func (s Selection) Delete(v *View) {
+func (v *View) SelectionDelete(s *core.Selection) {
 	v.Delete(s.LineFrom-1, s.ColFrom-1, s.LineTo-1, s.ColTo-1)
 }
 
@@ -96,7 +77,7 @@ var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?
 
 // Try to select a "location" from the given position
 // a location is a path with possibly a line number and maybe a column number as well
-func (v *View) PathSelection(line, col int) *Selection {
+func (v *View) PathSelection(line, col int) *core.Selection {
 	l := v.Line(v.slice, line-1)
 	ln := string(l)
 	slice := core.NewSlice(1, 1, 1, len(l)+1, [][]rune{l})
@@ -115,12 +96,12 @@ func (v *View) PathSelection(line, col int) *Selection {
 		return nil
 	}
 	// TODO: if a path like a go import, try to find that path up from curdir ?
-	return NewSelection(line, best[0]+1, line, best[1])
+	return core.NewSelection(line, best[0]+1, line, best[1])
 }
 
 // Parses a selection into a location (file, line, col)
-func (sel Selection) ToLoc(v *View) (loc string, line, col int) {
-	sub := locationRegexp.FindAllStringSubmatch(core.RunesToString(sel.Text(v)), 1)
+func (v *View) SelectionToLoc(sel *core.Selection) (loc string, line, col int) {
+	sub := locationRegexp.FindAllStringSubmatch(core.RunesToString(v.SelectionText(sel)), 1)
 	if len(sub) == 0 {
 		return
 	}

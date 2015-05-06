@@ -13,16 +13,16 @@ func (v *View) Save() {
 		e.SetStatusErr("Saving Failed " + err.Error())
 		return
 	}
-	v.Dirty = false
+	v.SetDirty(false)
 	e.SetStatus("Saved " + v.backend.SrcLoc())
 }
 
 func (v *View) InsertCur(s string) {
 	_, x, y := v.CurChar()
-	if len(v.Selections) > 0 {
-		s := v.Selections[0]
+	if len(v.selections) > 0 {
+		s := v.selections[0]
 		v.MoveCursorRoll(s.ColFrom-x-1, s.LineFrom-y-1)
-		s.Delete(v)
+		v.SelectionDelete(&s)
 		v.ClearSelections()
 	}
 	_, x, y = v.CurChar()
@@ -79,10 +79,10 @@ func (v *View) Delete(row1, col1, row2, col2 int) {
 // DeleteCur removes a selection or the curent character
 func (v *View) DeleteCur() {
 	c, x, y := v.CurChar()
-	if len(v.Selections) > 0 {
-		s := v.Selections[0]
+	if len(v.selections) > 0 {
+		s := v.selections[0]
 		v.MoveCursorRoll(s.ColFrom-x-1, s.LineFrom-y-1)
-		s.Delete(v)
+		v.SelectionDelete(&s)
 		v.ClearSelections()
 		return
 	}
@@ -96,7 +96,7 @@ func (v *View) Backspace() {
 	if v.CursorY == 0 && v.CursorX == 0 {
 		return
 	}
-	if len(v.Selections) == 0 {
+	if len(v.selections) == 0 {
 		v.MoveCursorRoll(-1, 0)
 	}
 	v.DeleteCur()

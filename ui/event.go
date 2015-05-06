@@ -158,13 +158,13 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.KeyCtrlW:
 			e.DelViewCheck(e.curView)
 		case termbox.KeyCtrlC:
-			if len(v.Selections) > 0 {
-				v.Selections[0].Copy(v)
+			if len(v.selections) > 0 {
+				v.SelectionCopy(&v.selections[0])
 			}
 		case termbox.KeyCtrlX:
-			if len(v.Selections) > 0 {
-				v.Selections[0].Copy(v)
-				v.Selections[0].Delete(v)
+			if len(v.selections) > 0 {
+				v.SelectionCopy(&v.selections[0])
+				v.SelectionDelete(&v.selections[0])
 				v.ClearSelections()
 			}
 		case termbox.KeyCtrlV:
@@ -175,8 +175,8 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.KeyCtrlR:
 			v.Reload()
 		case termbox.KeyCtrlF:
-			if len(v.Selections) > 0 {
-				text := core.RunesToString(v.Selections[0].Text(v))
+			if len(v.selections) > 0 {
+				text := core.RunesToString(v.SelectionText(&v.selections[0]))
 				e.Cmdbar.Search(text)
 			}
 		default:
@@ -234,7 +234,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 					x1--
 				}
 
-				s := Selection{
+				s := core.Selection{
 					LineFrom: y1 + 1,
 					LineTo:   y2 + 1,
 					ColFrom:  v.lineRunesTo(v.slice, y1, x1) + 1,
@@ -249,7 +249,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				}
 				// Because we only receive the event after a "move", we need to add the start location
 				// set the selection
-				v.Selections = []Selection{
+				v.selections = []core.Selection{
 					s,
 				}
 				return
@@ -265,6 +265,6 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		}
 	}
 	if dirty {
-		v.Dirty = true
+		v.SetDirty(true)
 	}
 }

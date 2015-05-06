@@ -14,13 +14,13 @@ var id int = 0
 type View struct {
 	Widget
 	id               int
-	Dirty            bool
+	dirty            bool
 	backend          core.Backend
 	workDir          string
 	CursorX, CursorY int // realtive position of cursor in view (0 index)
 	offx, offy       int // absolute view offset (scrolled down/right) (0 index)
 	HeightRatio      float64
-	Selections       []Selection
+	selections       []core.Selection
 	title            string
 	lastCloseTs      time.Time   // Timestamp of previous view close request
 	slice            *core.Slice // curSlice
@@ -38,7 +38,7 @@ func (v *View) Render() {
 	e.TermFill(t.Viewbar.Rune, v.x1+1, v.y1, v.x2, v.y1)
 	fg := t.ViewbarText
 	if v.Id() == e.CurView().Id() {
-		fg = fg.WithAttr(Bold)
+		fg = fg.WithAttr(core.Bold)
 	}
 	e.TermFB(fg, t.Viewbar.Bg)
 	ti := v.Title()
@@ -78,7 +78,7 @@ func (v *View) RenderIsDirty() {
 	e := core.Ed
 	t := e.Theme()
 	style := t.FileClean
-	if v.Dirty {
+	if v.Dirty() {
 		style = t.FileDirty
 	}
 	e.TermFB(style.Fg, style.Bg)
@@ -305,7 +305,7 @@ func (v *View) CurCol() int {
 // that is true if the view is not dirty
 // otherwise, if dirty, returns true if we get 2 lose request in a short timespan
 func (v *View) canClose() bool {
-	if !v.Dirty {
+	if !v.Dirty() {
 		return true
 	}
 	if v.lastCloseTs.IsZero() || time.Now().Sub(v.lastCloseTs) > 10*time.Second {
@@ -318,6 +318,14 @@ func (v *View) canClose() bool {
 
 func (v *View) setCursor(x, y int) {
 	core.Ed.SetCursor(x, y)
+}
+
+func (v *View) Backend() core.Backend {
+	return v.backend
+}
+
+func (v *View) Dirty() bool {
+	return v.dirty
 }
 
 func (v *View) SetWorkDir(dir string) {
@@ -333,11 +341,15 @@ func (v *View) SetTitle(title string) {
 }
 
 func (v *View) SetDirty(dirty bool) {
-	v.Dirty = dirty
+	v.dirty = dirty
 }
 
 func (v *View) SetBackend(b core.Backend) {
 	v.backend = b
+}
+
+func (v *View) Selections() *[]core.Selection {
+	return &v.selections
 }
 
 func (v *View) Id() int {

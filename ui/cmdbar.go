@@ -97,7 +97,7 @@ func (c *Cmdbar) paste(args []string) {
 	x, y := v.CurCol(), v.CurLine()
 	v.Insert(y, x, "\n")
 	v.MoveCursorRoll(-x, l-y)
-	v.Dirty = true
+	v.SetDirty(true)
 }
 
 func (c *Cmdbar) yank(args []string) error {
@@ -111,11 +111,12 @@ func (c *Cmdbar) yank(args []string) error {
 		return fmt.Errorf("Expected a numericargument")
 	}
 	nb--
-	Selection{
+	s := &core.Selection{
 		LineFrom: v.CurLine(),
 		LineTo:   v.CurLine() + nb,
 		ColTo:    -1,
-	}.Copy(ed.curView)
+	}
+	ed.curView.SelectionCopy(s)
 	return nil
 }
 
@@ -130,7 +131,7 @@ func (c *Cmdbar) open(args []string) error {
 	if err != nil {
 		return err
 	}
-	if ed.curView.Dirty {
+	if ed.curView.Dirty() {
 		ed.InsertViewSmart(v)
 	} else {
 		ed.ReplaceView(ed.curView, v)
@@ -144,16 +145,16 @@ func (c *Cmdbar) open(args []string) error {
 // replace content of v
 func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 	ed := core.Ed.(*Editor)
-	newView = newView || v.Dirty
-	if len(v.Selections) == 0 {
+	newView = newView || v.Dirty()
+	if len(v.selections) == 0 {
 		selection := v.PathSelection(v.CurLine()+1, v.CurCol()+1)
 		if selection == nil {
 			ed.SetStatusErr("Could not expand location from cursor location.")
 			return
 		}
-		v.Selections = []Selection{*selection}
+		v.selections = []core.Selection{*selection}
 	}
-	loc, line, col := v.Selections[0].ToLoc(v)
+	loc, line, col := v.SelectionToLoc(&v.selections[0])
 	isDir := false
 	loc, isDir = c.lookupLocation(v.WorkDir(), loc)
 	v2 := ed.ViewByLoc(loc)
