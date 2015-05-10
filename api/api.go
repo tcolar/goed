@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 
@@ -13,6 +14,7 @@ import (
 type Api struct {
 }
 
+// Note: port "0" means pick an available one.
 func (a *Api) Start(port int) {
 	m := pat.New()
 
@@ -22,10 +24,22 @@ func (a *Api) Start(port int) {
 
 	// only listen to local connections
 	http.Handle("/", m)
-	err := http.ListenAndServe(fmt.Sprintf("localhost:%d", port), nil)
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		panic(err)
 	}
+	_, p, err := net.SplitHostPort(ln.Addr().String())
+	if err != nil {
+		panic(err)
+	}
+	core.ApiPort, _ = strconv.Atoi(p)
+	server := &http.Server{Addr: ln.Addr().String()}
+	go func() {
+		err = server.Serve(ln)
+		if err != nil {
+			panic(err)
+		}
+	}()
 }
 
 // GET /api_version returns the server API version
@@ -36,7 +50,7 @@ func (a *Api) ApiVersion(w http.ResponseWriter, r *http.Request) {
 func (a *Api) handleV1(m *pat.PatternServeMux) {
 
 	m.Get("/v1/cur_view", http.HandlerFunc(a.CurView))
-	m.Put("/v1/cur_view/:id", http.HandlerFunc(a.TODO))
+	m.Put("/v1/cur_view/:id", http.HandlerFunc(a.CurViewPut))
 	m.Get("/v1/find_view/:identifier", http.HandlerFunc(a.TODO))
 	// open file ?? inject content ?? file based ? memory based ?
 	m.Post("/v1/new_view", http.HandlerFunc(a.TODO))
@@ -78,6 +92,15 @@ func (a *Api) CurView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, "%d", core.Ed.CurView().Id())
+}
+
+func (a *Api) CurViewPut(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get(":view"))
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	core.Ed.SetCurView(id)
 }
 
 // GET /v1/view/<viewid>/dirty returns whether the given view is dirty(1) or not(0)

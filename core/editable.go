@@ -1,6 +1,7 @@
 package core
 
 type Editable interface {
+	Config() Config
 	CurView() Viewable
 	CmdOn() bool
 	ViewById(id int) Viewable
@@ -9,6 +10,7 @@ type Editable interface {
 	SetStatus(status string)
 	Open(loc string, view Viewable, title string) error
 	SetCursor(x, y int)
+	SetCurView(id int) error
 	SetCmdOn(v bool)
 	Start(loc string)
 	TermFB(fg, bg Style)

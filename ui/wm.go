@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/termbox-go"
 )
@@ -422,6 +424,15 @@ func (e *Editor) ActivateView(v *View, cursorx, cursory int) {
 	e.curView = v
 	e.CurCol = e.ViewColumn(v)
 	v.MoveCursor(cursorx-v.CurCol(), cursory-v.CurLine())
+}
+
+func (e *Editor) SetCurView(id int) error {
+	v := e.ViewById(id)
+	if v == nil {
+		return fmt.Errorf("No such view %d", id)
+	}
+	e.ActivateView(v.(*View), 0, 0)
+	return nil
 }
 
 func (e Editor) ViewById(id int) core.Viewable {
