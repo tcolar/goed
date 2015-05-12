@@ -13,6 +13,7 @@ import (
 
 type Editor struct {
 	Cmdbar     *Cmdbar
+	config     *core.Config
 	Statusbar  *Statusbar
 	Fg, Bg     core.Style
 	theme      *core.Theme
@@ -27,14 +28,16 @@ type Editor struct {
 
 func NewEditor() *Editor {
 	return &Editor{
-		term: core.NewTermBox(),
+		term:   core.NewTermBox(),
+		config: core.LoadConfig(core.ConfFile),
 	}
 }
 
 // Edior with Mock terminal for testing
 func NewMockEditor() *Editor {
 	return &Editor{
-		term: core.NewMockTerm(),
+		term:   core.NewMockTerm(),
+		config: core.LoadDefaultConfig(),
 	}
 }
 
@@ -46,7 +49,7 @@ func (e *Editor) Start(loc string) {
 	defer e.term.Close()
 	e.term.SetExtendedColors(core.Colors == 256)
 	e.evtState = &EvtState{}
-	e.theme, err = core.ReadDefaultTheme()
+	e.theme, err = core.ReadTheme(path.Join(core.Home, "themes", e.config.Theme))
 	if err != nil {
 		panic(err)
 	}
@@ -133,7 +136,7 @@ func (e *Editor) openDir(loc string, view core.Viewable) error {
 		return err
 	}
 	view.SetBackend(backend)
-	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id, view.WorkDir()))
+	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id(), view.WorkDir()))
 	view.SetDirty(false)
 	return nil
 }
@@ -144,7 +147,7 @@ func (e *Editor) openFile(loc string, view core.Viewable) error {
 		return err
 	}
 	view.SetBackend(backend)
-	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id, view.WorkDir))
+	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id(), view.WorkDir()))
 	view.SetDirty(false)
 	return nil
 }
@@ -193,10 +196,14 @@ func (e *Editor) NewView() *View {
 	return v
 }
 
-func (e *Editor) NewFileView(path string) *View {
+func (e Editor) NewFileView(path string) *View {
 	v := e.NewView()
 	e.Open(path, v, "")
 	return v
+}
+
+func (e Editor) Config() core.Config {
+	return *e.config
 }
 
 func (e Editor) Theme() *core.Theme {

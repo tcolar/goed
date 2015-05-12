@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
@@ -97,4 +98,6 @@ func InitHome() {
 	}
 	os.MkdirAll(Home, 0777)
 	os.MkdirAll(path.Join(Home, "buffers"), 0777)
+	// TODO : Update config if new version ??
+	ioutil.WriteFile(path.Join(Home, "Version.txt"), []byte(Version), 644)
 }
