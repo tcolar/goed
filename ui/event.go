@@ -261,7 +261,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			}
 			e.cmdOn = false
 			e.ActivateView(v, ev.MouseX-v.x1-2+v.offx, ev.MouseY-v.y1-2+v.offy)
-			e.SetStatus(fmt.Sprintf("[%d]%s", v.Id, v.WorkDir()))
+			e.SetStatus(fmt.Sprintf("[%d]%s", v.Id(), v.WorkDir()))
 		}
 	}
 	if dirty {

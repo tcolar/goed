@@ -32,7 +32,7 @@ func (s *Statusbar) RenderPos() {
 	t := e.Theme()
 	e.TermFB(t.StatusbarText, t.Statusbar.Bg)
 	v := e.CurView()
-	if v == nil /*|| v.backend == nil*/ {
+	if v == nil {
 		return
 	}
 	col, ln := v.CursorTextPos(v.Slice(), v.CurCol(), v.CurLine())
