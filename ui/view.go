@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/syntax"
 )
 
 const tabSize = 4
@@ -24,6 +25,7 @@ type View struct {
 	title            string
 	lastCloseTs      time.Time   // Timestamp of previous view close request
 	slice            *core.Slice // curSlice
+	highlights       syntax.Highlights
 }
 
 func (v *View) Reset() {
@@ -112,7 +114,10 @@ func (v *View) RenderText() {
 	}
 	// Note: using full lines
 	v.slice = v.backend.Slice(v.offy+1, 1, v.offy+v.LastViewLine()+1, -1)
-	for _, l := range *v.slice.Text() {
+	if e.Config().SyntaxHighlighting {
+		v.updateHighlights()
+	}
+	for lnc, l := range *v.slice.Text() {
 		x := v.x1 + 2
 		if v.offx >= len(l) {
 			y++
@@ -131,13 +136,13 @@ func (v *View) RenderText() {
 				start++
 			}
 			// if we went "past" offx it means there where some
-			// tabs leftover spaces taht we need to render
+			// tabs leftover spaces that we need to render
 			for i := v.offx; i != sz; i++ {
 				e.TermChar(x, y, ' ')
 				x++
 			}
 		}
-		for _, c := range l[start:] {
+		for colc, c := range l[start:] {
 			sx, sy := v.CursorTextPos(v.slice, v.offx+x-2-v.x1, v.offy+y-2-v.y1)
 			selected, _ := v.Selected(sx+1, sy+1)
 			if selected != inSelection {
@@ -155,6 +160,9 @@ func (v *View) RenderText() {
 				x += tabSize - 1
 				e.TermFB(fg, bg)
 			} else {
+				if e.Config().SyntaxHighlighting && !inSelection {
+					v.applyHighlight(lnc, start+colc)
+				}
 				e.TermChar(x, y, c)
 			}
 			x++
@@ -175,8 +183,49 @@ func (v *View) RenderText() {
 		// More text below
 		e.TermFB(t.MoreTextDown.Fg, t.MoreTextDown.Bg)
 		e.TermChar(v.x1+1, y, t.MoreTextDown.Rune)
-		e.TermFB(fg, bg)
+		e.TermFB(fg, t.Bg)
 	}
+}
+
+func (v *View) updateHighlights() {
+	ext := filepath.Ext(v.backend.SrcLoc())
+	if len(ext) > 0 {
+		v.highlights.Update(*v.slice.Text(), ext)
+	}
+}
+
+func (v *View) applyHighlight(ln, col int) {
+	style := v.highlights.StyleAt(ln, col)
+	e := core.Ed
+	t := e.Theme()
+	var s core.Style
+	switch style {
+	case syntax.StyleComment:
+		s = t.Comment
+	case syntax.StyleString:
+		s = t.String
+	case syntax.StyleKw1:
+		s = t.Keyword1
+	case syntax.StyleKw2:
+		s = t.Keyword2
+	case syntax.StyleKw3:
+		s = t.Keyword3
+	case syntax.StyleSep1:
+		s = t.Separator1
+	case syntax.StyleSep2:
+		s = t.Separator2
+	case syntax.StyleSep3:
+		s = t.Separator3
+	case syntax.StyleSymb1:
+		s = t.Symbol1
+	case syntax.StyleSymb2:
+		s = t.Symbol2
+	case syntax.StyleSymb3:
+		s = t.Symbol3
+	default:
+		s = t.Fg
+	}
+	e.TermFB(s, t.Bg)
 }
 
 func (v *View) LastViewLine() int {

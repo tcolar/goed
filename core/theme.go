@@ -24,13 +24,14 @@ type Theme struct {
 	FgSelect Style // default to term fg
 	BgCursor Style
 	FgCursor Style
-	Comment  Style
-	String   Style
-	Keyword  Style
-	// Numbers Style
-	// Custom1 Style
-	// Symbols := = etc ...
-	// brackets {[]}()
+
+	Comment                            Style
+	String                             Style
+	Number                             Style
+	Keyword1, Keyword2, Keyword3       Style
+	Symbol1, Symbol2, Symbol3          Style
+	Separator1, Separator2, Separator3 Style
+
 	FileClean        StyledRune
 	FileDirty        StyledRune
 	Scrollbar        StyledRune
@@ -140,9 +141,17 @@ BgSelect="DF030F00"
 FgSelect="EA000001"
 BgCursor="21060F00"
 FgCursor="EA000001"
-Comment="F2070F00"
-String="28020F00"
-Keyword="C4010F01"
+Comment="F7070F00"
+String="49060F00"
+Keyword1="21030F01"
+Keyword2="6F030F01"
+Keyword3="69030F01"
+Separator1="40050F00"
+Separator2="95050F00"
+Separator3="E2050F00"
+Symbol1="CC040F01"
+Symbol2="8D040F01"
+Symbol3="D1040F01"
 Statusbar = "❊,EB070000,EB000000"
 StatusbarText = "BD660000"
 StatusbarTextErr = "01C50001"
