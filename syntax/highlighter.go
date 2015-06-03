@@ -1,6 +1,10 @@
 package syntax
 
-import "unicode"
+import (
+	"path/filepath"
+	"strings"
+	"unicode"
+)
 
 type Highlight struct {
 	Style          StyleId
@@ -21,13 +25,18 @@ type Highlights struct {
 }
 
 // Update updates the highlights for the given text (current slice)
-func (h *Highlights) Update(text [][]rune, fileExt string) {
+func (h *Highlights) Update(text [][]rune, file string) {
 	h.ln = 0
 	h.col = 0
 	h.curLn = 0
 	h.curIndex = 0
-	syntax, found := Syntaxes[fileExt]
+	ext := strings.ToLower(filepath.Ext(file))
+	base := strings.ToLower(filepath.Base(file))
 	h.Lines = make([][]Highlight, len(text))
+	syntax, found := Syntaxes[ext]
+	if !found {
+		syntax, found = Syntaxes[base]
+	}
 	if !found {
 		return
 	}
@@ -172,6 +181,14 @@ func (h *Highlights) consumePatterns(patterns []SyntaxPattern, text [][]rune) bo
 // consumes normal items (exact matches)
 func (h *Highlights) consume(items SyntaxItems, text [][]rune, isKw bool) bool {
 	for _, si := range items {
+		if isKw && h.col > 0 {
+			// check keyword is not part of longer "word" in which case it
+			// should not be highlighted (ie: "go" in "pogo")
+			r := text[h.ln][h.col-1]
+			if r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r) {
+				continue
+			}
+		}
 		if h.peek(si.Text, text) {
 			matchLen := len(si.Text)
 			if isKw && h.col+matchLen < len(text[h.ln]) {

@@ -188,9 +188,9 @@ func (v *View) RenderText() {
 }
 
 func (v *View) updateHighlights() {
-	ext := filepath.Ext(v.backend.SrcLoc())
-	if len(ext) > 0 {
-		v.highlights.Update(*v.slice.Text(), ext)
+	file := v.backend.SrcLoc()
+	if len(file) > 0 {
+		v.highlights.Update(*v.slice.Text(), file)
 	}
 }
 

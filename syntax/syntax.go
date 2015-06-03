@@ -13,6 +13,7 @@ func init() {
 	initSyntax(&SyntaxCSharp)
 	initSyntax(&SyntaxCss)
 	initSyntax(&SyntaxGo)
+	initSyntax(&SyntaxMake)
 	initSyntax(&SyntaxMarkdown)
 }
 
@@ -104,6 +105,9 @@ func initSyntax(s *syntax) {
 	for _, ext := range s.Extensions {
 		Syntaxes[ext] = syntax
 	}
+	for _, nm := range s.FileNames {
+		Syntaxes[nm] = syntax
+	}
 }
 
 type Syntax struct {
@@ -113,7 +117,7 @@ type Syntax struct {
 }
 
 type syntax struct {
-	// TODO: Filenames (ie: Makefile") ?
+	FileNames                             []string
 	Extensions                            []string
 	Patterns                              []SyntaxPattern
 	Keywords1, Keywords2, Keywords3       []string
