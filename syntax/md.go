@@ -1,6 +1,6 @@
 package syntax
 
-var syntaxMarkdown = syntax{
+var SyntaxMarkdown = syntax{
 	Extensions: []string{".md"},
 	Patterns: []SyntaxPattern{
 		NewSyntaxPattern("```", "```", "", true, StyleKw2).WithMSL(), //Code

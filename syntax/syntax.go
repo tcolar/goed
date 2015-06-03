@@ -6,8 +6,14 @@ var Syntaxes map[string]Syntax
 
 func init() {
 	Syntaxes = map[string]Syntax{}
-	initSyntax(&syntaxGo)
-	initSyntax(&syntaxMarkdown)
+	initSyntax(&SyntaxActionScript)
+	initSyntax(&SyntaxAxon)
+	initSyntax(&SyntaxBat)
+	initSyntax(&SyntaxCpp)
+	initSyntax(&SyntaxCSharp)
+	initSyntax(&SyntaxCss)
+	initSyntax(&SyntaxGo)
+	initSyntax(&SyntaxMarkdown)
 }
 
 const (
@@ -25,6 +31,9 @@ const (
 	StyleSep2
 	StyleSep3
 )
+
+// TODO: Makefile, shell(sh, bash,zsh,rc), asm?, c, cpp, h, axon, fantom, sedona, php, perl,
+// python, sql?, js, java, ruby?, csharp, *ML
 
 type StyleId byte
 
@@ -104,12 +113,12 @@ type Syntax struct {
 }
 
 type syntax struct {
+	// TODO: Filenames (ie: Makefile") ?
 	Extensions                            []string
 	Patterns                              []SyntaxPattern
 	Keywords1, Keywords2, Keywords3       []string
 	Symbols1, Symbols2, Symbols3          []string
 	Separators1, Separators2, Separators3 []string
-	// TODO: Number patterns ??
 }
 
 type SyntaxPattern struct {

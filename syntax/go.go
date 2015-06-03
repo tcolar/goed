@@ -1,6 +1,6 @@
 package syntax
 
-var syntaxGo = syntax{
+var SyntaxGo = syntax{
 	Extensions: []string{".go"},
 	Patterns: []SyntaxPattern{
 		NewSyntaxPattern("`", "`", ``, true, StyleString),
@@ -19,14 +19,14 @@ var syntaxGo = syntax{
 	},
 	Symbols1: []string{ // ~ assignment
 		">>=", "<<=", "&^=", "++", "+=", "-=", "*=", "/=", "%=",
-		"|=", "&=", "^=", "--", ":=", "=",
+		"|=", "&=", "^=", "--", ":=", "=", "<-",
 	},
 	Symbols2: []string{ // ~ comparators
-		">=", "<=", "&&", "||", ">=", "<=", "!=", "==", ">", "<", "!",
+		"&&", "||", ">=", "<=", "!=", "==", ">", "<", "!",
 	},
 	Symbols3: []string{ // others
 		"+", "-", "*", "/", "%", "|", "&", "^", "<<", ">>", "&^",
-		"...", "<-", "->",
+		"...",
 	},
 	Separators1: []string{
 		"(", ")", "[", "]", "{", "}",
