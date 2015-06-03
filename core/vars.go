@@ -1,6 +1,6 @@
 package core
 
-const Version = "0.0.1"
+const Version = "0.0.2"
 const ApiVersion = "v1"
 
 var Ed Editable // Editor singleton
