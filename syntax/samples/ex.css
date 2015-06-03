@@ -1,0 +1,36 @@
+@media screen and (max-width: 300px) {
+    body {
+        background-color: lightblue;
+    }
+}
+
+#coolmenu{
+	border: 1px solid black;
+	border-bottom-width: 0;
+	width: 170px;
+	background-color: #E6E6E6;
+}
+
+* html #coolmenu{ /*IE only rule, to negate the padding below IE includes in menu width.*/
+	width: 164px;
+}
+
+#coolmenu a{
+	font: bold 13px Verdana;
+	padding: 2px;
+	padding-left: 4px;
+	display: block;
+	width: 100%;
+	color: black;
+	text-decoration: none;
+	border-bottom: 1px solid black;
+}
+
+html>body #coolmenu a{ /*Non IE rule*/
+	width: auto;
+}
+
+#coolmenu a:hover{
+	background-color: black;
+	color: white;
+}
