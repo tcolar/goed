@@ -1,0 +1,6 @@
+// Example find ahu records that have humidity over setpoint
+() => do
+    readAll(ahu)
+    .findAll( p => p.has("humidity") and p->humidity >  p->sp)
+end
+
