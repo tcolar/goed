@@ -15,6 +15,8 @@ func init() {
 	initSyntax(&SyntaxGo)
 	initSyntax(&SyntaxMake)
 	initSyntax(&SyntaxMarkdown)
+	initSyntax(&SyntaxShell)
+	// TODO: fantom, sedona, php, perl, python, sql?, js, java, ruby?, *ML
 }
 
 const (
@@ -32,9 +34,6 @@ const (
 	StyleSep2
 	StyleSep3
 )
-
-// TODO: Makefile, shell(sh, bash,zsh,rc), asm?, c, cpp, h, axon, fantom, sedona, php, perl,
-// python, sql?, js, java, ruby?, csharp, *ML
 
 type StyleId byte
 
