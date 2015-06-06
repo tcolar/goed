@@ -38,7 +38,7 @@ func (h *Highlights) Update(text [][]rune, file string) {
 		syntax, found = Syntaxes[base]
 	}
 	if !found {
-		return
+		syntax = Syntaxes["_"]
 	}
 	h.consumeLeftovers(syntax.Patterns, text)
 	for h.ln < len(text) {
