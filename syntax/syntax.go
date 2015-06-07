@@ -6,17 +6,23 @@ var Syntaxes map[string]Syntax
 
 func init() {
 	Syntaxes = map[string]Syntax{}
+	initSyntax(&SyntaxGeneric) // Default
 	initSyntax(&SyntaxActionScript)
 	initSyntax(&SyntaxAxon)
 	initSyntax(&SyntaxBat)
 	initSyntax(&SyntaxCpp)
 	initSyntax(&SyntaxCSharp)
 	initSyntax(&SyntaxCss)
+	initSyntax(&SyntaxFantom)
 	initSyntax(&SyntaxGo)
+	initSyntax(&SyntaxJava)
+	initSyntax(&SyntaxJs)
 	initSyntax(&SyntaxMake)
 	initSyntax(&SyntaxMarkdown)
+	initSyntax(&SyntaxPerl)
 	initSyntax(&SyntaxShell)
-	// TODO: fantom, sedona, php, perl, python, sql?, js, java, ruby?, *ML
+	initSyntax(&SyntaxToml)
+	// TODO: php?, python, sql?, ruby?, *ML
 }
 
 const (
