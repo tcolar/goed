@@ -15,14 +15,17 @@ func init() {
 	initSyntax(&SyntaxCss)
 	initSyntax(&SyntaxFantom)
 	initSyntax(&SyntaxGo)
+	initSyntax(&SyntaxMarkup)
 	initSyntax(&SyntaxJava)
 	initSyntax(&SyntaxJs)
 	initSyntax(&SyntaxMake)
 	initSyntax(&SyntaxMarkdown)
 	initSyntax(&SyntaxPerl)
+	initSyntax(&SyntaxPython)
 	initSyntax(&SyntaxShell)
+	initSyntax(&SyntaxSql)
 	initSyntax(&SyntaxToml)
-	// TODO: php?, python, sql?, ruby?, *ML
+	// TODO: ruby?, php?, objC ?
 }
 
 const (
