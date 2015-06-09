@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>The Hello World of Closure Templates</title>
+  <script type="text/javascript" src="{path to Closure Library}/base.js"></script>
+  <script type="text/javascript" src="soyutils_usegoog.js"></script>
+  <script type="text/javascript" src="simple.js"></script>
+</head>
+<body>
+  <div name="test" id="test" class="test"/>
+	<span value='foo'/>
+  </div>
+  <data-foo/>
+  <foo:bar/>
+  <script type="text/javascript">
+    // Exercise the .helloWorld template
+    document.write(examples.simple.helloWorld());
+  </script>
+</body>
+</html>

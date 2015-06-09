@@ -1,5 +1,7 @@
 import java.util.*;
 
+Map<string> foo = new Map<string>();
+
 /*
  * Dummy example
 */
