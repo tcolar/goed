@@ -21,11 +21,12 @@ func init() {
 	initSyntax(&SyntaxMake)
 	initSyntax(&SyntaxMarkdown)
 	initSyntax(&SyntaxPerl)
+	initSyntax(&SyntaxPhp)
 	initSyntax(&SyntaxPython)
+	initSyntax(&SyntaxRuby)
 	initSyntax(&SyntaxShell)
 	initSyntax(&SyntaxSql)
 	initSyntax(&SyntaxToml)
-	// TODO: ruby?, php?, objC ?
 }
 
 const (

@@ -5,9 +5,10 @@ var SyntaxPython = syntax{
 	Patterns: []SyntaxPattern{
 		NewSyntaxPattern("'''", "'''", `\`, true, StyleString), // ML string
 		NewSyntaxPattern(`"""`, `"""`, `\`, true, StyleString), // ML string
-		NewSyntaxPattern(`#`, ``, ``, false, StyleComment),     // ML comment
-		NewSyntaxPattern(`"`, `"`, `\`, false, StyleString),    // string
-		NewSyntaxPattern("'", "'", `\`, false, StyleString),    // string
+		NewSyntaxPattern(`#!`, ``, ``, false, StyleKw3),
+		NewSyntaxPattern(`#`, ``, ``, false, StyleComment),  // ML comment
+		NewSyntaxPattern(`"`, `"`, `\`, false, StyleString), // string
+		NewSyntaxPattern("'", "'", `\`, false, StyleString), // string
 	},
 	Keywords1: []string{
 		"None", "True", "False",
