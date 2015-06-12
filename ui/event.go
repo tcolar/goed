@@ -18,6 +18,9 @@ type EvtState struct {
 func (e *Editor) EventLoop() {
 
 	e.term.SetMouseMode(termbox.MouseMotion)
+	// Note: terminal might not support SGR mouse events, but trying anyway
+	e.term.SetMouseMode(termbox.MouseSgr)
+
 	e.term.SetInputMode(termbox.InputMouse)
 
 	for {
