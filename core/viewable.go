@@ -6,7 +6,7 @@ type Viewable interface {
 	CurLine() int
 	CursorTextPos(s *Slice, c, l int) (col, ln int)
 	Dirty() bool
-	Id() int
+	Id() int64
 	LineCount() int
 	MoveCursor(x, y int)
 	Render()

@@ -426,7 +426,7 @@ func (e *Editor) ActivateView(v *View, cursorx, cursory int) {
 	v.MoveCursor(cursorx-v.CurCol(), cursory-v.CurLine())
 }
 
-func (e *Editor) SetCurView(id int) error {
+func (e *Editor) SetCurView(id int64) error {
 	v := e.ViewById(id)
 	if v == nil {
 		return fmt.Errorf("No such view %d", id)
@@ -435,7 +435,7 @@ func (e *Editor) SetCurView(id int) error {
 	return nil
 }
 
-func (e Editor) ViewById(id int) core.Viewable {
+func (e Editor) ViewById(id int64) core.Viewable {
 	for _, c := range e.Cols {
 		for _, v := range c.Views {
 			if v.Id() == id {

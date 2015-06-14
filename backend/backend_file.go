@@ -16,7 +16,7 @@ type FileBackend struct {
 	srcLoc    string
 	bufferLoc string
 	file      core.Rwsc //ReaderWriterSeekerCloser
-	viewId    int
+	viewId    int64
 
 	bufferSize int64 // Internal buffer size for file ops
 
@@ -28,7 +28,7 @@ type FileBackend struct {
 }
 
 // File backend, the source is a file, the buffer is a copy of the file in the buffer dir.
-func NewFileBackend(loc string, viewId int) (*FileBackend, error) {
+func NewFileBackend(loc string, viewId int64) (*FileBackend, error) {
 	b := &FileBackend{
 		viewId:     viewId,
 		srcLoc:     loc,
@@ -249,7 +249,7 @@ func (f *FileBackend) Save(loc string) error {
 	return nil
 }
 
-func (f *FileBackend) ViewId() int {
+func (f *FileBackend) ViewId() int64 {
 	return f.viewId
 }
 

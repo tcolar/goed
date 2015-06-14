@@ -4,17 +4,16 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/syntax"
 )
 
 const tabSize = 4
 
-var id int = 0
-
 type View struct {
 	Widget
-	id               int
+	id               int64
 	dirty            bool
 	backend          core.Backend
 	workDir          string
@@ -26,6 +25,28 @@ type View struct {
 	lastCloseTs      time.Time   // Timestamp of previous view close request
 	slice            *core.Slice // curSlice
 	highlights       syntax.Highlights
+}
+
+func (e *Editor) NewView() *View {
+	d, _ := filepath.Abs(".")
+	v := &View{
+		id:          e.genViewId(),
+		HeightRatio: 0.5,
+		workDir:     d,
+		slice:       core.NewSlice(0, 0, 0, 0, [][]rune{}),
+	}
+	v.backend, _ = backend.NewMemBackend("", v.Id())
+	return v
+}
+
+func (e Editor) NewFileView(path string) *View {
+	v := e.NewView()
+	e.Open(path, v, "")
+	return v
+}
+
+func (e Editor) genViewId() int64 {
+	return time.Now().UnixNano()
 }
 
 func (v *View) Reset() {
@@ -401,7 +422,7 @@ func (v *View) Selections() *[]core.Selection {
 	return &v.selections
 }
 
-func (v *View) Id() int {
+func (v *View) Id() int64 {
 	return v.id
 }
 

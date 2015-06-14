@@ -4,13 +4,13 @@ type Editable interface {
 	Config() Config
 	CurView() Viewable
 	CmdOn() bool
-	ViewById(id int) Viewable
+	ViewById(id int64) Viewable
 	Render()
 	SetStatusErr(err string)
 	SetStatus(status string)
 	Open(loc string, view Viewable, title string) error
 	SetCursor(x, y int)
-	SetCurView(id int) error
+	SetCurView(id int64) error
 	SetCmdOn(v bool)
 	Start(loc string)
 	TermFB(fg, bg Style)

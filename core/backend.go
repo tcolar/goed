@@ -19,7 +19,7 @@ type Backend interface {
 
 	Close() error
 
-	ViewId() int
+	ViewId() int64
 
 	// Completely clears the buffer (empty)
 	Wipe()

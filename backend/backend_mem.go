@@ -12,10 +12,10 @@ import (
 type MemBackend struct {
 	text   [][]rune
 	file   string
-	viewId int
+	viewId int64
 }
 
-func NewMemBackend(path string, viewId int) (*MemBackend, error) {
+func NewMemBackend(path string, viewId int64) (*MemBackend, error) {
 	m := &MemBackend{
 		text:   [][]rune{[]rune{}},
 		file:   path,
@@ -205,7 +205,7 @@ func (b *MemBackend) Close() error {
 	return nil // Noop
 }
 
-func (b *MemBackend) ViewId() int {
+func (b *MemBackend) ViewId() int64 {
 	return b.viewId
 }
 

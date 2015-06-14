@@ -7,8 +7,8 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-var id = 9999
-var id2 = 9998
+var id int64 = 9999
+var id2 int64 = 9998
 
 func init() {
 	core.Testing = true
@@ -56,7 +56,7 @@ func TestMemBackend(t *testing.T) {
 }
 
 // test Backend API methods
-func testBackend(t *testing.T, b core.Backend, id int) {
+func testBackend(t *testing.T, b core.Backend, id int64) {
 	assert.Equal(t, b.LineCount(), 12, "lineCount")
 	assert.Equal(t, b.SrcLoc(), "../test_data/file1.txt", "srcLoc")
 

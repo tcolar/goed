@@ -95,7 +95,7 @@ func (a *Api) CurView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Api) CurViewPut(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get(":view"))
+	id, err := strconv.ParseInt(r.URL.Query().Get(":view"), 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -174,7 +174,7 @@ func (a *Api) WorkDir(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Api) view(r *http.Request) (core.Viewable, error) {
-	id, err := strconv.Atoi(r.URL.Query().Get(":view"))
+	id, err := strconv.ParseInt(r.URL.Query().Get(":view"), 10, 64)
 	if err != nil {
 		return nil, err
 	}

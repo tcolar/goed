@@ -9,8 +9,8 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-func BufferFile(id int) string {
-	return path.Join(core.Home, "buffers", strconv.Itoa(id))
+func BufferFile(id int64) string {
+	return path.Join(core.Home, "buffers", strconv.FormatInt(id, 10))
 }
 
 /*
@@ -36,7 +36,7 @@ func NewFileBackendCmd(args []string, dir string, viewId int, title *string) (*B
 
 // Cmd runner with In-memory based backend
 // if title == nil then will show the command name
-func NewMemBackendCmd(args []string, dir string, viewId int, title *string) (*BackendCmd, error) {
+func NewMemBackendCmd(args []string, dir string, viewId int64, title *string) (*BackendCmd, error) {
 	b, err := NewMemBackend("", viewId)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func NewMemBackendCmd(args []string, dir string, viewId int, title *string) (*Ba
 	return c, nil
 }
 
-func newBackendCmd(args []string, dir string, viewId int, title *string) (*BackendCmd, error) {
+func newBackendCmd(args []string, dir string, viewId int64, title *string) (*BackendCmd, error) {
 	c := &BackendCmd{
 		dir:    dir,
 		runner: exec.Command(args[0], args[1:]...),

@@ -183,25 +183,6 @@ func (e *Editor) QuitCheck() bool {
 	return ok
 }
 
-func (e *Editor) NewView() *View {
-	id++
-	d, _ := filepath.Abs(".")
-	v := &View{
-		id:          id,
-		HeightRatio: 0.5,
-		workDir:     d,
-		slice:       core.NewSlice(0, 0, 0, 0, [][]rune{}),
-	}
-	v.backend, _ = backend.NewMemBackend("", v.Id())
-	return v
-}
-
-func (e Editor) NewFileView(path string) *View {
-	v := e.NewView()
-	e.Open(path, v, "")
-	return v
-}
-
 func (e Editor) Config() core.Config {
 	return *e.config
 }
