@@ -200,8 +200,7 @@ func (f *FileBackend) Slice(row, col, row2, col2 int) *core.Slice {
 		err := f.seek(r, col)
 		if err != nil {
 			if err != io.EOF {
-				panic(err)
-			} else {
+				core.Ed.SetStatusErr(err.Error())
 				return slice
 			}
 		}
