@@ -6,7 +6,6 @@ import (
 	"path"
 	"runtime/debug"
 
-	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/ui"
 	"gopkg.in/alecthomas/kingpin.v1"
@@ -40,7 +39,7 @@ func main() {
 	core.InitHome()
 	core.ConfFile = *config
 	core.Ed = ui.NewEditor()
-	apiServer := api.Api{}
+	//apiServer := api.Api{}
 
 	defer func() {
 		if fail := recover(); fail != nil {
@@ -54,7 +53,7 @@ func main() {
 		}
 	}()
 
-	apiServer.Start(0)
-	fmt.Printf("API Port: %d \n", core.ApiPort)
+	//apiServer.Start(0)
+	//fmt.Printf("API Port: %d \n", core.ApiPort)
 	core.Ed.Start(*loc)
 }

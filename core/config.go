@@ -11,6 +11,7 @@ import (
 type Config struct {
 	SyntaxHighlighting bool
 	Theme              string // ie: theme1.toml
+	MaxCmdBufferLines  int    // Max # of lines to keep in buffer when running a command
 }
 
 func LoadConfig(file string) *Config {
@@ -18,6 +19,9 @@ func LoadConfig(file string) *Config {
 	loc := path.Join(Home, file)
 	if _, err := toml.DecodeFile(loc, &conf); err != nil {
 		panic(err)
+	}
+	if conf.MaxCmdBufferLines == 0 {
+		conf.MaxCmdBufferLines = 10000
 	}
 	return conf
 }
@@ -39,7 +43,7 @@ func LoadDefaultConfig() *Config {
 	return conf
 }
 
-var defaultConfig = `
-SyntaxHighlighting=true
+var defaultConfig = `SyntaxHighlighting=true
 Theme="default.toml"
+MaxCmdBufferLines=10000
 `

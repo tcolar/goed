@@ -1,10 +1,12 @@
 package backend
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/tcolar/goed/core"
 )
@@ -22,7 +24,6 @@ type BackendCmd struct {
 func (c *BackendCmd) Reload() error {
 	args, dir := c.runner.Args, c.runner.Dir
 	c.stop()
-	// It does not seem we can reuse a command so create a new one
 	c.runner = exec.Command(args[0], args[1:]...)
 	c.runner.Dir = dir
 	c.Backend.Close()
@@ -34,8 +35,11 @@ func (c *BackendCmd) Reload() error {
 
 func (c *BackendCmd) Close() error {
 	c.stop()
-	c.runner = nil
 	return nil
+}
+
+func (c *BackendCmd) Running() bool {
+	return c.runner != nil && c.runner.Process != nil
 }
 
 func (c *BackendCmd) Start() {
@@ -60,7 +64,6 @@ func (c *BackendCmd) Start() {
 
 func (c *BackendCmd) stop() {
 	if c.runner != nil && c.runner.Process != nil {
-		c.runner.Process.Release()
 		c.runner.Process.Kill()
 		c.runner.Process = nil
 	}
@@ -70,6 +73,7 @@ type CmdStarter interface {
 	Start(c *BackendCmd) error
 }
 
+/*
 // starter impl for file backend
 type FileCmdStarter struct {
 }
@@ -81,7 +85,7 @@ func (s *FileCmdStarter) Start(c *BackendCmd) error {
 	err := c.runner.Run()
 	b.Reload()
 	return err
-}
+}*/
 
 // starter impl for mem backend
 type MemCmdStarter struct {
@@ -90,8 +94,60 @@ type MemCmdStarter struct {
 func (s *MemCmdStarter) Start(c *BackendCmd) error {
 
 	b := c.Backend.(*MemBackend)
-	out, err := c.runner.CombinedOutput()
 	b.Wipe()
-	b.Insert(1, 1, string(out))
+	return c.stream()
+}
+
+func (c *BackendCmd) stream() error {
+	var outBuf bytes.Buffer
+	var errBuf bytes.Buffer
+	c.runner.Stdout = &outBuf
+	c.runner.Stderr = &errBuf
+	err := c.runner.Start()
+	if err != nil {
+		return err
+	}
+	done := false
+	go func() {
+		buf := make([]byte, 50000)
+		for {
+			c.flush(&outBuf, &errBuf, buf)
+			if done {
+				c.flush(&outBuf, &errBuf, buf)
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+	err = c.runner.Wait()
+	done = true
 	return err
+}
+
+func (c *BackendCmd) flush(o, e *bytes.Buffer, buf []byte) {
+	refresh := false
+	v := core.Ed.ViewById(c.ViewId())
+	if o.Len() > 0 {
+		nb, _ := o.Read(buf)
+		if nb > 0 {
+			c.Backend.Append(string(buf[:nb]))
+			refresh = true
+		}
+	}
+	if e.Len() > 0 {
+		nb, _ := e.Read(buf)
+		if nb > 0 {
+			c.Backend.Append(string(buf[:nb]))
+			refresh = true
+		}
+	}
+	if refresh {
+		limit := core.Ed.Config().MaxCmdBufferLines
+		if v.LineCount() > limit {
+			c.Backend.Remove(1, 1, v.LineCount()-limit+1, 0)
+		}
+		v.MoveCursor(0, v.LineCount())
+		//v.Render()
+		core.Ed.Render()
+	}
 }

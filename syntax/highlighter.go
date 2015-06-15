@@ -208,9 +208,12 @@ func (h *Highlights) consume(items SyntaxItems, text [][]rune, isKw bool) bool {
 }
 
 // peek sees if the given string (s) is found at the given location
-// does not advance h.Ln or h.Col
+// Does not advance h.Ln or h.Col
 func (h *Highlights) peek(s string, text [][]rune) bool {
 	offCol := 0
+	if h.ln >= len(text) {
+		return false
+	}
 	ln := text[h.ln]
 	if h.col+len(s) > len(ln) {
 		return false

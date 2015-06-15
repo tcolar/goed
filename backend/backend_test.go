@@ -88,7 +88,6 @@ func testBackend(t *testing.T, b core.Backend, id int) {
 	assert.Equal(t, s, `"wide" runes`, "slice8")
 
 	insertionTests(t, b)
-
 	// TODO: test save etc ....
 	// Test file MD5
 }

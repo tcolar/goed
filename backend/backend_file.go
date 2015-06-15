@@ -113,6 +113,17 @@ func (b *FileBackend) Reload() error {
 	return nil
 }
 
+func (f *FileBackend) Append(text string) error {
+	b := []byte(text)
+	_, err := f.file.WriteAt(b, f.length)
+	if err != nil {
+		return err
+	}
+	// Update line Count
+	f.lnCount += bytes.Count(b, core.LineSep)
+	return nil
+}
+
 func (f *FileBackend) Insert(row, col int, text string) error {
 	b := []byte(text)
 	ln := int64(len(b))
@@ -132,7 +143,7 @@ func (f *FileBackend) Insert(row, col int, text string) error {
 	}
 	// Update line Count
 	f.lnCount += bytes.Count(b, core.LineSep)
-	return err
+	return nil
 }
 
 func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {

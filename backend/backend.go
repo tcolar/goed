@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"os"
 	"os/exec"
 	"path"
 	"strconv"
@@ -14,6 +13,7 @@ func BufferFile(id int) string {
 	return path.Join(core.Home, "buffers", strconv.Itoa(id))
 }
 
+/*
 // Cmd runner with File based backend
 // if title == nil then will show the command name
 func NewFileBackendCmd(args []string, dir string, viewId int, title *string) (*BackendCmd, error) {
@@ -32,7 +32,7 @@ func NewFileBackendCmd(args []string, dir string, viewId int, title *string) (*B
 
 	go c.Start()
 	return c, nil
-}
+}*/
 
 // Cmd runner with In-memory based backend
 // if title == nil then will show the command name

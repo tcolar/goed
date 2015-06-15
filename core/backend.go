@@ -7,6 +7,7 @@ type Backend interface {
 	BufferLoc() string // buffer location
 
 	Insert(row, col int, text string) error
+	Append(text string) error
 	Remove(row1, col1, row, col2 int) error
 
 	LineCount() int

@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 
+	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/termbox-go"
 )
@@ -158,6 +159,15 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.KeyCtrlW:
 			e.DelViewCheck(e.curView)
 		case termbox.KeyCtrlC:
+			switch v.backend.(type) {
+			case *backend.BackendCmd:
+				// CTRL+C process
+				if v.backend.(*backend.BackendCmd).Running() {
+					v.backend.Close()
+					return
+				}
+			}
+			// copy
 			if len(v.selections) > 0 {
 				v.SelectionCopy(&v.selections[0])
 			}

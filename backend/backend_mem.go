@@ -80,6 +80,19 @@ func (b *MemBackend) BufferLoc() string {
 	return "_MEM_" // TODO : BufferLoc for in-memory ??
 }
 
+func (b *MemBackend) Append(text string) error {
+	runes := core.StringToRunes(text)
+	row := len(b.text) - 1
+	for i, ln := range runes {
+		if i == 0 {
+			b.text[row] = append(b.text[row], ln...)
+		} else {
+			b.text = append(b.text, ln)
+		}
+	}
+	return nil
+}
+
 func (b *MemBackend) Insert(row, col int, text string) error {
 	row-- // 1 index to 0 index
 	col--
@@ -95,6 +108,9 @@ func (b *MemBackend) Insert(row, col int, text string) error {
 			b.text = append(b.text, []rune{})
 		}
 		copy(b.text[row+last:], b.text[row:])
+	}
+	if row == len(b.text) { // appending ne wline at end of file
+		b.text = append(b.text, []rune{})
 	}
 	for i, ln := range runes {
 		line := b.text[row+i]
