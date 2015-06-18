@@ -10,6 +10,7 @@ import (
 	"path"
 	"runtime"
 	"strings"
+	"unicode/utf8"
 )
 
 var LineSep = []byte{'\n'}
@@ -40,7 +41,7 @@ func MvFile(from, to string) error {
 
 // CountLines does a quick (buffered) line(\n) count of a file.
 func CountLines(r io.Reader) (int, error) {
-	buf := make([]byte, 8196)
+	buf := make([]byte, 8192)
 	count := 0
 
 	for {
@@ -80,6 +81,20 @@ func RunesToString(runes [][]rune) string {
 		r = append(r, line...)
 	}
 	return string(r)
+}
+
+func IsTextFile(file string) bool {
+	f, err := os.Open(file)
+	defer f.Close()
+	if err != nil {
+		return true // new file ?
+	}
+	buf := make([]byte, 1024)
+	c, err := f.Read(buf)
+	if err != nil {
+		return true
+	}
+	return utf8.Valid(buf[:c])
 }
 
 func InitHome() {
