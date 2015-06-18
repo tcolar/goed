@@ -94,7 +94,7 @@ func (h *Highlights) consumeLeftovers(patterns []SyntaxPattern, text [][]rune) {
 		h.ln = 0
 		for h.ln < len(text) {
 			if h.peek(p.Start, text) {
-				if p.Start != p.End || h.col+len(p.Start) < len(text[h.ln])-2 {
+				if p.Start != p.End || h.col+len(p.Start) < len(text[h.ln]) {
 					// if p.Start comes before p.End, it's not a leftover.
 					// When the opening and ending of a multiline comment is the
 					// same there is no "easy" way to tell which it is other than
