@@ -195,7 +195,6 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
-				e.SetStatusErr(fmt.Sprintf("%v", ev))
 				v.InsertCur(string(ev.Ch))
 				dirty = true
 			}
@@ -274,7 +273,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			}
 			e.cmdOn = false
 			e.ActivateView(v, ev.MouseX-v.x1-2+v.offx, ev.MouseY-v.y1-2+v.offy)
-			e.SetStatus(fmt.Sprintf("[%d]%s", v.Id(), v.WorkDir()))
+			e.SetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
 		}
 	}
 	if dirty {

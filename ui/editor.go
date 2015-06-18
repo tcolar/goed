@@ -104,9 +104,6 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) error {
 	if err != nil {
 		return fmt.Errorf("File not found %s", loc)
 	}
-	if stat.Size() > 500000 { // TODO : check if utf8 / executable
-		return fmt.Errorf("File too large %s", loc)
-	}
 	// make it absolute
 	loc, err = filepath.Abs(loc)
 	if err != nil {
@@ -125,7 +122,7 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) error {
 		err = e.openFile(loc, view)
 	}
 	view.SetWorkDir(filepath.Dir(loc))
-	return nil
+	return err
 }
 
 func (e *Editor) openDir(loc string, view core.Viewable) error {
@@ -136,18 +133,21 @@ func (e *Editor) openDir(loc string, view core.Viewable) error {
 		return err
 	}
 	view.SetBackend(backend)
-	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id(), view.WorkDir()))
+	e.SetStatus(fmt.Sprintf("%v", view.WorkDir()))
 	view.SetDirty(false)
 	return nil
 }
 
 func (e *Editor) openFile(loc string, view core.Viewable) error {
+	if !core.IsTextFile(loc) {
+		return fmt.Errorf("Binary file ? %s", loc)
+	}
 	backend, err := backend.NewFileBackend(loc, view.Id())
 	if err != nil {
 		return err
 	}
 	view.SetBackend(backend)
-	e.SetStatus(fmt.Sprintf("[%d]%v", view.Id(), view.WorkDir()))
+	e.SetStatus(fmt.Sprintf("%v  [%d]", view.WorkDir(), view.Id()))
 	view.SetDirty(false)
 	return nil
 }
