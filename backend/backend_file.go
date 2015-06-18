@@ -257,9 +257,9 @@ func (f *FileBackend) seek(row, col int) error {
 	if row == f.ln && col == f.col {
 		return nil
 	}
-	// Seek to the beginning of the right row
-	if row < f.ln/2 {
-		// absolute move more efficient
+	// absolute move likely more efficient if we are looking back 500 lines or more
+	if row < f.ln && f.ln-row > 500 {
+		// Seek to the beginning of the right row
 		if err := f.reset(); err != nil {
 			return err
 		}
@@ -298,12 +298,29 @@ func (f *FileBackend) seekRow(row int) error {
 }
 
 func (f *FileBackend) seekRowFwd(row int) error {
-	for f.ln != row {
-		_, _, err := f.readRune()
-		if err != nil {
+	buf := make([]byte, 8192)
+outer:
+	for {
+		c, err := f.file.Read(buf)
+		if err != nil && err != io.EOF {
 			return err
 		}
+		for _, b := range buf[:c] {
+			f.offset++
+			f.col++
+			if b == '\n' { // TODO: is that good enough with UTF emcoding ??
+				f.ln++
+				f.col = 1
+				if f.ln >= row {
+					break outer
+				}
+			}
+		}
+		if c < 8192 {
+			break // no more to read
+		}
 	}
+	f.file.Seek(f.offset, 0)
 	return nil
 }
 
@@ -364,7 +381,7 @@ func (f *FileBackend) readRune() (r rune, size int, err error) {
 	return
 }
 
-// read a rune without leaving offsets in place
+// read a rune whithout moving offsets
 func (f *FileBackend) peekRune() (r rune, size int, err error) {
 	b := []byte{4}
 	_, err = f.file.ReadAt(b, f.offset)
