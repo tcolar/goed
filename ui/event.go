@@ -10,9 +10,9 @@ import (
 
 // Evtstate stores some state about kb/mouse events
 type EvtState struct {
-	MovingView                     bool
-	X, Y                           int
-	DragX1, DragY1, DragX2, DragY2 int
+	MovingView      bool
+	X, Y            int
+	DragLn, DragCol int
 }
 
 func (e *Editor) EventLoop() {
@@ -80,7 +80,9 @@ func (m *Cmdbar) Event(e *Editor, ev *termbox.Event) {
 	case termbox.EventMouse:
 		switch ev.Key {
 		case termbox.MouseLeft:
-			e.cmdOn = true
+			if isMouseUp(ev) {
+				e.cmdOn = true
+			}
 		}
 	}
 }
@@ -89,7 +91,7 @@ func (m *Cmdbar) Event(e *Editor, ev *termbox.Event) {
 
 // Event handler for Statusbar
 func (s *Statusbar) Event(e *Editor, ev *termbox.Event) {
-	// Anyhting ??
+	// Anything ??
 }
 
 // ##################### View       ########################################
@@ -100,6 +102,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	switch ev.Type {
 	case termbox.EventKey:
 		// alt combo
+		e.SetStatus(fmt.Sprintf("%s %d %d", ev.Ch, ev.Key, ev.Mod))
 		if ev.Mod == termbox.ModAlt {
 			switch ev.Ch {
 			case 'o':
@@ -206,20 +209,22 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.MouseScrollDown:
 			v.MoveCursor(0, 1)
 		case termbox.MouseRight:
-			v.ClearSelections()
-			v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
-			e.Cmdbar.OpenSelection(v, true)
+			if isMouseUp(ev) {
+				v.ClearSelections()
+				v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
+				e.Cmdbar.OpenSelection(v, true)
+			}
 		case termbox.MouseLeft:
-			if e.evtState.MovingView {
+			if e.evtState.MovingView && isMouseUp(ev) {
 				e.evtState.MovingView = false
 				e.ViewMove(e.evtState.X, e.evtState.Y, ev.MouseX, ev.MouseY)
 				return
 			}
-			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 {
+			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
 				e.DelViewCheck(v)
 				return
 			}
-			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
+			if ev.MouseX == v.x1 && ev.MouseY == v.y1 && isMouseUp(ev) {
 				// handle
 				e.evtState.MovingView = true
 				e.evtState.X = ev.MouseX
@@ -227,56 +232,90 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				e.SetStatusErr("Starting move, click new position.")
 				return
 			}
+			col := ev.MouseX - v.x1 + v.offx - 1
+			ln := ev.MouseY - v.y1 + v.offy - 1
 			if ev.DragOn {
-				if e.evtState.DragX1 == 0 {
-					// start drag
-					e.evtState.DragX1, e.evtState.DragY1 = ev.MouseX, ev.MouseY
-				}
 				// continued drag
-				e.evtState.DragX2, e.evtState.DragY2 = ev.MouseX, ev.MouseY
-				x1 := e.evtState.DragX1 - v.x1 + v.offx - 2
-				x2 := e.evtState.DragX2 - v.x1 + v.offx - 2
-				y1 := e.evtState.DragY1 - v.y1 + v.offy - 2
-				y2 := e.evtState.DragY2 - v.y1 + v.offy - 2
-
-				if (y1 == y1 && x1 > x2) ||
-					(y1 > y2) {
-					x1++
-				} else {
-					x1--
-				}
+				x1 := e.evtState.DragCol
+				y1 := e.evtState.DragLn
+				x2 := col
+				y2 := ln
 
 				s := core.Selection{
-					LineFrom: y1 + 1,
-					LineTo:   y2 + 1,
-					ColFrom:  v.lineRunesTo(v.slice, y1, x1) + 1,
-					ColTo:    v.lineRunesTo(v.slice, y2, x2) + 1,
+					LineFrom: y1,
+					LineTo:   y2,
+					ColFrom:  v.lineRunesTo(v.slice, y1-1, x1-1) + 1,
+					ColTo:    v.lineRunesTo(v.slice, y2-1, x2-1) + 1,
 				}
-				// Deal with "reverse" selection
+				// Deal with "reversed" selection
 				if s.LineFrom == s.LineTo && s.ColFrom > s.ColTo {
 					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
 				} else if s.LineFrom > s.LineTo {
 					s.LineFrom, s.LineTo = s.LineTo, s.LineFrom
 					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
 				}
-				// Because we only receive the event after a "move", we need to add the start location
-				// set the selection
+
+				// Handling scrolling while dragging
+				if s.LineTo >= v.offy+(v.y2-v.y1)-1 { // scroll down
+					v.offy += 5
+					s.LineTo += 5
+				} else if s.LineFrom <= v.offy { // scroll up
+					v.offy -= 5
+					s.LineTo -= 5
+				} else if s.ColTo >= v.offx+(v.x2-v.x1)-1 { // scroll right
+					v.offx += 5
+					s.ColTo = 5
+				} else if s.ColFrom <= v.offx { //scroll left
+					v.offx -= 5
+					s.ColTo -= 5
+				}
+				if v.offy < 0 {
+					s.LineTo += -v.offy
+					v.offy = 0
+				} else if v.offy >= v.LineCount() {
+					v.offy = v.LineCount() - 1
+				}
+				if v.offx < 0 {
+					s.ColTo += -v.offx
+					v.offx = 0
+				} else if v.offx > v.LineLen(v.Slice(), ln-1) {
+					v.offx = v.LineLen(v.Slice(), ln-1) - 1
+				}
+				if s.LineFrom < 1 {
+					s.LineFrom = 1
+				} else if s.LineTo > v.LineCount() {
+					s.LineTo = v.LineCount() + 1
+				}
+				if s.ColFrom < 1 {
+					s.ColFrom = 1
+				} else if s.ColTo > v.LineLen(v.Slice(), ln-1) {
+					s.ColTo = v.LineLen(v.Slice(), ln-1) + 1
+				}
+
 				v.selections = []core.Selection{
 					s,
 				}
 				return
 			} else {
 				// reset drag
-				e.evtState.DragX1, e.evtState.DragY1 = 0, 0
-				e.evtState.DragX2, e.evtState.DragY2 = 0, 0
-				v.ClearSelections()
+				if !isMouseUp(ev) {
+					v.ClearSelections()
+				}
+				e.evtState.DragLn = ln
+				e.evtState.DragCol = col
 			}
-			e.cmdOn = false
-			e.ActivateView(v, ev.MouseX-v.x1-2+v.offx, ev.MouseY-v.y1-2+v.offy)
-			e.SetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
+			if isMouseUp(ev) {
+				e.cmdOn = false
+				e.ActivateView(v, ev.MouseX-v.x1-2+v.offx, ev.MouseY-v.y1-2+v.offy)
+				e.SetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
+			}
 		}
 	}
 	if dirty {
 		v.SetDirty(true)
 	}
+}
+
+func isMouseUp(ev *termbox.Event) bool {
+	return ev.MouseBtnState == termbox.MouseBtnUp
 }
