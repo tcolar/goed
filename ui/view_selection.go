@@ -117,3 +117,21 @@ func (v *View) SelectionToLoc(sel *core.Selection) (loc string, line, col int) {
 	}
 	return loc, line, col
 }
+
+func (v *View) ExpandSelection(prevl, prevc, l, c int) {
+	if len(v.selections) == 0 {
+		s := *core.NewSelection(prevl, prevc, l, c)
+		v.selections = []core.Selection{
+			s,
+		}
+	} else {
+		s := v.selections[0]
+		if s.LineTo == prevl && s.ColTo == prevc {
+			s.LineTo, s.ColTo = l, c
+		} else {
+			s.LineFrom, s.ColFrom = l, c
+		}
+		s.Normalize()
+		v.selections[0] = s
+	}
+}

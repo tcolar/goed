@@ -22,9 +22,9 @@ func (e *Editor) EventLoop() {
 	e.term.SetMouseMode(termbox.MouseSgr)
 
 	e.term.SetInputMode(termbox.InputMouse)
-
 	for {
 		ev := termbox.PollEvent()
+		e.SetStatus(fmt.Sprintf("%d %d", ev.Key, ev.Meta))
 		switch ev.Type {
 		case termbox.EventResize:
 			e.Resize(ev.Width, ev.Height)
@@ -99,18 +99,19 @@ func (s *Statusbar) Event(e *Editor, ev *termbox.Event) {
 // Event handler for View
 func (v *View) Event(e *Editor, ev *termbox.Event) {
 	dirty := false
+	ln, col := v.CurLine(), v.CurCol()
+	es := false //expand selection
 	switch ev.Type {
 	case termbox.EventKey:
 		// alt combo
-		e.SetStatus(fmt.Sprintf("%s %d %d", ev.Ch, ev.Key, ev.Mod))
 		if ev.Mod == termbox.ModAlt {
 			switch ev.Ch {
 			case 'o':
 				e.Cmdbar.OpenSelection(v, false)
+				return
 			}
-			return
 		}
-		// No Alt
+
 		switch ev.Key {
 		case termbox.KeyArrowRight:
 			offset := 1
@@ -119,6 +120,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				offset = v.runeSize(*c)
 			}
 			v.MoveCursorRoll(offset, 0)
+			es = true
 		case termbox.KeyArrowLeft:
 			offset := 1
 			c, _, _ := v.CursorChar(v.slice, v.CurCol()-1, v.CurLine())
@@ -126,29 +128,37 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				offset = v.runeSize(*c)
 			}
 			v.MoveCursorRoll(-offset, 0)
+			es = true
 		case termbox.KeyArrowUp:
 			v.MoveCursor(0, -1)
+			es = true
 		case termbox.KeyArrowDown:
 			v.MoveCursor(0, 1)
+			es = true
 		case termbox.KeyPgdn:
 			dist := v.LastViewLine() + 1
 			if v.LineCount()-v.CurLine() < dist {
 				dist = v.LineCount() - v.CurLine() - 1
 			}
 			v.MoveCursor(0, dist)
+			es = true
 		case termbox.KeyPgup:
 			dist := v.LastViewLine() + 1
 			if dist > v.CurLine() {
 				dist = v.CurLine()
 			}
 			v.MoveCursor(0, -dist)
+			es = true
 		case termbox.KeyEnd:
 			v.MoveCursor(v.lineCols(v.slice, v.CurLine())-v.CurCol(), 0)
+			es = true
 		case termbox.KeyHome:
 			v.MoveCursor(-v.CurCol(), 0)
+			es = true
 		case termbox.KeyTab:
 			v.InsertCur("\t")
 			dirty = true
+			es = true
 		case termbox.KeyEnter:
 			v.InsertNewLineCur()
 			dirty = true
@@ -197,10 +207,20 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			}
 		default:
 			// insert the key
-			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
+			if ev.Ch != 0 && ev.Mod == 0 && ev.Meta == 0 { // otherwise some special key combo
 				v.InsertCur(string(ev.Ch))
 				dirty = true
 			}
+		}
+		if es && ev.Meta == termbox.Shift {
+			v.ExpandSelection(
+				ln+1,
+				v.lineRunesTo(v.slice, ln, col)+1,
+				v.CurLine()+1,
+				v.lineRunesTo(v.slice, v.CurLine(), v.CurCol())+1,
+			)
+		} else {
+			v.ClearSelections()
 		}
 	case termbox.EventMouse:
 		switch ev.Key {
@@ -241,19 +261,11 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				x2 := col
 				y2 := ln
 
-				s := core.Selection{
-					LineFrom: y1,
-					LineTo:   y2,
-					ColFrom:  v.lineRunesTo(v.slice, y1-1, x1-1) + 1,
-					ColTo:    v.lineRunesTo(v.slice, y2-1, x2-1) + 1,
-				}
-				// Deal with "reversed" selection
-				if s.LineFrom == s.LineTo && s.ColFrom > s.ColTo {
-					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
-				} else if s.LineFrom > s.LineTo {
-					s.LineFrom, s.LineTo = s.LineTo, s.LineFrom
-					s.ColFrom, s.ColTo = s.ColTo, s.ColFrom
-				}
+				s := core.NewSelection(
+					y1,
+					v.lineRunesTo(v.slice, y1-1, x1-1)+1,
+					y2,
+					v.lineRunesTo(v.slice, y2-1, x2-1)+1)
 
 				// Handling scrolling while dragging
 				if s.LineTo >= v.offy+(v.y2-v.y1)-1 { // scroll down
@@ -293,7 +305,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				}
 
 				v.selections = []core.Selection{
-					s,
+					*s,
 				}
 				return
 			} else {
@@ -311,6 +323,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			}
 		}
 	}
+
 	if dirty {
 		v.SetDirty(true)
 	}
