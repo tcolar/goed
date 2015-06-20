@@ -1,5 +1,7 @@
 package core
 
+import "os"
+
 const Version = "0.0.2"
 const ApiVersion = "v1"
 
@@ -9,3 +11,4 @@ var Colors int
 var Home string
 var Testing bool
 var ConfFile string // config file path
+var LogFile *os.File

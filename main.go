@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path"
+	"log"
 	"runtime/debug"
 
 	"github.com/tcolar/goed/core"
@@ -39,17 +38,16 @@ func main() {
 	core.InitHome()
 	core.ConfFile = *config
 	core.Ed = ui.NewEditor()
+	defer core.LogFile.Close()
 	//apiServer := api.Api{}
 
 	defer func() {
 		if fail := recover(); fail != nil {
-			err := fail.(error)
 			// writing panic to file because shell will be garbled
-			fmt.Printf("Panicked with %s\n", err.Error())
-			f := path.Join(core.Home, "panic.txt")
-			fmt.Printf("Writing panic to %s \n", f)
+			fmt.Printf("Panicked with %v\n", fail)
+			fmt.Printf("Writing panic to log %s \n", core.LogFile.Name())
 			data := debug.Stack()
-			ioutil.WriteFile(f, data, 0644)
+			log.Fatal(string(data))
 		}
 	}()
 

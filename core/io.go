@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/user"
 	"path"
 	"runtime"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -111,8 +113,17 @@ func InitHome() {
 	} else {
 		Home = path.Join(usr.HomeDir, fmt.Sprintf(".goed%s", t))
 	}
-	os.MkdirAll(Home, 0777)
-	os.MkdirAll(path.Join(Home, "buffers"), 0777)
+	os.MkdirAll(Home, 0755)
+	os.MkdirAll(path.Join(Home, "buffers"), 0755)
+	os.MkdirAll(path.Join(Home, "logs"), 0755)
 	// TODO : Update config if new version ??
 	ioutil.WriteFile(path.Join(Home, "Version.txt"), []byte(Version), 644)
+
+	// Custom log file
+	f := path.Join(Home, "logs", fmt.Sprintf("%d.log", time.Now().Unix()))
+	LogFile, err = os.Create(f)
+	if err != nil {
+		panic(err)
+	}
+	log.SetOutput(LogFile)
 }

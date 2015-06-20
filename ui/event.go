@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
@@ -24,7 +25,7 @@ func (e *Editor) EventLoop() {
 	e.term.SetInputMode(termbox.InputMouse)
 	for {
 		ev := termbox.PollEvent()
-		e.SetStatus(fmt.Sprintf("%d %d", ev.Key, ev.Meta))
+		log.Printf("Event : %d %d", 0xFFFF-ev.Key, ev.Meta)
 		switch ev.Type {
 		case termbox.EventResize:
 			e.Resize(ev.Width, ev.Height)
