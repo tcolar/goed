@@ -14,6 +14,7 @@ type Viewable interface {
 	SetBackend(backend Backend)
 	SetDirty(bool)
 	Selections() *[]Selection
+	SetAutoScroll(x, y int, isSelect bool)
 	SetWorkDir(dir string)
 	SetTitle(title string)
 	Slice() *Slice

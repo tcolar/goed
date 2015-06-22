@@ -47,6 +47,7 @@ func (v *View) Insert(row, col int, s string) {
 	}
 	offx := v.strSize(string(b[idx:]))
 	v.Render()
+	e.TermFlush()
 	v.MoveCursor(offx, offy)
 }
 
@@ -74,6 +75,7 @@ func (v *View) Delete(row1, col1, row2, col2 int) {
 		return
 	}
 	v.Render()
+	core.Ed.TermFlush()
 }
 
 // DeleteCur removes a selection or the curent character

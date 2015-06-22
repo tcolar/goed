@@ -70,7 +70,7 @@ func (e Editor) Render() {
 	e.Cmdbar.Render()
 	e.Statusbar.Render()
 
-	e.term.Flush()
+	e.TermFlush()
 }
 
 type Renderer interface {

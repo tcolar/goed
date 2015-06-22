@@ -6,6 +6,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
@@ -87,6 +88,8 @@ func (e *Editor) Start(loc string) {
 	e.Resize(e.term.Size())
 
 	e.Render()
+
+	go e.autoScroller()
 
 	if !core.Testing {
 		e.EventLoop()
@@ -205,4 +208,79 @@ func (e Editor) CmdOn() bool {
 
 func (e *Editor) SetCmdOn(v bool) {
 	e.cmdOn = v
+}
+
+func (e *Editor) TermFlush() {
+	e.term.Flush()
+}
+
+// Handle selection auto scrolling of views
+func (e *Editor) autoScroller() {
+	for {
+		time.Sleep(200 * time.Millisecond)
+		v := e.CurView().(*View)
+		if v == nil {
+			continue
+		}
+		x, y := v.autoScrollX, v.autoScrollY
+		if x == 0 && y == 0 {
+			continue
+		}
+		if len(v.selections) == 0 {
+			continue
+		}
+		s := v.selections[0]
+		ln := v.CurLine()
+		v.offx += x
+		v.offy += y
+		if y > 0 {
+			s.LineTo += y
+		} else {
+			s.LineFrom += y
+		}
+		if x > 0 {
+			s.ColTo += x
+		} else {
+			s.ColFrom += x
+		}
+		// handle scroll / selection "overflows"
+		lnLen := v.LineLen(v.Slice(), ln)
+		if v.offy >= v.LineCount()-v.LastViewLine() {
+			v.offy = v.LineCount() - v.LastViewLine()
+		}
+		if v.offy < 0 {
+			v.offy = 0
+		}
+		if v.offx > lnLen-v.LastViewCol() {
+			v.offx = lnLen - v.LastViewCol()
+		}
+		if v.offx < 0 {
+			v.offx = 0
+		}
+		if s.LineFrom < 1 {
+			s.LineFrom = 1
+		} else if s.LineFrom > v.LineCount() {
+			s.LineFrom = v.LineCount()
+		}
+		if s.LineTo < 1 {
+			s.LineTo = 1
+		} else if s.LineTo > v.LineCount() {
+			s.LineTo = v.LineCount()
+		}
+		if s.ColFrom < 1 {
+			s.ColFrom = 1
+		} else if s.ColFrom > lnLen {
+			s.ColFrom = lnLen
+		}
+		if s.ColTo < 1 {
+			s.ColTo = 1
+		} else if s.ColTo > lnLen {
+			s.ColTo = lnLen
+		}
+		s.Normalize()
+		v.selections = []core.Selection{
+			s,
+		}
+		e.Render()
+	}
 }

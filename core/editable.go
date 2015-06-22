@@ -18,5 +18,6 @@ type Editable interface {
 	TermStr(x, y int, s string)
 	TermStrv(x, y int, s string)
 	TermFill(c rune, x1, y1, x2, y2 int)
+	TermFlush()
 	Theme() *Theme
 }

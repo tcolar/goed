@@ -25,6 +25,9 @@ type View struct {
 	lastCloseTs      time.Time   // Timestamp of previous view close request
 	slice            *core.Slice // curSlice
 	highlights       syntax.Highlights
+	autoScrollX      int
+	autoScrollY      int
+	autoScrollSelect bool
 }
 
 func (e *Editor) NewView() *View {
@@ -428,4 +431,9 @@ func (v *View) Id() int64 {
 
 func (v *View) Slice() *core.Slice {
 	return v.slice
+}
+
+func (v *View) SetAutoScroll(x, y int, isSelect bool) {
+	v.autoScrollX, v.autoScrollY = x, y
+	v.autoScrollSelect = isSelect
 }

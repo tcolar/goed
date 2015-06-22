@@ -48,7 +48,8 @@ func (c *BackendCmd) Start() {
 	v.SetWorkDir(workDir)
 	c.runner.Dir = workDir
 	v.SetTitle(fmt.Sprintf("[RUNNING] %s", *c.title))
-	core.Ed.Render()
+	v.Render()
+	core.Ed.TermFlush()
 
 	err := c.Starter.Start(c)
 
@@ -59,7 +60,8 @@ func (c *BackendCmd) Start() {
 		v.SetTitle(*c.title)
 	}
 	v.SetWorkDir(workDir) // start() could have modified this
-	core.Ed.Render()
+	v.Render()
+	core.Ed.TermFlush()
 }
 
 func (c *BackendCmd) stop() {
@@ -147,7 +149,7 @@ func (c *BackendCmd) flush(o, e *bytes.Buffer, buf []byte) {
 			c.Backend.Remove(1, 1, v.LineCount()-limit+1, 0)
 		}
 		v.MoveCursor(0, v.LineCount())
-		//v.Render()
-		core.Ed.Render()
+		v.Render()
+		core.Ed.TermFlush()
 	}
 }

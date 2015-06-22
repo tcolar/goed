@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
@@ -25,7 +24,7 @@ func (e *Editor) EventLoop() {
 	e.term.SetInputMode(termbox.InputMouse)
 	for {
 		ev := termbox.PollEvent()
-		log.Printf("Event : %d %d", 0xFFFF-ev.Key, ev.Meta)
+		//log.Printf("Event : %d %d", 0xFFFF-ev.Key, ev.Meta)
 		switch ev.Type {
 		case termbox.EventResize:
 			e.Resize(ev.Width, ev.Height)
@@ -101,7 +100,8 @@ func (s *Statusbar) Event(e *Editor, ev *termbox.Event) {
 func (v *View) Event(e *Editor, ev *termbox.Event) {
 	dirty := false
 	ln, col := v.CurLine(), v.CurCol()
-	es := false //expand selection
+	es := false                  //expand selection
+	v.SetAutoScroll(0, 0, false) // any events stops autoscroll
 	switch ev.Type {
 	case termbox.EventKey:
 		// alt combo
@@ -213,6 +213,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				dirty = true
 			}
 		}
+		// extend keyboard slection
 		if es && ev.Meta == termbox.Shift {
 			v.ExpandSelection(
 				ln+1,
@@ -267,46 +268,18 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 					v.lineRunesTo(v.slice, y1-1, x1-1)+1,
 					y2,
 					v.lineRunesTo(v.slice, y2-1, x2-1)+1)
-
-				// Handling scrolling while dragging
-				if s.LineTo >= v.offy+(v.y2-v.y1)-1 { // scroll down
-					v.offy += 5
-					s.LineTo += 5
-				} else if s.LineFrom <= v.offy { // scroll up
-					v.offy -= 5
-					s.LineTo -= 5
-				} else if s.ColTo >= v.offx+(v.x2-v.x1)-1 { // scroll right
-					v.offx += 5
-					s.ColTo = 5
-				} else if s.ColFrom <= v.offx { //scroll left
-					v.offx -= 5
-					s.ColTo -= 5
-				}
-				if v.offy < 0 {
-					s.LineTo += -v.offy
-					v.offy = 0
-				} else if v.offy >= v.LineCount() {
-					v.offy = v.LineCount() - 1
-				}
-				if v.offx < 0 {
-					s.ColTo += -v.offx
-					v.offx = 0
-				} else if v.offx > v.LineLen(v.Slice(), ln-1) {
-					v.offx = v.LineLen(v.Slice(), ln-1) - 1
-				}
-				if s.LineFrom < 1 {
-					s.LineFrom = 1
-				} else if s.LineTo > v.LineCount() {
-					s.LineTo = v.LineCount() + 1
-				}
-				if s.ColFrom < 1 {
-					s.ColFrom = 1
-				} else if s.ColTo > v.LineLen(v.Slice(), ln-1) {
-					s.ColTo = v.LineLen(v.Slice(), ln-1) + 1
-				}
-
 				v.selections = []core.Selection{
 					*s,
+				}
+				// Handling scrolling while dragging
+				if ln <= v.offy { // scroll up
+					v.SetAutoScroll(0, -v.LineCount()/10, true)
+				} else if ln >= v.offy+(v.y2-v.y1)-1 { // scroll down
+					v.SetAutoScroll(0, v.LineCount()/10, true)
+				} else if col <= v.offx { //scroll left
+					v.SetAutoScroll(-5, 0, true)
+				} else if col >= v.offx+(v.x2-v.x1)-2 { // scroll right
+					v.SetAutoScroll(5, 0, true)
 				}
 				return
 			} else {
@@ -316,6 +289,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				}
 				e.evtState.DragLn = ln
 				e.evtState.DragCol = col
+				v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
 			}
 			if isMouseUp(ev) {
 				e.cmdOn = false
