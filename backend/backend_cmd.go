@@ -60,8 +60,7 @@ func (c *BackendCmd) Start() {
 		v.SetTitle(*c.title)
 	}
 	v.SetWorkDir(workDir) // start() could have modified this
-	v.Render()
-	core.Ed.TermFlush()
+	core.Ed.Render()
 }
 
 func (c *BackendCmd) stop() {

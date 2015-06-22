@@ -69,6 +69,9 @@ func (v *View) Paste() {
 		core.Ed.SetStatusErr(err.Error())
 		return
 	}
+	if len(v.selections) > 0 {
+		v.DeleteCur()
+	}
 	_, x, y := v.CurChar()
 	v.Insert(y, x, text)
 }
@@ -118,6 +121,7 @@ func (v *View) SelectionToLoc(sel *core.Selection) (loc string, line, col int) {
 	return loc, line, col
 }
 
+// Expand a selection toward a new position
 func (v *View) ExpandSelection(prevl, prevc, l, c int) {
 	if len(v.selections) == 0 {
 		s := *core.NewSelection(prevl, prevc, l, c)
