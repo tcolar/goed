@@ -146,6 +146,7 @@ func TestViewSelections(t *testing.T) {
 }
 
 func TestViewEdition(t *testing.T) {
+	// Note: more tests done directly on backemds
 	var err error
 	Ed := core.Ed.(*Editor)
 	v := Ed.NewView()
@@ -184,6 +185,49 @@ func TestViewEdition(t *testing.T) {
 	testChar(t, v, 0, 0, 'd')
 	v.Delete(0, 1, 0, 1)
 	testChar(t, v, 0, 0, 'd')
+}
+
+func TestDelete(t *testing.T) {
+	// Test some edge cases
+	var err error
+	Ed := core.Ed.(*Editor)
+	v := Ed.NewView()
+	v.SetBounds(5, 5, 140, 30)
+	err = Ed.Open("../test_data/empty.txt", v, "")
+	assert.Nil(t, err, "open")
+	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
+
+	v.Insert(0, 0, "ab\ncd\nef")
+	s := core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
+	assert.Equal(t, s, "ab\ncd\nef")
+	// backspace edge cases
+	v.CursorX = 3
+	v.CursorY = 0
+	v.Backspace()
+	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
+	assert.Equal(t, s, "abcd\nef")
+	v.CursorX = 0
+	v.CursorY = 0
+	v.Backspace()
+	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
+	assert.Equal(t, s, "abcd\nef")
+	// delete edge cases
+	v.CursorX = 5
+	v.CursorY = 0
+	v.DeleteCur()
+	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
+	assert.Equal(t, s, "abcdef")
+	v.CursorX = 7
+	v.CursorY = 0
+	v.DeleteCur()
+	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
+	assert.Equal(t, s, "abcdef")
+	v.Delete(1, 1, 1, 7)
+	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
+	assert.Equal(t, s, "")
+	v.DeleteCur() // check no panic
+	v.Backspace() // check no panic
+	assert.Equal(t, s, "")
 	// TODO: Test multilines inserts/deletes
 }
 
