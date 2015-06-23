@@ -97,6 +97,18 @@ func (b *FileBackend) Reload() error {
 		return err
 	}
 
+	// Ensure file end with '\n', POSIX rule and simplifies usage.
+	_, err = b.file.Seek(-1, 2)
+	r := make([]byte, 1)
+	if err == nil {
+		_, err = b.file.Read(r)
+	}
+	// Note: err likely would mean empty file
+	if err != nil || r[0] != '\n' {
+		b.file.Write([]byte{'\n'})
+	}
+	b.file.Seek(0, 0)
+
 	// get base line count
 	b.lnCount, _ = core.CountLines(b.file)
 	if b.lnCount == 0 {

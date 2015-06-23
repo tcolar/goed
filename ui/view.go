@@ -303,6 +303,7 @@ func (v *View) MoveCursor(x, y int) {
 		y = -curLine
 	} else if curLine+y > lastLine {
 		y = lastLine - curLine
+		x = v.lineCols(slice, curLine+y) - curCol
 	}
 	if curCol+x < 0 {
 		x = -curCol

@@ -222,13 +222,37 @@ func TestDelete(t *testing.T) {
 	v.DeleteCur()
 	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
 	assert.Equal(t, s, "abcdef")
-	v.Delete(1, 1, 1, 7)
+	v.Delete(0, 0, 0, 5)
 	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
 	assert.Equal(t, s, "")
 	v.DeleteCur() // check no panic
 	v.Backspace() // check no panic
+	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
 	assert.Equal(t, s, "")
-	// TODO: Test multilines inserts/deletes
+
+	err = Ed.Open("../test_data/no_eol.txt", v, "")
+	assert.Nil(t, err, "open")
+	v.slice = v.backend.Slice(v.offy+1, v.offx+1, v.offy+v.LastViewLine()+1, v.offx+v.LastViewCol()+1)
+	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
+	assert.Equal(t, s, "abc\n123\nz")
+	v.MoveCursor(-100, -100)
+	assert.Equal(t, v.CurLine(), 0)
+	assert.Equal(t, v.CurCol(), 0)
+	v.MoveCursor(0, 2)
+	assert.Equal(t, v.CurLine(), 2)
+	assert.Equal(t, v.CurCol(), 0)
+	v.MoveCursorRoll(1, 0)
+	assert.Equal(t, v.CursorY, 2)
+	assert.Equal(t, v.CursorX, 1)
+	v.InsertCur("Z")
+	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
+	assert.Equal(t, s, "abc\n123\nzZ")
+	v.MoveCursorRoll(-1, 0)
+	v.InsertCur("A")
+	v.InsertCur("B")
+	s = core.RunesToString(*v.backend.Slice(1, 1, 10, 10).Text())
+	assert.Equal(t, s, "abc\n123\nzABZ")
+
 }
 
 func testChar(t *testing.T, v *View, y, x int, c rune) {
