@@ -145,7 +145,7 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 		row1 = 0
 	}
 	if row1 >= len(b.text) {
-		row1 = len(b.text)
+		row1 = len(b.text) - 1
 	}
 
 	if row2 < len(b.text) && col2 >= len(b.text[row2]) {

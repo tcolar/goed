@@ -38,14 +38,20 @@ func (v *View) Insert(row, col int, s string) {
 		e.SetStatusErr("Insert Failed " + err.Error())
 		return
 	}
-	// move the cursor to after insertion
-	b := []byte(s)
-	offy := bytes.Count(b, core.LineSep)
-	idx := bytes.LastIndex(b, core.LineSep)
-	if idx < 0 {
-		idx = 0
+	offx, offy := 0, 0
+	if s == "\n" {
+		offy = 1
+		offx = -v.CurCol()
+	} else {
+		// move the cursor to after insertion
+		b := []byte(s)
+		offy = bytes.Count(b, core.LineSep)
+		idx := bytes.LastIndex(b, core.LineSep)
+		if idx < 0 {
+			idx = 0
+		}
+		offx = v.strSize(string(b[idx:]))
 	}
-	offx := v.strSize(string(b[idx:]))
 	v.Render()
 	e.TermFlush()
 	v.MoveCursor(offx, offy)
