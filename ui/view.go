@@ -274,7 +274,7 @@ func (v *View) MoveCursorRoll(x, y int) {
 		x = v.lineCols(slice, curLine+y) - curCol
 	} else if curCol+x > ln {
 		ln = v.lineCols(slice, curLine+y)
-		if y == 0 && curLine+y < lastLine {
+		if y == 0 && curLine+y <= lastLine {
 			// moved (right) passed eol, wrap to beginning of next line
 			x = -curCol
 			y++
@@ -295,24 +295,11 @@ func (v *View) MoveCursor(x, y int) {
 
 	curCol := v.CurCol()
 	curLine := v.CurLine()
-	lastLine := v.LineCount() - 1
-
-	// check for overflows
-	if curLine+y < 0 {
-		y = -curLine
-	} else if curLine+y > lastLine {
-		y = lastLine - curLine
-	}
-	if curCol+x < 0 {
-		x = -curCol
-	}
-	ln := v.lineCols(slice, curLine+y)
-	if curCol+x > ln {
-		x = ln - curCol // put at EOL
-	}
 
 	v.CursorX += x
 	v.CursorY += y
+
+	v.NormalizeCursor()
 
 	// Special handling for tabs
 	c, textX, textY := v.CurChar()
@@ -346,10 +333,35 @@ func (v *View) MoveCursor(x, y int) {
 		v.CursorY = v.LastViewLine()
 	}
 
+	v.NormalizeCursor()
+
 	tox := v.x1 + 2 + v.CursorX
 	toy := v.y1 + 2 + v.CursorY
 
 	v.setCursor(tox, toy)
+}
+
+func (v *View) NormalizeCursor() {
+	lastLine := v.LineCount()
+	if v.CursorY < 0 {
+		v.CursorY = 0
+		v.CursorX = 0
+		return
+	}
+	if v.offy+v.CursorY > lastLine {
+		v.CursorY = lastLine - v.offy
+		v.CursorX = v.lineCols(v.Slice(), v.offy+v.CursorY)
+		return
+	}
+	lc := v.lineCols(v.Slice(), v.offy+v.CursorY)
+	if v.CursorX < 0 {
+		v.CursorX = 0
+		return
+	}
+	if v.offx+v.CursorX > lc {
+		v.CursorX = lc - v.offx
+		return
+	}
 }
 
 func (v *View) Title() string {

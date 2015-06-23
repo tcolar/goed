@@ -74,6 +74,7 @@ func (v *View) Delete(row1, col1, row2, col2 int) {
 		core.Ed.SetStatusErr("Delete Failed " + err.Error())
 		return
 	}
+	v.NormalizeCursor()
 	v.Render()
 	core.Ed.TermFlush()
 }
@@ -95,7 +96,7 @@ func (v *View) DeleteCur() {
 
 // Backspace removes a selection or character before the current location
 func (v *View) Backspace() {
-	if v.CursorY == 0 && v.CursorX == 0 {
+	if v.CurLine() == 0 && v.CurCol() == 0 {
 		return
 	}
 	if len(v.selections) == 0 {
