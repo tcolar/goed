@@ -296,10 +296,24 @@ func (v *View) MoveCursor(x, y int) {
 	curCol := v.CurCol()
 	curLine := v.CurLine()
 
+	lastLine := v.LineCount() - 1
+
+	// check for overflows
+	if curLine+y < 0 {
+		y = -curLine
+	} else if curLine+y > lastLine {
+		y = lastLine - curLine
+	}
+	if curCol+x < 0 {
+		x = -curCol
+	}
+	ln := v.lineCols(slice, curLine+y)
+	if curCol+x > ln {
+		x = ln - curCol // put at EOL
+	}
+
 	v.CursorX += x
 	v.CursorY += y
-
-	v.NormalizeCursor()
 
 	// Special handling for tabs
 	c, textX, textY := v.CurChar()

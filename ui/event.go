@@ -254,6 +254,9 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				e.SetStatusErr("Starting move, click new position.")
 				return
 			}
+			if ev.MouseX <= v.x1 {
+				return // scrollbar TBD
+			}
 			col := ev.MouseX - v.x1 + v.offx - 1
 			ln := ev.MouseY - v.y1 + v.offy - 1
 			if ev.DragOn {
@@ -283,13 +286,11 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				}
 				return
 			} else {
-				// reset drag
-				if !isMouseUp(ev) {
+				if !isMouseUp(ev) { // reset drag
 					v.ClearSelections()
 				}
 				e.evtState.DragLn = ln
 				e.evtState.DragCol = col
-				v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
 			}
 			if isMouseUp(ev) {
 				e.cmdOn = false

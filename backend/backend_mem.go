@@ -148,6 +148,12 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 		row1 = len(b.text) - 1
 	}
 
+	if col1 < 0 {
+		col1 = 0
+	}
+	if col2 < 0 {
+		col2 = 0
+	}
 	if row2 < len(b.text) && col2 >= len(b.text[row2]) {
 		// that is, if at end of line, then start from beginning of next row
 		row2++
@@ -158,12 +164,6 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 	}
 	if row2 >= len(b.text) {
 		row2 = len(b.text) - 1
-	}
-	if col1 < 0 {
-		col1 = 0
-	}
-	if col2 < 0 {
-		col2 = 0
 	}
 	if col1 > len(b.text[row1]) {
 		col1 = len(b.text[row1])
