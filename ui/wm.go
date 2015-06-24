@@ -339,7 +339,8 @@ func (e *Editor) DelCol(col *Col, terminateViews bool) {
 				e.Cols[i+1].WidthRatio += c.WidthRatio
 				e.CurCol = e.Cols[i+1]
 			}
-			e.ActivateView(e.CurCol.Views[0], 0, 0)
+			v := e.CurCol.Views[0]
+			e.ActivateView(v, v.CurCol(), v.CurLine())
 			e.Cols = append(e.Cols[:i], e.Cols[i+1:]...)
 			break
 		}
@@ -378,7 +379,8 @@ func (e *Editor) DelView(v core.Viewable, terminate bool) {
 				e.curView = c.Views[i+1]
 			}
 			c.Views = append(c.Views[:i], c.Views[i+1:]...)
-			e.ActivateView(e.curView, 0, 0)
+			cv := e.curView
+			e.ActivateView(cv, cv.CurCol(), cv.CurLine())
 			if terminate {
 				e.TerminateView(v)
 			}
