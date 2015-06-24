@@ -13,6 +13,7 @@ type EvtState struct {
 	MovingView      bool
 	X, Y            int
 	DragLn, DragCol int
+	InDrag          bool
 }
 
 func (e *Editor) EventLoop() {
@@ -104,6 +105,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	v.SetAutoScroll(0, 0, false) // any events stops autoscroll
 	switch ev.Type {
 	case termbox.EventKey:
+		e.evtState.InDrag = true
 		// alt combo
 		if ev.Mod == termbox.ModAlt {
 			switch ev.Ch {
@@ -232,6 +234,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			v.MoveCursor(0, 1)
 		case termbox.MouseRight:
 			if isMouseUp(ev) {
+				e.evtState.InDrag = false
 				v.ClearSelections()
 				v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
 				e.Cmdbar.OpenSelection(v, true)
@@ -260,6 +263,11 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			col := ev.MouseX - v.x1 + v.offx - 1
 			ln := ev.MouseY - v.y1 + v.offy - 1
 			if ev.DragOn {
+				if !e.evtState.InDrag {
+					e.evtState.InDrag = true
+					v.ClearSelections()
+					e.ActivateView(v, e.evtState.DragCol-1, e.evtState.DragLn-1)
+				}
 				// continued drag
 				x1 := e.evtState.DragCol
 				y1 := e.evtState.DragLn
@@ -285,18 +293,19 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 					v.SetAutoScroll(5, 0, true)
 				}
 				return
-			} else {
-				if !isMouseUp(ev) { // reset drag
+			}
+
+			if isMouseUp(ev) { // click
+				if !e.evtState.InDrag {
 					v.ClearSelections()
+					e.ActivateView(v, col-1, ln-1)
+					e.SetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
 				}
-				e.evtState.DragLn = ln
-				e.evtState.DragCol = col
 			}
-			if isMouseUp(ev) {
-				e.cmdOn = false
-				e.ActivateView(v, ev.MouseX-v.x1-2+v.offx, ev.MouseY-v.y1-2+v.offy)
-				e.SetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
-			}
+			e.evtState.InDrag = false
+			e.cmdOn = false
+			e.evtState.DragLn = ln
+			e.evtState.DragCol = col
 		}
 	}
 
