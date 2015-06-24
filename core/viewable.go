@@ -9,6 +9,7 @@ type Viewable interface {
 	Id() int64
 	LineCount() int
 	MoveCursor(x, y int)
+	Reload()
 	Render()
 	Reset()
 	SetBackend(backend Backend)

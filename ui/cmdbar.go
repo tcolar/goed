@@ -127,7 +127,7 @@ func (c *Cmdbar) open(args []string) error {
 	}
 	ed := core.Ed.(*Editor)
 	v := ed.NewView()
-	err := ed.Open(args[0], v, "")
+	_, err := ed.Open(args[0], v, "")
 	if err != nil {
 		return err
 	}
@@ -157,14 +157,14 @@ func (c *Cmdbar) OpenSelection(v *View, newView bool) {
 	loc, line, col := v.SelectionToLoc(&v.selections[0])
 	isDir := false
 	loc, isDir = c.lookupLocation(v.WorkDir(), loc)
-	v2 := ed.ViewByLoc(loc)
-	if v2 != nil {
+	vv := ed.ViewByLoc(loc)
+	if vv != nil {
 		// Already open
-		ed.ActivateView(v2, col-1, line-1)
+		ed.ActivateView(vv.(*View), col-1, line-1)
 		return
 	}
-	v2 = ed.NewView()
-	if err := ed.Open(loc, v2, v.WorkDir()); err != nil {
+	v2 := ed.NewView()
+	if _, err := ed.Open(loc, v2, v.WorkDir()); err != nil {
 		ed.SetStatusErr(err.Error())
 		return
 	}

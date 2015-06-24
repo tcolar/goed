@@ -354,7 +354,8 @@ func (e *Editor) DelCol(col *Col, terminateViews bool) {
 	e.Resize(e.term.Size())
 }
 
-func (e *Editor) DelView(view *View, terminate bool) {
+func (e *Editor) DelView(v core.Viewable, terminate bool) {
+	view := v.(*View)
 	c := e.ViewColumn(view)
 	if len(e.Cols) <= 1 && len(c.Views) <= 1 {
 		e.SetStatusErr("Only one view left !")
@@ -446,7 +447,9 @@ func (e Editor) ViewById(id int64) core.Viewable {
 	return nil
 }
 
-func (e *Editor) ViewByLoc(loc string) *View {
+// ViewByLoc returns the view matching the given location
+// or nil if no match
+func (e *Editor) ViewByLoc(loc string) core.Viewable {
 	if len(loc) == 0 {
 		return nil
 	}

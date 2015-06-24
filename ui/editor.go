@@ -96,26 +96,28 @@ func (e *Editor) Start(loc string) {
 	}
 }
 
-func (e Editor) Open(loc string, view core.Viewable, rel string) error {
-	if view == nil {
-		return fmt.Errorf("Invalid view !")
-	}
+func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable, error) {
 	if len(rel) > 0 && !strings.HasPrefix(loc, string(os.PathSeparator)) {
 		loc = path.Join(rel, loc)
 	}
 	stat, err := os.Stat(loc)
 	if err != nil {
-		return fmt.Errorf("File not found %s", loc)
+		return nil, fmt.Errorf("File not found %s", loc)
 	}
 	// make it absolute
 	loc, err = filepath.Abs(loc)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	title := filepath.Base(loc)
 	if stat.IsDir() {
 		loc += string(os.PathSeparator)
 		title += string(os.PathSeparator)
+	}
+	nv := false
+	if view == nil {
+		view = e.NewView()
+		nv = true
 	}
 	view.Reset()
 	view.SetTitle(title)
@@ -125,7 +127,11 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) error {
 		err = e.openFile(loc, view)
 	}
 	view.SetWorkDir(filepath.Dir(loc))
-	return err
+	if nv {
+		e.InsertView(view.(*View), e.CurView().(*View), 0.2)
+		//		e.ActivateView(view.(*View), 0, 0)
+	}
+	return view, err
 }
 
 func (e *Editor) openDir(loc string, view core.Viewable) error {
