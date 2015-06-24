@@ -41,7 +41,16 @@ func (v *View) Insert(row, col int, s string) {
 	offx, offy := 0, 0
 	if s == "\n" {
 		offy = 1
-		offx = -v.CurCol()
+		if col >= v.LineLen(v.slice, row) {
+			// newline a EOL, copy indentation
+			indent := v.lineIndent(row)
+			if len(indent) > 0 {
+				v.backend.Insert(row+2, 0, string(indent))
+				offx = v.CurCol() - len(indent)
+			}
+		} else { // splitting line in two
+			offx = -v.CurCol()
+		}
 	} else {
 		// move the cursor to after insertion
 		b := []byte(s)
@@ -55,6 +64,16 @@ func (v *View) Insert(row, col int, s string) {
 	v.Render()
 	e.TermFlush()
 	v.MoveCursor(offx, offy)
+}
+
+func (v *View) lineIndent(row int) []rune {
+	ln := v.Line(v.slice, row)
+	for i, c := range ln {
+		if c != ' ' && c != '\t' {
+			return ln[:i]
+		}
+	}
+	return ln
 }
 
 func (v *View) InsertNewLineCur() {
