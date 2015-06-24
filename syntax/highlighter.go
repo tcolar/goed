@@ -3,6 +3,7 @@ package syntax
 import (
 	"path/filepath"
 	"strings"
+	"sync"
 	"unicode"
 )
 
@@ -24,8 +25,12 @@ type Highlights struct {
 	curLn, curIndex int
 }
 
+var m sync.Mutex
+
 // Update updates the highlights for the given text (current slice)
 func (h *Highlights) Update(text [][]rune, file string) {
+	m.Lock()
+	defer m.Unlock()
 	h.ln = 0
 	h.col = 0
 	h.curLn = 0
