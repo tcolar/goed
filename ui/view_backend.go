@@ -21,7 +21,7 @@ func (v *View) InsertCur(s string) {
 	_, x, y := v.CurChar()
 	if len(v.selections) > 0 {
 		s := v.selections[0]
-		v.MoveCursorRoll(s.ColFrom-x-1, s.LineFrom-y-1)
+		v.MoveCursorRoll(s.ColFrom-x, s.LineFrom-y)
 		v.SelectionDelete(&s)
 		v.ClearSelections()
 	}
@@ -33,7 +33,7 @@ func (v *View) InsertCur(s string) {
 func (v *View) Insert(row, col int, s string) {
 	e := core.Ed
 	// backend is 1-based indexed
-	err := v.backend.Insert(row+1, col+1, s)
+	err := v.backend.Insert(row, col, s)
 	if err != nil {
 		e.SetStatusErr("Insert Failed " + err.Error())
 		return
@@ -45,7 +45,7 @@ func (v *View) Insert(row, col int, s string) {
 			// newline a EOL, copy indentation
 			indent := v.lineIndent(row)
 			if len(indent) > 0 {
-				v.backend.Insert(row+2, 0, string(indent))
+				v.backend.Insert(row+1, 0, string(indent))
 				offx = v.CurCol() - len(indent)
 			}
 		} else { // splitting line in two
@@ -94,7 +94,7 @@ func (v *View) Reload() {
 
 // Delete removes characters at the given text location
 func (v *View) Delete(row1, col1, row2, col2 int) {
-	err := v.backend.Remove(row1+1, col1+1, row2+1, col2+1)
+	err := v.backend.Remove(row1, col1, row2, col2)
 	if err != nil {
 		core.Ed.SetStatusErr("Delete Failed " + err.Error())
 		return
@@ -109,7 +109,7 @@ func (v *View) DeleteCur() {
 	c, x, y := v.CurChar()
 	if len(v.selections) > 0 {
 		s := v.selections[0]
-		v.MoveCursorRoll(s.ColFrom-x-1, s.LineFrom-y-1)
+		v.MoveCursorRoll(s.ColFrom-x, s.LineFrom-y)
 		v.SelectionDelete(&s)
 		v.ClearSelections()
 		return
@@ -139,7 +139,7 @@ func (v *View) LineCount() int {
 // Line return the line at the given index
 func (v *View) Line(s *core.Slice, lnIndex int) []rune {
 	// backend is 1-based indexed
-	index := lnIndex + 1 - s.R1
+	index := lnIndex - s.R1
 	if index < 0 || index >= len(*s.Text()) {
 		return []rune{}
 	}

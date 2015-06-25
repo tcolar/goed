@@ -137,7 +137,7 @@ func (v *View) RenderText() {
 		e.TermFB(fg, bg)
 	}
 	// Note: using full lines
-	v.slice = v.backend.Slice(v.offy+1, 1, v.offy+v.LastViewLine()+1, -1)
+	v.slice = v.backend.Slice(v.offy, 0, v.offy+v.LastViewLine(), -1)
 	if e.Config().SyntaxHighlighting {
 		v.updateHighlights()
 	}
@@ -168,7 +168,7 @@ func (v *View) RenderText() {
 		}
 		for colc, c := range l[start:] {
 			sx, sy := v.CursorTextPos(v.slice, v.offx+x-2-v.x1, v.offy+y-2-v.y1)
-			selected, _ := v.Selected(sx+1, sy+1)
+			selected, _ := v.Selected(sx, sy)
 			if selected != inSelection {
 				inSelection = selected
 				if selected {

@@ -263,23 +263,23 @@ func (e *Editor) autoScroller() {
 		if v.offx < 0 {
 			v.offx = 0
 		}
-		if s.LineFrom < 1 {
-			s.LineFrom = 1
+		if s.LineFrom < 0 {
+			s.LineFrom = 0
 		} else if s.LineFrom > v.LineCount() {
 			s.LineFrom = v.LineCount()
 		}
-		if s.LineTo < 1 {
-			s.LineTo = 1
+		if s.LineTo < 0 {
+			s.LineTo = 0
 		} else if s.LineTo > v.LineCount() {
 			s.LineTo = v.LineCount()
 		}
-		if s.ColFrom < 1 {
-			s.ColFrom = 1
+		if s.ColFrom < 0 {
+			s.ColFrom = 0
 		} else if s.ColFrom > lnLen {
 			s.ColFrom = lnLen
 		}
-		if s.ColTo < 1 {
-			s.ColTo = 1
+		if s.ColTo < 0 {
+			s.ColTo = 0
 		} else if s.ColTo > lnLen {
 			s.ColTo = lnLen
 		}

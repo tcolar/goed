@@ -66,12 +66,12 @@ func TestApiGets(t *testing.T) {
 	assert.Equal(t, body, "")
 
 	s := core.Ed.CurView().Selections()
-	sel := core.NewSelection(1, 1, 2, 10)
-	sel2 := core.NewSelection(3, 3, 5, 5)
+	sel := core.NewSelection(0, 0, 1, 9)
+	sel2 := core.NewSelection(2, 2, 4, 5)
 	*s = append(*s, *sel, *sel2)
 	body, err = get("/v1/view/1/selections")
 	assert.Nil(t, err)
-	assert.Equal(t, body, "1 1 2 10\n3 3 5 5\n")
+	assert.Equal(t, body, "0 0 1 9\n2 2 4 5\n")
 
 	body, err = get("/v1/view/1/line_count")
 	assert.Nil(t, err)

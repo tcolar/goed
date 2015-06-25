@@ -34,10 +34,10 @@ func NewFileBackend(loc string, viewId int64) (*FileBackend, error) {
 	b := &FileBackend{
 		viewId:     viewId,
 		srcLoc:     loc,
-		ln:         1,
+		ln:         0,
 		lnCount:    1,
-		col:        1,
-		prevCol:    1,
+		col:        0,
+		prevCol:    0,
 		bufferSize: 65536,
 	}
 	err := b.Reload()
@@ -167,6 +167,7 @@ func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {
 	}
 	end := f.offset
 	if end >= f.length {
+
 		return nil
 	}
 	err = f.seek(row1, col1)
@@ -174,7 +175,7 @@ func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {
 		return err
 	}
 	ln := end - f.offset + 1
-	if ln <= 0 {
+	if ln < 0 {
 		return nil
 	}
 	buf := make([]byte, ln)
@@ -200,7 +201,7 @@ func (f *FileBackend) LineCount() int {
 func (f *FileBackend) Slice(row, col, row2, col2 int) *core.Slice {
 	slice := core.NewSlice(row, col, row2, col2, [][]rune{})
 	text := slice.Text()
-	if row < 1 || col < 1 {
+	if row < 0 || col < 0 {
 		return slice
 	}
 	if row2 != -1 && row > row2 {
@@ -284,9 +285,6 @@ func (f *FileBackend) ViewId() int64 {
 
 // seek moves the offest to the given row/col
 func (f *FileBackend) seek(row, col int) error {
-	if row == f.ln && col == f.col {
-		return nil
-	}
 	// absolute move likely more efficient if we are looking back 500 lines or more
 	if row < f.ln && f.ln-row > 500 {
 		// Seek to the beginning of the right row
@@ -323,7 +321,7 @@ func (f *FileBackend) seekRow(row int) error {
 	} else {
 		err = f.seekRowRwd(row)
 	}
-	f.col = 1
+	f.col = 0
 	return err
 }
 
@@ -340,7 +338,7 @@ outer:
 			f.col++
 			if b == '\n' { // TODO: is that good enough with UTF emcoding ??
 				f.ln++
-				f.col = 1
+				f.col = 0
 				if f.ln >= row {
 					break outer
 				}
@@ -356,7 +354,7 @@ outer:
 
 func (f *FileBackend) seekRowRwd(row int) error {
 	// Move to the end of the previous line
-	for f.ln != row-1 {
+	for f.ln >= row {
 		if f.offset == 0 {
 			return nil // start of file
 		}
@@ -403,7 +401,7 @@ func (f *FileBackend) readRune() (r rune, size int, err error) {
 	f.offset += int64(size)
 	if r == '\n' {
 		f.prevCol = f.col
-		f.col = 1
+		f.col = 0
 		f.ln++
 	} else {
 		f.col++
@@ -436,8 +434,8 @@ func (f *FileBackend) peekRune() (r rune, size int, err error) {
 // reset puts us back at the beginning of the file
 func (f *FileBackend) reset() error {
 	f.offset = 0
-	f.ln = 1
-	f.col = 1
+	f.ln = 0
+	f.col = 0
 	_, err := f.file.Seek(0, 0)
 	return err
 }
@@ -499,9 +497,9 @@ func (f *FileBackend) Wipe() {
 	os.Truncate(f.bufferLoc, 0)
 	f.file.Seek(0, 0)
 	f.offset = 0
-	f.ln = 1
-	f.col = 1
-	f.prevCol = 1
+	f.ln = 0
+	f.col = 0
+	f.prevCol = 0
 	f.lnCount = 1
 	f.length = 0
 }

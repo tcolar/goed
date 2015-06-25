@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -126,4 +127,20 @@ func InitHome() {
 		panic(err)
 	}
 	log.SetOutput(LogFile)
+}
+
+// LookupLocation will try to locate the given location
+// if not found relative to dir, then try up the directory tree
+// this works great to open GO import path for example
+func LookupLocation(dir, loc string) (string, bool) {
+	f := path.Join(dir, loc)
+	stat, err := os.Stat(f)
+	if err == nil {
+		return f, stat.IsDir()
+	}
+	dir = filepath.Dir(dir)
+	if strings.HasSuffix(dir, string(os.PathSeparator)) { //root
+		return loc, true
+	}
+	return LookupLocation(dir, loc)
 }

@@ -4,7 +4,7 @@ type Viewable interface {
 	Backend() Backend
 	CurCol() int
 	CurLine() int
-	CursorTextPos(s *Slice, c, l int) (col, ln int)
+	CursorTextPos(s *Slice, c, l int) (col, row int)
 	Dirty() bool
 	Id() int64
 	LineCount() int

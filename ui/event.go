@@ -2,18 +2,26 @@ package ui
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/termbox-go"
 )
 
+const (
+	// Double clicks
+	MouseLeftDbl termbox.Key = 0xFF00 + iota
+	MouseRightDbl
+)
+
 // Evtstate stores some state about kb/mouse events
 type EvtState struct {
-	MovingView      bool
-	X, Y            int
-	DragLn, DragCol int
-	InDrag          bool
+	MovingView                    bool
+	LastClickX, LastClickY        int
+	LastLeftClick, LastRightClick int64 // timestamp
+	DragLn, DragCol               int
+	InDrag                        bool
 }
 
 func (e *Editor) EventLoop() {
@@ -100,17 +108,18 @@ func (s *Statusbar) Event(e *Editor, ev *termbox.Event) {
 // Event handler for View
 func (v *View) Event(e *Editor, ev *termbox.Event) {
 	dirty := false
-	ln, col := v.CurLine(), v.CurCol()
+
 	es := false                  //expand selection
 	v.SetAutoScroll(0, 0, false) // any events stops autoscroll
 	switch ev.Type {
 	case termbox.EventKey:
+		ln, col := v.CurLine(), v.CurCol()
 		e.evtState.InDrag = true
 		// alt combo
 		if ev.Mod == termbox.ModAlt {
 			switch ev.Ch {
 			case 'o':
-				e.Cmdbar.OpenSelection(v, false)
+				v.OpenSelection(false)
 				return
 			}
 		}
@@ -126,7 +135,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			es = true
 		case termbox.KeyArrowLeft:
 			offset := 1
-			c, _, _ := v.CursorChar(v.slice, v.CurCol()-1, v.CurLine())
+			c, _, _ := v.CursorChar(v.slice, col-1, ln)
 			if c != nil {
 				offset = v.runeSize(*c)
 			}
@@ -140,23 +149,23 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			es = true
 		case termbox.KeyPgdn:
 			dist := v.LastViewLine() + 1
-			if v.LineCount()-v.CurLine() < dist {
-				dist = v.LineCount() - v.CurLine() - 1
+			if v.LineCount()-ln < dist {
+				dist = v.LineCount() - ln - 1
 			}
 			v.MoveCursor(0, dist)
 			es = true
 		case termbox.KeyPgup:
 			dist := v.LastViewLine() + 1
-			if dist > v.CurLine() {
-				dist = v.CurLine()
+			if dist > ln {
+				dist = ln
 			}
 			v.MoveCursor(0, -dist)
 			es = true
 		case termbox.KeyEnd:
-			v.MoveCursor(v.lineCols(v.slice, v.CurLine())-v.CurCol(), 0)
+			v.MoveCursor(v.lineCols(v.slice, ln)-col, 0)
 			es = true
 		case termbox.KeyHome:
-			v.MoveCursor(-v.CurCol(), 0)
+			v.MoveCursor(-col, 0)
 			es = true
 		case termbox.KeyTab:
 			v.InsertCur("\t")
@@ -174,7 +183,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.KeyCtrlS:
 			v.Save()
 		case termbox.KeyCtrlO:
-			e.Cmdbar.OpenSelection(v, true)
+			v.OpenSelection(true)
 		case termbox.KeyCtrlW:
 			e.DelViewCheck(e.curView)
 		case termbox.KeyCtrlC:
@@ -187,15 +196,17 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				}
 			}
 			// copy
-			if len(v.selections) > 0 {
-				v.SelectionCopy(&v.selections[0])
+			if len(v.selections) == 0 {
+				v.SelectLine(ln)
 			}
+			v.SelectionCopy(&v.selections[0])
 		case termbox.KeyCtrlX:
-			if len(v.selections) > 0 {
-				v.SelectionCopy(&v.selections[0])
-				v.SelectionDelete(&v.selections[0])
-				v.ClearSelections()
+			if len(v.selections) == 0 {
+				v.SelectLine(ln)
 			}
+			v.SelectionCopy(&v.selections[0])
+			v.SelectionDelete(&v.selections[0])
+			v.ClearSelections()
 		case termbox.KeyCtrlV:
 			v.Paste()
 			dirty = true
@@ -204,6 +215,9 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.KeyCtrlR:
 			v.Reload()
 		case termbox.KeyCtrlF:
+			if len(v.selections) == 0 {
+				v.SelectWord(ln, col)
+			}
 			if len(v.selections) > 0 {
 				text := core.RunesToString(v.SelectionText(&v.selections[0]))
 				e.Cmdbar.Search(text)
@@ -215,34 +229,53 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				dirty = true
 			}
 		}
-		// extend keyboard slection
+		// extend keyboard selection
 		if es && ev.Meta == termbox.Shift {
-			v.ExpandSelection(
-				ln+1,
-				v.lineRunesTo(v.slice, ln, col)+1,
-				v.CurLine()+1,
-				v.lineRunesTo(v.slice, v.CurLine(), v.CurCol())+1,
+			v.StretchSelection(
+				ln,
+				v.lineRunesTo(v.slice, ln, col),
+				v.CurLine(),
+				v.lineRunesTo(v.slice, v.CurLine(), v.CurCol()),
 			)
 		} else {
 			v.ClearSelections()
 		}
 	case termbox.EventMouse:
+		col := ev.MouseX - v.x1 + v.offx - 2
+		ln := ev.MouseY - v.y1 + v.offy - 2
+		if isMouseUp(ev) && ev.MouseX == e.evtState.LastClickX &&
+			ev.MouseY == e.evtState.LastClickY &&
+			time.Now().Unix()-e.evtState.LastLeftClick < 2 {
+			ev.Key = MouseLeftDbl
+		}
 		switch ev.Key {
+		case MouseLeftDbl:
+			if selection := v.ExpandSelectionWord(ln, col); selection != nil {
+				v.selections = []core.Selection{
+					*selection,
+				}
+			}
+			return
 		case termbox.MouseScrollUp:
 			v.MoveCursor(0, -1)
+			return
 		case termbox.MouseScrollDown:
 			v.MoveCursor(0, 1)
+			return
 		case termbox.MouseRight:
 			if isMouseUp(ev) {
 				e.evtState.InDrag = false
+				e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
+				e.evtState.LastRightClick = time.Now().Unix()
 				v.ClearSelections()
 				v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
-				e.Cmdbar.OpenSelection(v, true)
+				v.OpenSelection(true)
 			}
+			return
 		case termbox.MouseLeft:
 			if e.evtState.MovingView && isMouseUp(ev) {
 				e.evtState.MovingView = false
-				e.ViewMove(e.evtState.X, e.evtState.Y, ev.MouseX, ev.MouseY)
+				e.ViewMove(e.evtState.LastClickX, e.evtState.LastClickY, ev.MouseX, ev.MouseY)
 				return
 			}
 			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
@@ -252,21 +285,19 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			if ev.MouseX == v.x1 && ev.MouseY == v.y1 && isMouseUp(ev) {
 				// handle
 				e.evtState.MovingView = true
-				e.evtState.X = ev.MouseX
-				e.evtState.Y = ev.MouseY
+				e.evtState.LastClickX = ev.MouseX
+				e.evtState.LastClickY = ev.MouseY
 				e.SetStatusErr("Starting move, click new position.")
 				return
 			}
 			if ev.MouseX <= v.x1 {
 				return // scrollbar TBD
 			}
-			col := ev.MouseX - v.x1 + v.offx - 1
-			ln := ev.MouseY - v.y1 + v.offy - 1
 			if ev.DragOn {
 				if !e.evtState.InDrag {
 					e.evtState.InDrag = true
 					v.ClearSelections()
-					e.ActivateView(v, e.evtState.DragCol-1, e.evtState.DragLn-1)
+					e.ActivateView(v, e.evtState.DragCol, e.evtState.DragLn)
 				}
 				// continued drag
 				x1 := e.evtState.DragCol
@@ -276,20 +307,20 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 
 				s := core.NewSelection(
 					y1,
-					v.lineRunesTo(v.slice, y1-1, x1-1)+1,
+					v.lineRunesTo(v.slice, y1, x1),
 					y2,
-					v.lineRunesTo(v.slice, y2-1, x2-1)+1)
+					v.lineRunesTo(v.slice, y2, x2))
 				v.selections = []core.Selection{
 					*s,
 				}
 				// Handling scrolling while dragging
-				if ln <= v.offy { // scroll up
+				if ln < v.offy { // scroll up
 					v.SetAutoScroll(0, -v.LineCount()/10, true)
-				} else if ln >= v.offy+(v.y2-v.y1)-1 { // scroll down
+				} else if ln >= v.offy+(v.y2-v.y1)-2 { // scroll down
 					v.SetAutoScroll(0, v.LineCount()/10, true)
-				} else if col <= v.offx { //scroll left
+				} else if col < v.offx { //scroll left
 					v.SetAutoScroll(-5, 0, true)
-				} else if col >= v.offx+(v.x2-v.x1)-2 { // scroll right
+				} else if col >= v.offx+(v.x2-v.x1)-3 { // scroll right
 					v.SetAutoScroll(5, 0, true)
 				}
 				return
@@ -298,7 +329,9 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			if isMouseUp(ev) { // click
 				if !e.evtState.InDrag {
 					v.ClearSelections()
-					e.ActivateView(v, col-1, ln-1)
+					e.ActivateView(v, col, ln)
+					e.evtState.LastLeftClick = time.Now().Unix()
+					e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
 					e.SetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
 				}
 			}
@@ -306,7 +339,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			e.cmdOn = false
 			e.evtState.DragLn = ln
 			e.evtState.DragCol = col
-		}
+		} // end switch
 	}
 
 	if dirty {

@@ -2,9 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"os"
-	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -138,63 +135,6 @@ func (c *Cmdbar) open(args []string) error {
 	}
 	ed.ActivateView(v, 0, 0)
 	return nil
-}
-
-// Open what's selected or under the cursor
-// if newView is true then open in a new view, otherwise
-// replace content of v
-func (c *Cmdbar) OpenSelection(v *View, newView bool) {
-	ed := core.Ed.(*Editor)
-	newView = newView || v.Dirty()
-	if len(v.selections) == 0 {
-		selection := v.PathSelection(v.CurLine()+1, v.CurCol()+1)
-		if selection == nil {
-			ed.SetStatusErr("Could not expand location from cursor location.")
-			return
-		}
-		v.selections = []core.Selection{*selection}
-	}
-	loc, line, col := v.SelectionToLoc(&v.selections[0])
-	isDir := false
-	loc, isDir = c.lookupLocation(v.WorkDir(), loc)
-	vv := ed.ViewByLoc(loc)
-	if vv != nil {
-		// Already open
-		ed.ActivateView(vv.(*View), col-1, line-1)
-		return
-	}
-	v2 := ed.NewView()
-	if _, err := ed.Open(loc, v2, v.WorkDir()); err != nil {
-		ed.SetStatusErr(err.Error())
-		return
-	}
-	if newView {
-		if isDir {
-			ed.InsertView(v2, v, 0.5)
-		} else {
-			ed.InsertViewSmart(v2)
-		}
-	} else {
-		ed.ReplaceView(v, v2)
-	}
-	// note:  x, y are zero based, line, col are 1 based
-	ed.ActivateView(v2, col-1, line-1)
-}
-
-// lookupLocation will try to locate the given location
-// if not found relative to dir, then try up the directory tree
-// this works great to open GO import path for example
-func (c *Cmdbar) lookupLocation(dir, loc string) (string, bool) {
-	f := path.Join(dir, loc)
-	stat, err := os.Stat(f)
-	if err == nil {
-		return f, stat.IsDir()
-	}
-	dir = filepath.Dir(dir)
-	if strings.HasSuffix(dir, string(os.PathSeparator)) { //root
-		return loc, true
-	}
-	return c.lookupLocation(dir, loc)
 }
 
 func (c *Cmdbar) save(args []string) {

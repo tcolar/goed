@@ -27,6 +27,7 @@ func NewMemBackend(path string, viewId int64) (*MemBackend, error) {
 
 func (m *MemBackend) Reload() error {
 	// TODO: check dirty ?
+	m.Wipe()
 	if len(m.file) == 0 {
 		return nil
 	}
@@ -94,8 +95,6 @@ func (b *MemBackend) Append(text string) error {
 }
 
 func (b *MemBackend) Insert(row, col int, text string) error {
-	row-- // 1 index to 0 index
-	col--
 	runes := core.StringToRunes(text)
 	if len(runes) == 0 {
 		return nil
@@ -134,12 +133,6 @@ func (b *MemBackend) Insert(row, col int, text string) error {
 }
 
 func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
-
-	// convert to 0-index for simplicity
-	row1--
-	row2--
-	col1--
-	col2--
 
 	if row1 < 0 {
 		row1 = 0
@@ -184,7 +177,7 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 func (b *MemBackend) Slice(row, col, row2, col2 int) *core.Slice {
 	slice := core.NewSlice(row, col, row2, col2, [][]rune{})
 	text := slice.Text()
-	if row < 1 || col < 1 {
+	if row < 0 || col < 0 {
 		return slice
 	}
 	if row2 != -1 && row > row2 {
@@ -195,20 +188,20 @@ func (b *MemBackend) Slice(row, col, row2, col2 int) *core.Slice {
 	}
 	r := row
 	for ; row2 == -1 || r <= row2; r++ {
-		if r > len(b.text) {
+		if r >= len(b.text) {
 			break
 		}
 		if col2 == -1 {
-			*text = append(*text, b.text[r-1])
+			*text = append(*text, b.text[r])
 		} else {
-			c, c2, l := col-1, col2, len(b.text[r-1])
+			c, c2, l := col, col2+1, len(b.text[r])
 			if c > l {
 				c = l
 			}
 			if c2 > l {
 				c2 = l
 			}
-			*text = append(*text, b.text[r-1][c:c2])
+			*text = append(*text, b.text[r][c:c2])
 		}
 	}
 	return slice

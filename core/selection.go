@@ -3,7 +3,6 @@ package core
 import "fmt"
 
 // View Selection
-// Coordinates are 1 indexed
 type Selection struct {
 	LineFrom, ColFrom int // selection start point
 	LineTo, ColTo     int // selection end point (colto=-1 means whole lines)
