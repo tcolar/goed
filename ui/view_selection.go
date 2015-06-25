@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"unicode"
 
 	"github.com/atotto/clipboard"
 	"github.com/tcolar/goed/core"
@@ -27,10 +28,10 @@ func (v *View) SelectionText(s *core.Selection) [][]rune {
 	text := *v.backend.Slice(lf, cf, lf, -1).Text()
 	for l := lf + 1; l < lt; l++ {
 		// middle
-		text = append(text, *v.backend.Slice(l, 1, l, -1).Text()...)
+		text = append(text, *v.backend.Slice(l, 0, l, -1).Text()...)
 	}
 	// last line
-	text = append(text, *v.backend.Slice(lt, 1, lt, ct).Text()...)
+	text = append(text, *v.backend.Slice(lt, 0, lt, ct).Text()...)
 	return text
 }
 
@@ -60,7 +61,9 @@ func (v *View) SelectionCopy(s *core.Selection) {
 }
 
 func (v *View) SelectionDelete(s *core.Selection) {
-	v.Delete(s.LineFrom-1, s.ColFrom-1, s.LineTo-1, s.ColTo-1)
+	y, x := s.LineFrom-v.CurLine(), s.ColFrom-v.CurCol()
+	v.Delete(s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
+	v.MoveCursor(x, y)
 }
 
 func (v *View) Paste() {
@@ -80,10 +83,10 @@ var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?
 
 // Try to select a "location" from the given position
 // a location is a path with possibly a line number and maybe a column number as well
-func (v *View) PathSelection(line, col int) *core.Selection {
-	l := v.Line(v.slice, line-1)
+func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
+	l := v.Line(v.slice, line)
 	ln := string(l)
-	slice := core.NewSlice(1, 1, 1, len(l)+1, [][]rune{l})
+	slice := core.NewSlice(0, 0, 0, len(l), [][]rune{l})
 	c := v.lineRunesTo(slice, 0, col)
 	matches := locationRegexp.FindAllStringIndex(ln, -1)
 	var best []int
@@ -98,8 +101,46 @@ func (v *View) PathSelection(line, col int) *core.Selection {
 	if best == nil {
 		return nil
 	}
-	// TODO: if a path like a go import, try to find that path up from curdir ?
-	return core.NewSelection(line, best[0]+1, line, best[1])
+	return core.NewSelection(line, best[0], line, best[1]-1)
+}
+
+// Try to select the longest "word" from current position.
+func (v *View) ExpandSelectionWord(line, col int) *core.Selection {
+	l := v.Line(v.slice, line)
+	c := v.lineRunesTo(v.slice, line, col)
+	c1, c2 := c, c
+	for ; c1 >= 0 && isWordRune(l[c1]); c1-- {
+	}
+	c1++
+	for ; c2 < len(l) && isWordRune(l[c2]); c2++ {
+	}
+	c2--
+	if c1 >= c2 {
+		return nil
+	}
+	return core.NewSelection(line, c1, line, c2)
+}
+
+func isWordRune(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
+}
+
+// Select the whole given line
+func (v *View) SelectLine(line int) {
+	s := core.NewSelection(line, 0, line, v.LineLen(v.slice, line))
+	v.selections = []core.Selection{
+		*s,
+	}
+}
+
+// Select a word at the given location (if any)
+func (v *View) SelectWord(line, col int) {
+	s := v.ExpandSelectionWord(line, col)
+	if s != nil {
+		v.selections = []core.Selection{
+			*s,
+		}
+	}
 }
 
 // Parses a selection into a location (file, line, col)
@@ -121,8 +162,8 @@ func (v *View) SelectionToLoc(sel *core.Selection) (loc string, line, col int) {
 	return loc, line, col
 }
 
-// Expand a selection toward a new position
-func (v *View) ExpandSelection(prevl, prevc, l, c int) {
+// Stretch a selection toward a new position
+func (v *View) StretchSelection(prevl, prevc, l, c int) {
 	if len(v.selections) == 0 {
 		s := *core.NewSelection(prevl, prevc, l, c)
 		v.selections = []core.Selection{
@@ -138,4 +179,44 @@ func (v *View) ExpandSelection(prevl, prevc, l, c int) {
 		s.Normalize()
 		v.selections[0] = s
 	}
+}
+
+// Open what's selected or under the cursor
+// if newView is true then open in a new view, otherwise
+// replace content of v
+func (v *View) OpenSelection(newView bool) {
+	ed := core.Ed.(*Editor)
+	newView = newView || v.Dirty()
+	if len(v.selections) == 0 {
+		selection := v.ExpandSelectionPath(v.CurLine(), v.CurCol())
+		if selection == nil {
+			ed.SetStatusErr("Could not expand location from cursor location.")
+			return
+		}
+		v.selections = []core.Selection{*selection}
+	}
+	loc, line, col := v.SelectionToLoc(&v.selections[0])
+	isDir := false
+	loc, isDir = core.LookupLocation(v.WorkDir(), loc)
+	vv := ed.ViewByLoc(loc)
+	if vv != nil {
+		// Already open
+		ed.ActivateView(vv.(*View), col, line)
+		return
+	}
+	v2 := ed.NewView()
+	if _, err := ed.Open(loc, v2, v.WorkDir()); err != nil {
+		ed.SetStatusErr(err.Error())
+		return
+	}
+	if newView {
+		if isDir {
+			ed.InsertView(v2, v, 0.5)
+		} else {
+			ed.InsertViewSmart(v2)
+		}
+	} else {
+		ed.ReplaceView(v, v2)
+	}
+	ed.ActivateView(v2, col, line)
 }
