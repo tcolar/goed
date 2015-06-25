@@ -8,6 +8,7 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// Config represents the Goed configuration data.
 type Config struct {
 	SyntaxHighlighting bool
 	Theme              string // ie: theme1.toml

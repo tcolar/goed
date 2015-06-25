@@ -11,6 +11,7 @@ import (
 
 const tabSize = 4
 
+// View represents an individual view pane(file) in the editor.
 type View struct {
 	Widget
 	id               int64
@@ -42,6 +43,7 @@ func (e *Editor) NewView() *View {
 	return v
 }
 
+// NewFileView creates a view for a given file
 func (e Editor) NewFileView(path string) *View {
 	v := e.NewView()
 	e.Open(path, v, "")
@@ -252,10 +254,12 @@ func (v *View) applyHighlight(ln, col int) {
 	e.TermFB(s, t.Bg)
 }
 
+// LastViewLines returns the last Line of this view (~ number of visible lines)
 func (v *View) LastViewLine() int {
 	return v.y2 - v.y1 - 3
 }
 
+// LastViewCol returns the last column of this view (~ number of visible columns)
 func (v *View) LastViewCol() int {
 	return v.x2 - v.x1 - 3
 }

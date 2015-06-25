@@ -34,7 +34,7 @@ func NewFileBackendCmd(args []string, dir string, viewId int, title *string) (*B
 	return c, nil
 }*/
 
-// Cmd runner with In-memory based backend
+// NewMemBackendCmd creates a Comand runner backed by an In-memory based backend
 // if title == nil then will show the command name
 func NewMemBackendCmd(args []string, dir string, viewId int64, title *string) (*BackendCmd, error) {
 	b, err := NewMemBackend("", viewId)

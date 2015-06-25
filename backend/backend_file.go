@@ -13,7 +13,8 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-// File backend uses a plain unbeffered file as its buffer.
+// FileBackend is a backend implemetation that uses a plain unbuffered file as
+// its buffer.
 type FileBackend struct {
 	srcLoc    string
 	bufferLoc string
@@ -29,7 +30,8 @@ type FileBackend struct {
 	length           int64
 }
 
-// File backend, the source is a file, the buffer is a copy of the file in the buffer dir.
+// NewFileBackend creates a backend from a copy of the file in the buffer dir.
+// Note that very large files(>100Mb) might be edited in place.
 func NewFileBackend(loc string, viewId int64) (*FileBackend, error) {
 	b := &FileBackend{
 		viewId:     viewId,

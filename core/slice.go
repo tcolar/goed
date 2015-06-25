@@ -1,5 +1,6 @@
 package core
 
+// Slice represents a "matrix" of text (runes)
 type Slice struct {
 	text           [][]rune
 	R1, C1, R2, C2 int //bounds

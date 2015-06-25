@@ -12,6 +12,7 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+// Editor is goed's main Editor pane (singleton)
 type Editor struct {
 	Cmdbar     *Cmdbar
 	config     *core.Config
@@ -34,7 +35,7 @@ func NewEditor() *Editor {
 	}
 }
 
-// Edior with Mock terminal for testing
+// Editor with Mock terminal for testing
 func NewMockEditor() *Editor {
 	return &Editor{
 		term:   core.NewMockTerm(),
@@ -42,6 +43,7 @@ func NewMockEditor() *Editor {
 	}
 }
 
+// Start starts-up the editor
 func (e *Editor) Start(loc string) {
 	err := e.term.Init()
 	if err != nil {
@@ -96,6 +98,7 @@ func (e *Editor) Start(loc string) {
 	}
 }
 
+// Open opens a given location in the editor (in the given view)
 func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable, error) {
 	if len(rel) > 0 && !strings.HasPrefix(loc, string(os.PathSeparator)) {
 		loc = path.Join(rel, loc)
@@ -134,6 +137,7 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable,
 	return view, err
 }
 
+// OpenDir opens a directory listing
 func (e *Editor) openDir(loc string, view core.Viewable) error {
 	args := []string{"ls", "-a", "--color=no"}
 	title := filepath.Base(loc) + "/"
@@ -147,6 +151,7 @@ func (e *Editor) openDir(loc string, view core.Viewable) error {
 	return nil
 }
 
+// OpenFile opens a file in the editor
 func (e *Editor) openFile(loc string, view core.Viewable) error {
 	if !core.IsTextFile(loc) {
 		return fmt.Errorf("Binary file ? %s", loc)

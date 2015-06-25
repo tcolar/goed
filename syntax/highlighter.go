@@ -7,6 +7,7 @@ import (
 	"unicode"
 )
 
+// Highlight represents a highlighting style for a piece of text
 type Highlight struct {
 	Style          StyleId
 	ColFrom, ColTo int
@@ -19,6 +20,7 @@ func NewHighlight(s StyleId, colFrom, colTo int) Highlight {
 	}
 }
 
+// Highlights is a set of Highlight items.
 type Highlights struct {
 	Lines           [][]Highlight
 	ln, col         int // internal use

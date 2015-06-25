@@ -17,6 +17,7 @@ func (v *View) Save() {
 	e.SetStatus("Saved " + v.backend.SrcLoc())
 }
 
+// InsertCur inserts text at the current location.
 func (v *View) InsertCur(s string) {
 	_, x, y := v.CurChar()
 	if len(v.selections) > 0 {

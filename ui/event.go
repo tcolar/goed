@@ -24,6 +24,8 @@ type EvtState struct {
 	InDrag                        bool
 }
 
+// EventLoop is the main event loop that keeps waiting for events as long as
+// the editor is running.
 func (e *Editor) EventLoop() {
 
 	e.term.SetMouseMode(termbox.MouseMotion)

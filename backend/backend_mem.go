@@ -9,12 +9,14 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+// MemBackend is a Backend implementation backed by an in memory bufer.
 type MemBackend struct {
 	text   [][]rune
 	file   string
 	viewId int64
 }
 
+// NewmemBackend creates a new in memory backend by reading a file.
 func NewMemBackend(path string, viewId int64) (*MemBackend, error) {
 	m := &MemBackend{
 		text:   [][]rune{[]rune{}},

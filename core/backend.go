@@ -2,9 +2,13 @@ package core
 
 import "io"
 
+// Backend represent the backend(data operations) of a View.
+// Backend implements the low level data handling.
 type Backend interface {
-	SrcLoc() string    // "original" source
-	BufferLoc() string // buffer location
+	// SrcLoc returns the location of the original data.
+	SrcLoc() string
+	// BufferLoc is the location of the "copy" the backend works directly on.
+	BufferLoc() string
 
 	Insert(line, col int, text string) error
 	Append(text string) error
@@ -12,19 +16,22 @@ type Backend interface {
 
 	LineCount() int
 
+	// Save saves the edited data (BufferLoc) into the original (SrcLoc)
 	Save(loc string) error
 
-	// Get a region ("rectangle") as a runes matrix
+	// Slice gets a region of text ("rectangle") as a runes matrix
 	Slice(line1, col, line2, col2 int) *Slice
 
+	// Close closes the backend resources.
 	Close() error
 
+	// ViewId returns the "unique" viewid given to this buffer.
 	ViewId() int64
 
-	// Completely clears the buffer (empty)
+	// Completely clears the buffer text (empty document)
 	Wipe()
 
-	// Reloads from source
+	// Reloads the text (from SrcLoc to BufferLoc)
 	Reload() error
 
 	//Sync() error         // sync from source ?

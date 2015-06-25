@@ -11,6 +11,7 @@ import (
 )
 
 // Goed Api
+// TODO: probably to be removed
 type Api struct {
 }
 

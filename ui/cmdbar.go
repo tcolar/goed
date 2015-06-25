@@ -9,7 +9,8 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-// Cmdbar widget
+// Cmdbar is the CommandBar widget
+// TODO: needs to be decoupled from it's actions
 type Cmdbar struct {
 	Widget
 	Cmd     []rune

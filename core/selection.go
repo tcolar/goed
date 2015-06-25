@@ -2,7 +2,7 @@ package core
 
 import "fmt"
 
-// View Selection
+// Selection represents some selected text in a view
 type Selection struct {
 	LineFrom, ColFrom int // selection start point
 	LineTo, ColTo     int // selection end point (colto=-1 means whole lines)
@@ -19,7 +19,7 @@ func NewSelection(l1, c1, l2, c2 int) *Selection {
 	return s
 }
 
-// Return the selection in the form "line1 col1 line2 col2"
+// String return the selection in the form "line1 col1 line2 col2"
 func (s Selection) String() string {
 	return fmt.Sprintf("%d %d %d %d", s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
 }

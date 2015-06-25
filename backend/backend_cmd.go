@@ -12,7 +12,7 @@ import (
 )
 
 // BackendCmd is used to run a command using a specific backend
-// whose content is the output from an extenal command.
+// whose content will be the the output of the command.
 type BackendCmd struct {
 	core.Backend
 	dir     string
@@ -70,6 +70,7 @@ func (c *BackendCmd) stop() {
 	}
 }
 
+// CmdStarter is an interface for a "startable" command
 type CmdStarter interface {
 	Start(c *BackendCmd) error
 }
@@ -88,7 +89,8 @@ func (s *FileCmdStarter) Start(c *BackendCmd) error {
 	return err
 }*/
 
-// starter impl for mem backend
+// MemCmdStarter is the command starter implementation for mem backend
+// It starts the command and "streams" the output to the backend.
 type MemCmdStarter struct {
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/tcolar/termbox-go"
 )
 
+// Col represent a column of the editor (a set of views)
 type Col struct {
 	WidthRatio float64
 	Views      []*View
@@ -22,6 +23,7 @@ func (e *Editor) NewCol(width float64, views []*View) *Col {
 	}
 }
 
+// WidgetAt returns the widget at a given editor location
 func (e *Editor) WidgetAt(x, y int) Renderer {
 	_, h := e.term.Size()
 	if y == 0 {
@@ -73,6 +75,7 @@ func (e Editor) Render() {
 	e.TermFlush()
 }
 
+// Renderer is the interface for a renderable UI component.
 type Renderer interface {
 	Bounds() (int, int, int, int)
 	Render()

@@ -17,6 +17,7 @@ const (
 	Underlined
 )
 
+// Theme represents a goed theme data.
 type Theme struct {
 	Bg       Style // default to term bg
 	Fg       Style // default to term fg

@@ -61,6 +61,7 @@ func CountLines(r io.Reader) (int, error) {
 	return count, nil
 }
 
+// StringToRunes transforms a string into a rune matrix.
 func StringToRunes(s string) [][]rune {
 	b := []byte(s)
 	lines := bytes.Split(b, []byte("\n"))
@@ -74,7 +75,7 @@ func StringToRunes(s string) [][]rune {
 	return runes
 }
 
-// RunesToString returns a rune section as a srting.
+// RunesToString transforms a rune matrix as a string.
 func RunesToString(runes [][]rune) string {
 	r := []rune{}
 	for i, line := range runes {
@@ -86,6 +87,7 @@ func RunesToString(runes [][]rune) string {
 	return string(r)
 }
 
+// IsTextFile checks if a filke appears to be text or not(binary)
 func IsTextFile(file string) bool {
 	f, err := os.Open(file)
 	defer f.Close()
@@ -100,6 +102,7 @@ func IsTextFile(file string) bool {
 	return utf8.Valid(buf[:c])
 }
 
+// InitHome initializes the ~/.goed directory structure
 func InitHome() {
 	usr, err := user.Current()
 	t := ""
