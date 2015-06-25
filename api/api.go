@@ -60,7 +60,7 @@ func (a *Api) handleV1(m *pat.PatternServeMux) {
 	m.Get("/v1/view/:view/buffer_loc", http.HandlerFunc(a.TODO))
 	m.Put("/v1/view/:view/close", http.HandlerFunc(a.TODO))
 	m.Get("/v1/view/:view/cursor", http.HandlerFunc(a.TODO))
-	m.Put("/v1/view/:view/cursor/:row/:col", http.HandlerFunc(a.TODO))
+	m.Put("/v1/view/:view/cursor/:line/:col", http.HandlerFunc(a.TODO))
 	m.Get("/v1/view/:view/dirty", http.HandlerFunc(a.Dirty))
 	m.Put("/v1/view/:view/dirty/:val", http.HandlerFunc(a.TODO))
 	m.Get("/v1/view/:view/line_count", http.HandlerFunc(a.LineCount))
@@ -129,7 +129,7 @@ func (a *Api) LineCount(w http.ResponseWriter, r *http.Request) {
 
 // GET /v1/view/<viewid>/selection returns the given view selection
 // in the form:
-// 	Row1 Col1 Row2 Col2
+// 	Line1 Col1 Line2 Col2
 // If no selection returns an empty string
 func (a *Api) Selections(w http.ResponseWriter, r *http.Request) {
 	v, err := a.view(r)

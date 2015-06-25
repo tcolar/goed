@@ -19,7 +19,7 @@ func NewSelection(l1, c1, l2, c2 int) *Selection {
 	return s
 }
 
-// Return the selection in the form "row1 col1 row1 col2"
+// Return the selection in the form "line1 col1 line2 col2"
 func (s Selection) String() string {
 	return fmt.Sprintf("%d %d %d %d", s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
 }

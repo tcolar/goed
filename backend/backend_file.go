@@ -197,22 +197,22 @@ func (f *FileBackend) LineCount() int {
 }
 
 // Slice returns the runes that are in the given rectangle.
-// row2 / col2 maybe -1, meaning all lines / whole lines
-func (f *FileBackend) Slice(row, col, row2, col2 int) *core.Slice {
-	slice := core.NewSlice(row, col, row2, col2, [][]rune{})
+// line2 / col2 maybe -1, meaning all lines / whole lines
+func (f *FileBackend) Slice(line1, col, line2, col2 int) *core.Slice {
+	slice := core.NewSlice(line1, col, line2, col2, [][]rune{})
 	text := slice.Text()
-	if row < 0 || col < 0 {
+	if line1 < 0 || col < 0 {
 		return slice
 	}
-	if row2 != -1 && row > row2 {
-		row, row2 = row2, row
+	if line2 != -1 && line1 > line2 {
+		line1, line2 = line2, line1
 	}
 	if col2 != -1 && col > col2 {
 		col, col2 = col2, col
 	}
-	r := row
-	for ; row2 == -1 || r <= row2; r++ {
-		err := f.seek(r, col)
+	l := line1
+	for ; line2 == -1 || l <= line2; l++ {
+		err := f.seek(l, col)
 		if err != nil {
 			if err != io.EOF {
 				core.Ed.SetStatusErr(err.Error())
@@ -283,16 +283,16 @@ func (f *FileBackend) ViewId() int64 {
 	return f.viewId
 }
 
-// seek moves the offest to the given row/col
-func (f *FileBackend) seek(row, col int) error {
+// seek moves the offest to the given line/col
+func (f *FileBackend) seek(line, col int) error {
 	// absolute move likely more efficient if we are looking back 500 lines or more
-	if row < f.ln && f.ln-row > 500 {
-		// Seek to the beginning of the right row
+	if line < f.ln && f.ln-line > 500 {
+		// Seek to the beginning of the right line
 		if err := f.reset(); err != nil {
 			return err
 		}
 	}
-	if err := f.seekRow(row); err != nil {
+	if err := f.seekLine(line); err != nil {
 		return err
 	}
 	// now seek to the right col
@@ -313,19 +313,19 @@ func (f *FileBackend) seek(row, col int) error {
 	return nil
 }
 
-// seek to the beginning of a row
-func (f *FileBackend) seekRow(row int) error {
+// seek to the beginning of a line
+func (f *FileBackend) seekLine(line int) error {
 	var err error
-	if row > f.ln {
-		err = f.seekRowFwd(row)
+	if line > f.ln {
+		err = f.seekLineFwd(line)
 	} else {
-		err = f.seekRowRwd(row)
+		err = f.seekLineRwd(line)
 	}
 	f.col = 0
 	return err
 }
 
-func (f *FileBackend) seekRowFwd(row int) error {
+func (f *FileBackend) seekLineFwd(line int) error {
 	buf := make([]byte, 8192)
 outer:
 	for {
@@ -339,7 +339,7 @@ outer:
 			if b == '\n' { // TODO: is that good enough with UTF emcoding ??
 				f.ln++
 				f.col = 0
-				if f.ln >= row {
+				if f.ln >= line {
 					break outer
 				}
 			}
@@ -352,9 +352,9 @@ outer:
 	return nil
 }
 
-func (f *FileBackend) seekRowRwd(row int) error {
+func (f *FileBackend) seekLineRwd(line int) error {
 	// Move to the end of the previous line
-	for f.ln >= row {
+	for f.ln >= line {
 		if f.offset == 0 {
 			return nil // start of file
 		}

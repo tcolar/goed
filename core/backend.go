@@ -6,16 +6,16 @@ type Backend interface {
 	SrcLoc() string    // "original" source
 	BufferLoc() string // buffer location
 
-	Insert(row, col int, text string) error
+	Insert(line, col int, text string) error
 	Append(text string) error
-	Remove(row1, col1, row, col2 int) error
+	Remove(line1, col1, line2, col2 int) error
 
 	LineCount() int
 
 	Save(loc string) error
 
 	// Get a region ("rectangle") as a runes matrix
-	Slice(row, col, row2, col2 int) *Slice
+	Slice(line1, col, line2, col2 int) *Slice
 
 	Close() error
 

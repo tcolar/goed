@@ -30,10 +30,10 @@ func (v *View) InsertCur(s string) {
 }
 
 // Insert inserts text at the given text location
-func (v *View) Insert(row, col int, s string) {
+func (v *View) Insert(line, col int, s string) {
 	e := core.Ed
 	// backend is 1-based indexed
-	err := v.backend.Insert(row, col, s)
+	err := v.backend.Insert(line, col, s)
 	if err != nil {
 		e.SetStatusErr("Insert Failed " + err.Error())
 		return
@@ -41,11 +41,11 @@ func (v *View) Insert(row, col int, s string) {
 	offx, offy := 0, 0
 	if s == "\n" {
 		offy = 1
-		if col >= v.LineLen(v.slice, row) {
+		if col >= v.LineLen(v.slice, line) {
 			// newline a EOL, copy indentation
-			indent := v.lineIndent(row)
+			indent := v.lineIndent(line)
 			if len(indent) > 0 {
-				v.backend.Insert(row+1, 0, string(indent))
+				v.backend.Insert(line+1, 0, string(indent))
 				offx = v.CurCol() - len(indent)
 			}
 		} else { // splitting line in two
@@ -66,8 +66,8 @@ func (v *View) Insert(row, col int, s string) {
 	v.MoveCursor(offx, offy)
 }
 
-func (v *View) lineIndent(row int) []rune {
-	ln := v.Line(v.slice, row)
+func (v *View) lineIndent(line int) []rune {
+	ln := v.Line(v.slice, line)
 	for i, c := range ln {
 		if c != ' ' && c != '\t' {
 			return ln[:i]
@@ -81,8 +81,8 @@ func (v *View) InsertNewLineCur() {
 }
 
 // InsertNewLine inserts a "newline"(Enter key) in the buffer
-func (v *View) InsertNewLine(row, col int) {
-	v.Insert(row, col, "\n")
+func (v *View) InsertNewLine(line, col int) {
+	v.Insert(line, col, "\n")
 }
 
 func (v *View) Reload() {
@@ -93,8 +93,8 @@ func (v *View) Reload() {
 }
 
 // Delete removes characters at the given text location
-func (v *View) Delete(row1, col1, row2, col2 int) {
-	err := v.backend.Remove(row1, col1, row2, col2)
+func (v *View) Delete(line1, col1, line2, col2 int) {
+	err := v.backend.Remove(line1, col1, line2, col2)
 	if err != nil {
 		core.Ed.SetStatusErr("Delete Failed " + err.Error())
 		return
