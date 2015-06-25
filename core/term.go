@@ -10,12 +10,12 @@ import (
 type Term interface {
 	Close()
 	Clear(fg, bg uint16)
-	Char(x, y int, c rune, fg, bg Style)
+	Char(y, x int, c rune, fg, bg Style)
 	Flush()
 	Init() error
 	SetExtendedColors(bool)
-	SetCursor(x, y int)
-	Size() (int, int)
+	SetCursor(y, x int)
+	Size() (y, x int)
 	SetMouseMode(termbox.MouseMode)
 	SetInputMode(termbox.InputMode)
 }
@@ -50,16 +50,17 @@ func (t *TermBox) SetExtendedColors(b bool) {
 	termbox.SetExtendedColors(b)
 }
 
-func (t *TermBox) SetCursor(x, y int) {
-	termbox.SetCursor(x, y)
+func (t *TermBox) SetCursor(y, x int) {
+	termbox.SetCursor(y, x)
 }
 
-func (t *TermBox) Char(x, y int, c rune, fg, bg Style) {
+func (t *TermBox) Char(y, x int, c rune, fg, bg Style) {
 	termbox.SetCell(x, y, c, termbox.Attribute(fg.Uint16()), termbox.Attribute(bg.Uint16()))
 }
 
-func (t *TermBox) Size() (int, int) {
-	return termbox.Size()
+func (t *TermBox) Size() (h, w int) {
+	w, h = termbox.Size()
+	return h, w
 }
 
 func (t *TermBox) SetMouseMode(m termbox.MouseMode) {
@@ -104,18 +105,18 @@ func (t *MockTerm) Flush() {
 func (t *MockTerm) SetExtendedColors(b bool) {
 }
 
-func (t *MockTerm) SetCursor(x, y int) {
+func (t *MockTerm) SetCursor(y, x int) {
 	t.cursorX, t.cursorY = x, y
 }
 
-func (t *MockTerm) Char(x, y int, c rune, fg, bg Style) {
+func (t *MockTerm) Char(y, x int, c rune, fg, bg Style) {
 	if x < t.w && y < t.h {
 		t.text[y][x] = c
 	}
 }
 
-func (t *MockTerm) Size() (int, int) {
-	return t.w, t.h
+func (t *MockTerm) Size() (h, w int) {
+	return t.h, t.w
 }
 
 func (t *MockTerm) SetMouseMode(m termbox.MouseMode) {
@@ -125,7 +126,7 @@ func (t *MockTerm) SetInputMode(m termbox.InputMode) {
 }
 
 // for testing
-func (t *MockTerm) CharAt(x, y int) rune {
+func (t *MockTerm) CharAt(y, x int) rune {
 	return t.text[y][x]
 }
 

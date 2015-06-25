@@ -38,7 +38,7 @@ func (e *Editor) EventLoop() {
 		//log.Printf("Event : %d %d", 0xFFFF-ev.Key, ev.Meta)
 		switch ev.Type {
 		case termbox.EventResize:
-			e.Resize(ev.Width, ev.Height)
+			e.Resize(ev.Height, ev.Width)
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeyCtrlQ:
@@ -60,7 +60,7 @@ func (e *Editor) EventLoop() {
 				}
 			}
 		case termbox.EventMouse:
-			w := e.WidgetAt(ev.MouseX, ev.MouseY)
+			w := e.WidgetAt(ev.MouseY, ev.MouseX)
 			if w != nil {
 				w.Event(e, &ev)
 			}
@@ -133,41 +133,41 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			if c != nil {
 				offset = v.runeSize(*c)
 			}
-			v.MoveCursorRoll(offset, 0)
+			v.MoveCursorRoll(0, offset)
 			es = true
 		case termbox.KeyArrowLeft:
 			offset := 1
-			c, _, _ := v.CursorChar(v.slice, col-1, ln)
+			c, _, _ := v.CursorChar(v.slice, ln, col-1)
 			if c != nil {
 				offset = v.runeSize(*c)
 			}
-			v.MoveCursorRoll(-offset, 0)
+			v.MoveCursorRoll(0, -offset)
 			es = true
 		case termbox.KeyArrowUp:
-			v.MoveCursor(0, -1)
+			v.MoveCursor(-1, 0)
 			es = true
 		case termbox.KeyArrowDown:
-			v.MoveCursor(0, 1)
+			v.MoveCursor(1, 0)
 			es = true
 		case termbox.KeyPgdn:
 			dist := v.LastViewLine() + 1
 			if v.LineCount()-ln < dist {
 				dist = v.LineCount() - ln - 1
 			}
-			v.MoveCursor(0, dist)
+			v.MoveCursor(dist, 0)
 			es = true
 		case termbox.KeyPgup:
 			dist := v.LastViewLine() + 1
 			if dist > ln {
 				dist = ln
 			}
-			v.MoveCursor(0, -dist)
+			v.MoveCursor(-dist, 0)
 			es = true
 		case termbox.KeyEnd:
-			v.MoveCursor(v.lineCols(v.slice, ln)-col, 0)
+			v.MoveCursor(0, v.lineCols(v.slice, ln)-col)
 			es = true
 		case termbox.KeyHome:
-			v.MoveCursor(-col, 0)
+			v.MoveCursor(0, -col)
 			es = true
 		case termbox.KeyTab:
 			v.InsertCur("\t")
@@ -235,9 +235,9 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		if es && ev.Meta == termbox.Shift {
 			v.StretchSelection(
 				ln,
-				v.lineRunesTo(v.slice, ln, col),
+				v.LineRunesTo(v.slice, ln, col),
 				v.CurLine(),
-				v.lineRunesTo(v.slice, v.CurLine(), v.CurCol()),
+				v.LineRunesTo(v.slice, v.CurLine(), v.CurCol()),
 			)
 		} else {
 			v.ClearSelections()
@@ -259,10 +259,10 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			}
 			return
 		case termbox.MouseScrollUp:
-			v.MoveCursor(0, -1)
+			v.MoveCursor(-1, 0)
 			return
 		case termbox.MouseScrollDown:
-			v.MoveCursor(0, 1)
+			v.MoveCursor(1, 0)
 			return
 		case termbox.MouseRight:
 			if isMouseUp(ev) {
@@ -270,14 +270,14 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
 				e.evtState.LastRightClick = time.Now().Unix()
 				v.ClearSelections()
-				v.MoveCursor(ev.MouseX-v.x1-2-v.CursorX, ev.MouseY-v.y1-2-v.CursorY)
+				v.MoveCursor(ev.MouseY-v.y1-2-v.CursorY, ev.MouseX-v.x1-2-v.CursorX)
 				v.OpenSelection(true)
 			}
 			return
 		case termbox.MouseLeft:
 			if e.evtState.MovingView && isMouseUp(ev) {
 				e.evtState.MovingView = false
-				e.ViewMove(e.evtState.LastClickX, e.evtState.LastClickY, ev.MouseX, ev.MouseY)
+				e.ViewMove(e.evtState.LastClickY, e.evtState.LastClickX, ev.MouseY, ev.MouseX)
 				return
 			}
 			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
@@ -309,21 +309,21 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 
 				s := core.NewSelection(
 					y1,
-					v.lineRunesTo(v.slice, y1, x1),
+					v.LineRunesTo(v.slice, y1, x1),
 					y2,
-					v.lineRunesTo(v.slice, y2, x2))
+					v.LineRunesTo(v.slice, y2, x2))
 				v.selections = []core.Selection{
 					*s,
 				}
 				// Handling scrolling while dragging
 				if ln < v.offy { // scroll up
-					v.SetAutoScroll(0, -v.LineCount()/10, true)
+					v.SetAutoScroll(-v.LineCount()/10, 0, true)
 				} else if ln >= v.offy+(v.y2-v.y1)-2 { // scroll down
-					v.SetAutoScroll(0, v.LineCount()/10, true)
+					v.SetAutoScroll(v.LineCount()/10, 0, true)
 				} else if col < v.offx { //scroll left
-					v.SetAutoScroll(-5, 0, true)
+					v.SetAutoScroll(0, -5, true)
 				} else if col >= v.offx+(v.x2-v.x1)-3 { // scroll right
-					v.SetAutoScroll(5, 0, true)
+					v.SetAutoScroll(0, 5, true)
 				}
 				return
 			}

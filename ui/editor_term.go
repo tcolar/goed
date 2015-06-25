@@ -8,28 +8,28 @@ func (e *Editor) TermFB(fg, bg core.Style) {
 	e.Bg = bg
 }
 
-func (e *Editor) TermChar(x, y int, c rune) {
-	e.term.Char(x, y, c, e.Fg, e.Bg)
+func (e *Editor) TermChar(y, x int, c rune) {
+	e.term.Char(y, x, c, e.Fg, e.Bg)
 }
 
 // TermStr draws an horizonttal string to the terminal
-func (e *Editor) TermStr(x, y int, s string) {
+func (e *Editor) TermStr(y, x int, s string) {
 	for _, c := range s {
-		e.term.Char(x, y, c, e.Fg, e.Bg)
+		e.term.Char(y, x, c, e.Fg, e.Bg)
 		x++
 	}
 }
 
 // TermStrv draws a vertical string to the terminal
-func (e *Editor) TermStrv(x, y int, s string) {
+func (e *Editor) TermStrv(y, x int, s string) {
 	for _, c := range s {
-		e.term.Char(x, y, c, e.Fg, e.Bg)
+		e.term.Char(y, x, c, e.Fg, e.Bg)
 		y++
 	}
 }
 
 // TermFill fills an area of the terminal
-func (e *Editor) TermFill(c rune, x1, y1, x2, y2 int) {
+func (e *Editor) TermFill(c rune, y1, x1, y2, x2 int) {
 	if x1 > x2 {
 		x1, x2 = x2, x1
 	}
@@ -38,7 +38,7 @@ func (e *Editor) TermFill(c rune, x1, y1, x2, y2 int) {
 	}
 	for x := x1; x <= x2; x++ {
 		for y := y1; y <= y2; y++ {
-			e.term.Char(x, y, c, e.Fg, e.Bg)
+			e.term.Char(y, x, c, e.Fg, e.Bg)
 		}
 	}
 }

@@ -19,14 +19,14 @@ func (v *View) Save() {
 
 // InsertCur inserts text at the current location.
 func (v *View) InsertCur(s string) {
-	_, x, y := v.CurChar()
+	_, y, x := v.CurChar()
 	if len(v.selections) > 0 {
 		s := v.selections[0]
-		v.MoveCursorRoll(s.ColFrom-x, s.LineFrom-y)
+		v.MoveCursorRoll(s.LineFrom-y, s.ColFrom-x)
 		v.SelectionDelete(&s)
 		v.ClearSelections()
 	}
-	_, x, y = v.CurChar()
+	_, y, x = v.CurChar()
 	v.Insert(y, x, s)
 }
 
@@ -64,7 +64,7 @@ func (v *View) Insert(line, col int, s string) {
 	}
 	v.Render()
 	e.TermFlush()
-	v.MoveCursor(offx, offy)
+	v.MoveCursor(offy, offx)
 }
 
 func (v *View) lineIndent(line int) []rune {
@@ -107,10 +107,10 @@ func (v *View) Delete(line1, col1, line2, col2 int) {
 
 // DeleteCur removes a selection or the curent character
 func (v *View) DeleteCur() {
-	c, x, y := v.CurChar()
+	c, y, x := v.CurChar()
 	if len(v.selections) > 0 {
 		s := v.selections[0]
-		v.MoveCursorRoll(s.ColFrom-x, s.LineFrom-y)
+		v.MoveCursorRoll(s.LineFrom-y, s.ColFrom-x)
 		v.SelectionDelete(&s)
 		v.ClearSelections()
 		return
@@ -126,7 +126,7 @@ func (v *View) Backspace() {
 		return
 	}
 	if len(v.selections) == 0 {
-		v.MoveCursorRoll(-1, 0)
+		v.MoveCursorRoll(0, -1)
 	}
 	v.DeleteCur()
 }
@@ -172,8 +172,8 @@ func (v *View) lineColsTo(s *core.Slice, lnIndex, to int) int {
 	return ln
 }
 
-// lineRunesTo returns the number of raw runes to the given line column
-func (v View) lineRunesTo(s *core.Slice, lnIndex, column int) int {
+// LineRunesTo returns the number of raw runes to the given line column
+func (v View) LineRunesTo(s *core.Slice, lnIndex, column int) int {
 	runes := 0
 	if len(*s.Text()) == 0 || lnIndex >= v.LineCount() || lnIndex < 0 {
 		return 0
@@ -188,30 +188,24 @@ func (v View) lineRunesTo(s *core.Slice, lnIndex, column int) int {
 	return runes
 }
 
-// CursorTextPos returns the position in the text buffer for a cursor location
-func (v *View) CursorTextPos(s *core.Slice, cursorX, cursorY int) (int, int) {
-	l := cursorY
-	return v.lineRunesTo(s, l, cursorX), l
-}
-
 // CursorChar returns the rune at the given cursor location
 // Also returns the position of the char in the text buffer
-func (v *View) CursorChar(s *core.Slice, cursorX, cursorY int) (r *rune, textX, textY int) {
+func (v *View) CursorChar(s *core.Slice, cursorY, cursorX int) (r *rune, textY, textX int) {
 	// backend is 1-based indexed
-	x, y := v.CursorTextPos(s, cursorX, cursorY)
+	x, y := v.LineRunesTo(s, cursorY, cursorX), cursorY
 	ln := v.Line(s, y)
 	if len(ln) <= x { // EOL
 		nl := '\n'
-		return &nl, x, y
+		return &nl, y, x
 	} else if len(ln) <= x {
-		return nil, x, y
+		return nil, y, x
 	}
-	return &ln[x], x, y
+	return &ln[x], y, x
 }
 
 // CurChar returns the rune at the current cursor location
-func (v *View) CurChar() (r *rune, textX, textY int) {
-	return v.CursorChar(v.slice, v.CurCol(), v.CurLine())
+func (v *View) CurChar() (r *rune, textY, textX int) {
+	return v.CursorChar(v.slice, v.CurLine(), v.CurCol())
 }
 
 // The runeSize (on screen)

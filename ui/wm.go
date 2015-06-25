@@ -24,8 +24,8 @@ func (e *Editor) NewCol(width float64, views []*View) *Col {
 }
 
 // WidgetAt returns the widget at a given editor location
-func (e *Editor) WidgetAt(x, y int) Renderer {
-	_, h := e.term.Size()
+func (e *Editor) WidgetAt(y, x int) Renderer {
+	h, _ := e.term.Size()
 	if y == 0 {
 		return e.Cmdbar
 	}
@@ -66,7 +66,7 @@ func (e Editor) Render() {
 	// Note theterminal inverse the colors where the cursor is
 	// this is why this statement might appear "backward"
 	e.TermFB(e.theme.BgCursor, e.theme.FgCursor)
-	e.TermChar(cc+v.x1-v.offx+2, cl+v.y1-v.offy+2, car)
+	e.TermChar(cl+v.y1-v.offy+2, cc+v.x1-v.offx+2, car)
 	e.TermFB(e.theme.Fg, e.theme.Bg)
 
 	e.Cmdbar.Render()
@@ -77,16 +77,16 @@ func (e Editor) Render() {
 
 // Renderer is the interface for a renderable UI component.
 type Renderer interface {
-	Bounds() (int, int, int, int)
+	Bounds() (y1, x1, y2, x2 int)
 	Render()
-	SetBounds(x1, y1, x2, y2 int)
+	SetBounds(y1, x1, y2, x2 int)
 	Event(e *Editor, ev *termbox.Event)
 }
 
 // TODO: optimize, for example might only need to resize a single column
-func (e *Editor) Resize(width, height int) {
-	e.Cmdbar.SetBounds(0, 0, width, 0)
-	e.Statusbar.SetBounds(0, height-1, width, height-1)
+func (e *Editor) Resize(height, width int) {
+	e.Cmdbar.SetBounds(0, 0, 0, width)
+	e.Statusbar.SetBounds(height-1, 0, height-1, width)
 	wc := 0
 	wr := 0.0
 	for i, c := range e.Cols {
@@ -106,7 +106,7 @@ func (e *Editor) Resize(width, height int) {
 				h = height - hc - 1 // last view gets rest of height
 				v.HeightRatio = 1.0 - hr
 			}
-			v.SetBounds(wc, hc, wc+w-1, hc+h-1)
+			v.SetBounds(hc, wc, hc+h+1, wc+w-1)
 			hc += h
 			hr += v.HeightRatio
 		}
@@ -116,10 +116,10 @@ func (e *Editor) Resize(width, height int) {
 }
 
 // ViewMove handles moving & resizing views/columns, typically using the mouse
-func (e *Editor) ViewMove(x1, y1, x2, y2 int) {
-	w, h := e.term.Size()
-	v1 := e.WidgetAt(x1, y1).(*View)
-	v2 := e.WidgetAt(x2, y2).(*View)
+func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
+	h, w := e.term.Size()
+	v1 := e.WidgetAt(y1, x1).(*View)
+	v2 := e.WidgetAt(y2, x2).(*View)
 	c1 := e.ViewColumn(v1)
 	c2 := e.ViewColumn(v2)
 	c1i := e.ColIndex(c1)
@@ -429,7 +429,7 @@ func (e *Editor) DelColCheck(c *Col) {
 func (e *Editor) ActivateView(v *View, cursorx, cursory int) {
 	e.curView = v
 	e.CurCol = e.ViewColumn(v)
-	v.MoveCursor(cursorx-v.CurCol(), cursory-v.CurLine())
+	v.MoveCursor(cursory-v.CurLine(), cursorx-v.CurCol())
 }
 
 func (e *Editor) SetCurView(id int64) error {

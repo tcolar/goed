@@ -63,7 +63,7 @@ func (v *View) SelectionCopy(s *core.Selection) {
 func (v *View) SelectionDelete(s *core.Selection) {
 	y, x := s.LineFrom-v.CurLine(), s.ColFrom-v.CurCol()
 	v.Delete(s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
-	v.MoveCursor(x, y)
+	v.MoveCursor(y, x)
 }
 
 func (v *View) Paste() {
@@ -75,7 +75,7 @@ func (v *View) Paste() {
 	if len(v.selections) > 0 {
 		v.DeleteCur()
 	}
-	_, x, y := v.CurChar()
+	_, y, x := v.CurChar()
 	v.Insert(y, x, text)
 }
 
@@ -87,7 +87,7 @@ func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
 	l := v.Line(v.slice, line)
 	ln := string(l)
 	slice := core.NewSlice(0, 0, 0, len(l), [][]rune{l})
-	c := v.lineRunesTo(slice, 0, col)
+	c := v.LineRunesTo(slice, 0, col)
 	matches := locationRegexp.FindAllStringIndex(ln, -1)
 	var best []int
 	// Find the "narrowest" match around the cursor
@@ -107,7 +107,7 @@ func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
 // Try to select the longest "word" from current position.
 func (v *View) ExpandSelectionWord(line, col int) *core.Selection {
 	l := v.Line(v.slice, line)
-	c := v.lineRunesTo(v.slice, line, col)
+	c := v.LineRunesTo(v.slice, line, col)
 	c1, c2 := c, c
 	for ; c1 >= 0 && isWordRune(l[c1]); c1-- {
 	}

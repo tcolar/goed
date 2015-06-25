@@ -59,11 +59,11 @@ func (e *Editor) Start(loc string) {
 	e.Fg = e.theme.Fg
 	e.Bg = e.theme.Bg
 
-	w, h := e.term.Size()
+	h, w := e.term.Size()
 	e.Cmdbar = &Cmdbar{}
-	e.Cmdbar.SetBounds(0, 0, w, 0)
+	e.Cmdbar.SetBounds(0, 0, 0, w)
 	e.Statusbar = &Statusbar{}
-	e.Statusbar.SetBounds(0, h-1, w, h-1)
+	e.Statusbar.SetBounds(h-1, 0, h-1, w)
 	view1 := e.NewView()
 	e.curView = view1
 	e.Open(loc, view1, "")
@@ -209,8 +209,8 @@ func (e Editor) CurView() core.Viewable {
 	return e.curView
 }
 
-func (e Editor) SetCursor(x, y int) {
-	e.term.SetCursor(x, y)
+func (e Editor) SetCursor(y, x int) {
+	e.term.SetCursor(y, x)
 }
 
 func (e Editor) CmdOn() bool {

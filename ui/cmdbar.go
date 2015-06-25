@@ -21,16 +21,16 @@ func (c *Cmdbar) Render() {
 	ed := core.Ed
 	t := ed.Theme()
 	ed.TermFB(t.Cmdbar.Fg, t.Cmdbar.Bg)
-	ed.TermFill(t.Cmdbar.Rune, c.x1, c.y1, c.x2, c.y2)
+	ed.TermFill(t.Cmdbar.Rune, c.y1, c.x1, c.y2, c.x2)
 	if ed.CmdOn() {
 		ed.TermFB(t.CmdbarTextOn, t.Cmdbar.Bg)
-		ed.TermStr(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
+		ed.TermStr(c.y1, c.x1, fmt.Sprintf("> %s", string(c.Cmd)))
 	} else {
 		ed.TermFB(t.CmdbarText, t.Cmdbar.Bg)
-		ed.TermStr(c.x1, c.y1, fmt.Sprintf("> %s", string(c.Cmd)))
+		ed.TermStr(c.y1, c.x1, fmt.Sprintf("> %s", string(c.Cmd)))
 	}
 	ed.TermFB(t.CmdbarText, t.Cmdbar.Bg)
-	ed.TermStr(c.x2-11, c.y1, fmt.Sprintf("|GoEd %s", core.Version))
+	ed.TermStr(c.y1, c.x2-11, fmt.Sprintf("|GoEd %s", core.Version))
 }
 
 func (c *Cmdbar) RunCmd() {
@@ -89,12 +89,12 @@ func (c *Cmdbar) RunCmd() {
 func (c *Cmdbar) paste(args []string) {
 	ed := core.Ed.(*Editor)
 	v := ed.curView
-	v.MoveCursorRoll(-v.CurCol(), 1)
+	v.MoveCursorRoll(1, -v.CurCol())
 	l := v.CurLine()
 	v.Paste()
 	x, y := v.CurCol(), v.CurLine()
 	v.Insert(y, x, "\n")
-	v.MoveCursorRoll(-x, l-y)
+	v.MoveCursorRoll(l-y, -x)
 	v.SetDirty(true)
 }
 
@@ -157,7 +157,7 @@ func (c *Cmdbar) line(args []string) {
 		return
 	}
 	if ed.CurView != nil {
-		ed.curView.MoveCursor(0, l-ed.curView.CurLine()-1)
+		ed.curView.MoveCursor(l-ed.curView.CurLine()-1, 0)
 	}
 }
 

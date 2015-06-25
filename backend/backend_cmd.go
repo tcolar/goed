@@ -149,7 +149,7 @@ func (c *BackendCmd) flush(o, e *bytes.Buffer, buf []byte) {
 		if v.LineCount() > limit {
 			c.Backend.Remove(1, 1, v.LineCount()-limit+1, 0)
 		}
-		v.MoveCursor(0, v.LineCount())
+		v.MoveCursor(v.LineCount(), 0)
 		v.Render()
 		core.Ed.TermFlush()
 	}

@@ -14,12 +14,14 @@ const tabSize = 4
 // View represents an individual view pane(file) in the editor.
 type View struct {
 	Widget
-	id               int64
-	dirty            bool
-	backend          core.Backend
-	workDir          string
-	CursorX, CursorY int // realtive position of cursor in view (0 index)
-	offx, offy       int // absolute view offset (scrolled down/right) (0 index)
+	id      int64
+	dirty   bool
+	backend core.Backend
+	workDir string
+	// realtive position of cursor in view (0 index)
+	CursorX, CursorY int
+	// absolute view offset (scrolled down/right) (0 index)
+	offx, offy       int
 	HeightRatio      float64
 	selections       []core.Selection
 	title            string
@@ -63,7 +65,7 @@ func (v *View) Render() {
 	e := core.Ed
 	t := e.Theme()
 	e.TermFB(t.Viewbar.Fg, t.Viewbar.Bg)
-	e.TermFill(t.Viewbar.Rune, v.x1+1, v.y1, v.x2, v.y1)
+	e.TermFill(t.Viewbar.Rune, v.y1, v.x1+1, v.y1, v.x2)
 	fg := t.ViewbarText
 	if v.Id() == e.CurView().Id() {
 		fg = fg.WithAttr(core.Bold)
@@ -73,7 +75,7 @@ func (v *View) Render() {
 	if v.x2-v.x1 > 4 && v.x1+len(ti) > v.x2-4 {
 		ti = ti[:v.x2-v.x1-4]
 	}
-	e.TermStr(v.x1+2, v.y1, ti)
+	e.TermStr(v.y1, v.x1+2, ti)
 	v.RenderClose()
 	v.RenderScroll()
 	v.RenderIsDirty()
@@ -89,7 +91,7 @@ func (v *View) RenderMargin() {
 	if v.offx < 80 && v.offx+v.LastViewCol() >= 80 {
 		for i := 0; i <= v.LastViewLine(); i++ {
 			e.TermFB(t.Margin.Fg, t.Margin.Bg)
-			e.TermChar(v.x1+2+80-v.offx, v.y1+2+i, t.Margin.Rune)
+			e.TermChar(v.y1+2+i, v.x1+2+80-v.offx, t.Margin.Rune)
 			e.TermFB(t.Fg, t.Bg)
 		}
 	}
@@ -99,7 +101,7 @@ func (v *View) RenderScroll() {
 	e := core.Ed
 	t := e.Theme()
 	e.TermFB(t.Scrollbar.Fg, t.Scrollbar.Bg)
-	e.TermFill(t.Scrollbar.Rune, v.x1, v.y1+1, v.x1, v.y2)
+	e.TermFill(t.Scrollbar.Rune, v.y1+1, v.x1, v.y2, v.x1)
 }
 
 func (v *View) RenderIsDirty() {
@@ -110,14 +112,14 @@ func (v *View) RenderIsDirty() {
 		style = t.FileDirty
 	}
 	e.TermFB(style.Fg, style.Bg)
-	e.TermChar(v.x1, v.y1, style.Rune)
+	e.TermChar(v.y1, v.x1, style.Rune)
 }
 
 func (v *View) RenderClose() {
 	e := core.Ed
 	t := e.Theme()
 	e.TermFB(t.Close.Fg, t.Close.Bg)
-	e.TermChar(v.x2-1, v.y1, t.Close.Rune)
+	e.TermChar(v.y1, v.x2-1, t.Close.Rune)
 }
 
 func (v *View) RenderText() {
@@ -135,7 +137,7 @@ func (v *View) RenderText() {
 	if v.offy > 0 {
 		// More text above
 		e.TermFB(t.MoreTextUp.Fg, t.MoreTextUp.Bg)
-		e.TermChar(v.x1+1, y-1, t.MoreTextUp.Rune)
+		e.TermChar(y-1, v.x1+1, t.MoreTextUp.Rune)
 		e.TermFB(fg, bg)
 	}
 	// Note: using full lines
@@ -153,7 +155,7 @@ func (v *View) RenderText() {
 		if v.offx > 0 {
 			// More text to our left
 			e.TermFB(t.MoreTextSide.Fg, t.MoreTextSide.Bg)
-			e.TermChar(x-1, y, t.MoreTextSide.Rune)
+			e.TermChar(y, x-1, t.MoreTextSide.Rune)
 			e.TermFB(fg, bg)
 			// skip letters until we get to or past offx
 			sz := 0
@@ -164,12 +166,14 @@ func (v *View) RenderText() {
 			// if we went "past" offx it means there where some
 			// tabs leftover spaces that we need to render
 			for i := v.offx; i != sz; i++ {
-				e.TermChar(x, y, ' ')
+				e.TermChar(y, x, ' ')
 				x++
 			}
 		}
 		for colc, c := range l[start:] {
-			sx, sy := v.CursorTextPos(v.slice, v.offx+x-2-v.x1, v.offy+y-2-v.y1)
+			sy := v.offy + y - 2 - v.y1
+			sx := v.offx + x - 2 - v.x1
+			sx = v.LineRunesTo(v.slice, sy, sx)
 			selected, _ := v.Selected(sx, sy)
 			if selected != inSelection {
 				inSelection = selected
@@ -182,20 +186,20 @@ func (v *View) RenderText() {
 			}
 			if c == '\t' {
 				e.TermFB(t.TabChar.Fg, bg)
-				e.TermStr(x, y, tab)
+				e.TermStr(y, x, tab)
 				x += tabSize - 1
 				e.TermFB(fg, bg)
 			} else {
 				if e.Config().SyntaxHighlighting && !inSelection {
 					v.applyHighlight(lnc, start+colc)
 				}
-				e.TermChar(x, y, c)
+				e.TermChar(y, x, c)
 			}
 			x++
 			if x > v.x2-1 {
 				// More text to our right
 				e.TermFB(t.MoreTextSide.Fg, t.MoreTextSide.Bg)
-				e.TermChar(x-1, y, t.MoreTextSide.Rune)
+				e.TermChar(y, x-1, t.MoreTextSide.Rune)
 				e.TermFB(fg, bg)
 				break
 			}
@@ -208,7 +212,7 @@ func (v *View) RenderText() {
 	if v.offy+v.LastViewLine() < v.LineCount()-1 {
 		// More text below
 		e.TermFB(t.MoreTextDown.Fg, t.MoreTextDown.Bg)
-		e.TermChar(v.x1+1, y, t.MoreTextDown.Rune)
+		e.TermChar(y, v.x1+1, t.MoreTextDown.Rune)
 		e.TermFB(fg, t.Bg)
 	}
 }
@@ -265,7 +269,7 @@ func (v *View) LastViewCol() int {
 }
 
 // Same as MoveCursor but with "rolling" to next/prev line if overflowed.
-func (v *View) MoveCursorRoll(x, y int) {
+func (v *View) MoveCursorRoll(y, x int) {
 	slice := v.slice
 	curCol := v.CurCol()
 	curLine := v.CurLine()
@@ -287,13 +291,13 @@ func (v *View) MoveCursorRoll(x, y int) {
 			x = ln - curCol
 		}
 	}
-	v.MoveCursor(x, y)
+	v.MoveCursor(y, x)
 }
 
-// MoveCursor : Move the cursor from it's current position by the x,y offsets (**in runes**)
+// MoveCursor : Move the cursor from it's current position by the y, x offsets (**in runes**)
 // This makes all the checks to make sure it's in a valid location
 // as well as scrolling the view as needed.
-func (v *View) MoveCursor(x, y int) {
+func (v *View) MoveCursor(y, x int) {
 
 	slice := v.slice
 
@@ -321,7 +325,7 @@ func (v *View) MoveCursor(x, y int) {
 	v.CursorY += y
 
 	// Special handling for tabs
-	c, textX, textY := v.CurChar()
+	c, textY, textX := v.CurChar()
 	if c != nil && *c == '\t' {
 		from := v.CursorX
 		// align cursor with beginning of tab
@@ -420,8 +424,8 @@ func (v *View) canClose() bool {
 	return true
 }
 
-func (v *View) setCursor(x, y int) {
-	core.Ed.SetCursor(x, y)
+func (v *View) setCursor(y, x int) {
+	core.Ed.SetCursor(y, x)
 }
 
 func (v *View) Backend() core.Backend {
@@ -464,7 +468,7 @@ func (v *View) Slice() *core.Slice {
 	return v.slice
 }
 
-func (v *View) SetAutoScroll(x, y int, isSelect bool) {
+func (v *View) SetAutoScroll(y, x int, isSelect bool) {
 	v.autoScrollX, v.autoScrollY = x, y
 	v.autoScrollSelect = isSelect
 }
