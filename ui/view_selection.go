@@ -196,6 +196,8 @@ func (v *View) OpenSelection(newView bool) {
 		v.selections = []core.Selection{*selection}
 	}
 	loc, line, col := v.SelectionToLoc(&v.selections[0])
+	line-- // we use 0 indexes in views
+	col--
 	isDir := false
 	loc, isDir = core.LookupLocation(v.WorkDir(), loc)
 	vv := ed.ViewByLoc(loc)
