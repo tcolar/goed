@@ -113,10 +113,11 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 
 	es := false                  //expand selection
 	v.SetAutoScroll(0, 0, false) // any events stops autoscroll
+	e.SetStatus(fmt.Sprintf("evt %d", ev.Type))
 	switch ev.Type {
 	case termbox.EventKey:
 		ln, col := v.CurLine(), v.CurCol()
-		e.evtState.InDrag = true
+		e.evtState.InDrag = false
 		// alt combo
 		if ev.Mod == termbox.ModAlt {
 			switch ev.Ch {
@@ -329,6 +330,9 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			}
 
 			if isMouseUp(ev) { // click
+				if e.evtState.DragLn != ln || e.evtState.DragCol != col {
+					e.evtState.InDrag = false
+				}
 				if !e.evtState.InDrag {
 					v.ClearSelections()
 					e.ActivateView(v, col, ln)
