@@ -108,6 +108,9 @@ func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
 func (v *View) ExpandSelectionWord(line, col int) *core.Selection {
 	l := v.Line(v.slice, line)
 	c := v.LineRunesTo(v.slice, line, col)
+	if c < 0 || c >= len(l) {
+		return nil
+	}
 	c1, c2 := c, c
 	for ; c1 >= 0 && isWordRune(l[c1]); c1-- {
 	}
