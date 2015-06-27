@@ -1,4 +1,4 @@
-
+// +build ignore
 
 #include<iostream>
  
