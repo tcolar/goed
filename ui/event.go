@@ -35,7 +35,6 @@ func (e *Editor) EventLoop() {
 	e.term.SetInputMode(termbox.InputMouse)
 	for {
 		ev := termbox.PollEvent()
-		//log.Printf("Event : %d %d", 0xFFFF-ev.Key, ev.Meta)
 		switch ev.Type {
 		case termbox.EventResize:
 			e.Resize(ev.Height, ev.Width)
@@ -110,10 +109,8 @@ func (s *Statusbar) Event(e *Editor, ev *termbox.Event) {
 // Event handler for View
 func (v *View) Event(e *Editor, ev *termbox.Event) {
 	dirty := false
-
 	es := false                  //expand selection
 	v.SetAutoScroll(0, 0, false) // any events stops autoscroll
-	e.SetStatus(fmt.Sprintf("evt %d", ev.Type))
 	switch ev.Type {
 	case termbox.EventKey:
 		ln, col := v.CurLine(), v.CurCol()
@@ -330,8 +327,9 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			}
 
 			if isMouseUp(ev) { // click
-				if e.evtState.DragLn != ln || e.evtState.DragCol != col {
+				if selected, _ := v.Selected(ln, col); selected {
 					e.evtState.InDrag = false
+					// otherwise it could be the mouseUp at the end of a drag.
 				}
 				if !e.evtState.InDrag {
 					v.ClearSelections()

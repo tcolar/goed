@@ -85,8 +85,8 @@ type Renderer interface {
 
 // TODO: optimize, for example might only need to resize a single column
 func (e *Editor) Resize(height, width int) {
-	e.Cmdbar.SetBounds(0, 0, 0, width)
-	e.Statusbar.SetBounds(height-1, 0, height-1, width)
+	e.Cmdbar.SetBounds(0, 0, 0, width-1)
+	e.Statusbar.SetBounds(height-1, 0, height-1, width-1)
 	wc := 0
 	wr := 0.0
 	for i, c := range e.Cols {
@@ -106,7 +106,7 @@ func (e *Editor) Resize(height, width int) {
 				h = height - hc - 1 // last view gets rest of height
 				v.HeightRatio = 1.0 - hr
 			}
-			v.SetBounds(hc, wc, hc+h+1, wc+w-1)
+			v.SetBounds(hc, wc, hc+h-1, wc+w-1)
 			hc += h
 			hr += v.HeightRatio
 		}

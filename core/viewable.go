@@ -2,6 +2,7 @@ package core
 
 // Viewable is the interface to a View
 type Viewable interface {
+	Bounds() (y1, x1, y2, x2 int)
 	Backend() Backend
 	CurCol() int
 	CurLine() int
