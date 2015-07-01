@@ -70,7 +70,7 @@ func ReadDefaultTheme() (*Theme, error) {
 func ReadTheme(loc string) (*Theme, error) {
 	var theme Theme
 	if _, err := toml.DecodeFile(loc, &theme); err != nil {
-		return nil, err
+		return ReadDefaultTheme()
 	}
 	return &theme, nil
 }
