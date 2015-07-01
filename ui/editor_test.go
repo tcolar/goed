@@ -10,7 +10,7 @@ import (
 
 func init() {
 	core.Testing = true
-	core.InitHome()
+	core.InitHome(time.Now().Unix())
 	core.Ed = NewMockEditor()
 	core.Ed.Start("")
 }

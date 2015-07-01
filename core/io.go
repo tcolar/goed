@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 	"unicode/utf8"
 )
 
@@ -103,33 +102,48 @@ func IsTextFile(file string) bool {
 }
 
 // InitHome initializes the ~/.goed directory structure
-func InitHome() {
-	usr, err := user.Current()
-	t := ""
-	if Testing {
-		t = "_test"
-	}
-	if err != nil {
-		fmt.Printf("Error : %s \n", err.Error())
-		Home = "goed"
-	} else if runtime.GOOS == "windows" { // meh
-		Home = path.Join(usr.HomeDir, fmt.Sprintf("goed%s", t))
-	} else {
-		Home = path.Join(usr.HomeDir, fmt.Sprintf(".goed%s", t))
-	}
+func InitHome(id int64) {
+	Home = GoedHome()
 	os.MkdirAll(Home, 0755)
 	os.MkdirAll(path.Join(Home, "buffers"), 0755)
 	os.MkdirAll(path.Join(Home, "logs"), 0755)
+	os.MkdirAll(path.Join(Home, "instances"), 0755)
 	// TODO : Update config if new version ??
 	ioutil.WriteFile(path.Join(Home, "Version.txt"), []byte(Version), 644)
 
+	// RCP instance socket
+	Socket = GoedSocket(id)
+
 	// Custom log file
-	f := path.Join(Home, "logs", fmt.Sprintf("%d.log", time.Now().Unix()))
+	f := path.Join(Home, "logs", fmt.Sprintf("%d.log", id))
+	var err error
 	LogFile, err = os.Create(f)
 	if err != nil {
 		panic(err)
 	}
 	log.SetOutput(LogFile)
+}
+
+func GoedSocket(id int64) string {
+	return path.Join(GoedHome(), "instances", fmt.Sprintf("@%d.sock", id))
+}
+
+func GoedHome() string {
+	usr, err := user.Current()
+	t := ""
+	home := "goed"
+	if Testing {
+		t = "_test"
+	}
+	if err != nil {
+		log.Printf("Error : %s \n", err.Error())
+		home = "goed"
+	} else if runtime.GOOS == "windows" { // meh
+		home = path.Join(usr.HomeDir, fmt.Sprintf("goed%s", t))
+	} else {
+		home = path.Join(usr.HomeDir, fmt.Sprintf(".goed%s", t))
+	}
+	return home
 }
 
 // LookupLocation will try to locate the given location
@@ -146,4 +160,9 @@ func LookupLocation(dir, loc string) (string, bool) {
 		return loc, true
 	}
 	return LookupLocation(dir, loc)
+}
+
+func Cleanup() {
+	LogFile.Close()
+	os.Remove(Socket)
 }

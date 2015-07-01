@@ -3,13 +3,14 @@ package core
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func init() {
 	Testing = true
-	InitHome()
+	InitHome(time.Now().Unix())
 }
 
 func TestCountLines(t *testing.T) {

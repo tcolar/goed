@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"runtime/debug"
+	"time"
 
+	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/ui"
 	"gopkg.in/alecthomas/kingpin.v1"
@@ -34,12 +36,13 @@ func main() {
 		*colors = 2
 	}
 
+	id := time.Now().UnixNano()
+
 	core.Colors = *colors
-	core.InitHome()
+	core.InitHome(id)
 	core.ConfFile = *config
 	core.Ed = ui.NewEditor()
-	defer core.LogFile.Close()
-	//apiServer := api.Api{}
+	apiServer := api.Api{}
 
 	defer func() {
 		if fail := recover(); fail != nil {
@@ -49,9 +52,9 @@ func main() {
 			data := debug.Stack()
 			log.Fatal(string(data))
 		}
+		core.Cleanup()
 	}()
 
-	//apiServer.Start(0)
-	//fmt.Printf("API Port: %d \n", core.ApiPort)
+	apiServer.Start()
 	core.Ed.Start(*loc)
 }

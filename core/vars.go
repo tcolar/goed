@@ -24,3 +24,5 @@ var ConfFile string
 var LogFile *os.File
 
 var ApiPort int
+
+var Socket string // instance RPC socket

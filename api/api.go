@@ -1,53 +1,45 @@
 package api
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"net/http"
-	"strconv"
+	"net/rpc"
 
-	"github.com/bmizerany/pat"
 	"github.com/tcolar/goed/core"
 )
 
-// Goed Api
-// TODO: probably to be removed
+// Goed API Server (RPC over local socket)
+// See client/ for the client side.
 type Api struct {
 }
 
-// Note: port "0" means pick an available one.
-func (a *Api) Start(port int) {
-	m := pat.New()
-
-	m.Get("/api_version", http.HandlerFunc(a.ApiVersion))
-
-	a.handleV1(m)
-
-	// only listen to local connections
-	http.Handle("/", m)
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+func (a *Api) Start() {
+	r := new(GoedRpc)
+	rpc.Register(r)
+	rpc.HandleHTTP()
+	l, err := net.Listen("unix", core.Socket)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Socket listen error %s : \n", core.Socket, err.Error())
 	}
-	_, p, err := net.SplitHostPort(ln.Addr().String())
-	if err != nil {
-		panic(err)
-	}
-	core.ApiPort, _ = strconv.Atoi(p)
-	server := &http.Server{Addr: ln.Addr().String()}
+
 	go func() {
-		err = server.Serve(ln)
+		err = http.Serve(l, nil)
 		if err != nil {
 			panic(err)
 		}
 	}()
 }
 
-// GET /api_version returns the server API version
-func (a *Api) ApiVersion(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, core.ApiVersion)
+// Goed RPC functions holder
+type GoedRpc struct{}
+
+func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
+	*version = core.ApiVersion
+	return nil
 }
 
+/*
 func (a *Api) handleV1(m *pat.PatternServeMux) {
 
 	m.Get("/v1/cur_view", http.HandlerFunc(a.CurView))
@@ -188,3 +180,4 @@ func (a *Api) view(r *http.Request) (core.Viewable, error) {
 
 func (a *Api) TODO(w http.ResponseWriter, r *http.Request) {
 }
+*/

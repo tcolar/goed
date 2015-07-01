@@ -2,6 +2,7 @@ package backend
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tcolar/goed/core"
@@ -12,7 +13,7 @@ var id2 int64 = 9998
 
 func init() {
 	core.Testing = true
-	core.InitHome()
+	core.InitHome(time.Now().Unix())
 }
 
 func TestFileBackend(t *testing.T) {
