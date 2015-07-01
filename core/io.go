@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -124,8 +125,32 @@ func InitHome(id int64) {
 	log.SetOutput(LogFile)
 }
 
+// Instances returns a list of known Goed Instances
+func Instances() (ids []int64) {
+	files, err := ioutil.ReadDir(path.Join(GoedHome(), "instances"))
+	if err != nil {
+		return ids
+	}
+	for _, f := range files {
+		nm := f.Name()
+		if strings.HasSuffix(nm, ".sock") {
+			i, err := strconv.ParseInt(nm[:len(nm)-5], 10, 64)
+			if err == nil {
+				ids = append(ids, i)
+			}
+		}
+	}
+	// we want newer first, so revese the list
+	for i, j := 0, len(ids)-1; i < j; {
+		ids[i], ids[j] = ids[j], ids[i]
+		i++
+		j--
+	}
+	return ids
+}
+
 func GoedSocket(id int64) string {
-	return path.Join(GoedHome(), "instances", fmt.Sprintf("@%d.sock", id))
+	return path.Join(GoedHome(), "instances", fmt.Sprintf("%d.sock", id))
 }
 
 func GoedHome() string {

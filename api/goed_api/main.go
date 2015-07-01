@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/tcolar/goed/api/client"
 	"github.com/tcolar/goed/core"
 	"gopkg.in/alecthomas/kingpin.v1"
 )
@@ -14,12 +15,9 @@ var (
 	// TODO: command line version of the api
 	app = kingpin.New("goed_api", "API service for goed Editor")
 
-	apiVersion    = app.Command("api_version", "Returns the API version.")
-	curView       = app.Command("cur_view", "Returns the index of the current view.")
-	highlight     = app.Command("highlight", "Highlight a given file.")
-	highlightFile = highlight.Arg("file", "file to highlight").Required().String()
-
-	//loc = test.Arg("", "").Default(".").Required().String()
+	instances  = app.Command("instances", "Returns the known goed instance ID'S, space separated, latest first.")
+	instances1 = instances.Flag("1", "Returns only the most recent instance ID.").Default("false").Bool()
+	apiVersion = app.Command("api_version", "Returns the API version.")
 )
 
 func main() {
@@ -30,26 +28,29 @@ func main() {
 
 func Dispatch(action string) {
 	switch action {
+	case instances.FullCommand():
+		Instances()
 	case apiVersion.FullCommand():
 		ApiVersion()
-	case curView.FullCommand():
-		CurView()
-	case highlight.FullCommand():
-		Highlight(*highlightFile)
+	}
+}
+
+func Instances() {
+	ids := core.Instances()
+	for _, id := range ids {
+		fmt.Println(id)
+		if *instances1 {
+			break
+		}
 	}
 }
 
 func ApiVersion() {
-	fmt.Printf(core.ApiVersion)
-}
-
-func CurView() {
-	/*if core.Ed.CurView() == nil {
-		fmt.Println("No active view !")
+	id := 0 // TODO get insatnceid as arg
+	version, err := client.ApiVersion(id)
+	if err != nil {
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	fmt.Printf("%d", core.Ed.CurView().Id())*/
-}
-
-func Highlight(file string) {
+	fmt.Println(version)
 }
