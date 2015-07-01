@@ -1,3 +1,5 @@
+// package core contains the core data structures and functionality
+// leveraged y the other other Goed packages.
 package core
 
 import "os"

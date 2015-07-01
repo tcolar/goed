@@ -1,3 +1,4 @@
+// Package syntax provides synatx highlighting support for Goed.
 package syntax
 
 import "sort"

@@ -1,3 +1,5 @@
+// goed_api provides a command line wrapper around the Goed client API
+// github.com/tcolar/goed/api/client
 package main
 
 import (

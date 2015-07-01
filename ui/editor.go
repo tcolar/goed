@@ -1,3 +1,4 @@
+// package ui provides the UI components of Goed.
 package ui
 
 import (

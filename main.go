@@ -1,3 +1,5 @@
+// Goed is a terminal based editor.
+// https://github.com/tcolar/goed
 package main
 
 import (

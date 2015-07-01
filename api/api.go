@@ -1,3 +1,6 @@
+// Package api provide the server side Goed API
+// via RPC over local socket.
+// See client/ for the client implementation.
 package api
 
 import (
@@ -9,8 +12,6 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-// Goed API Server (RPC over local socket)
-// See client/ for the client side.
 type Api struct {
 }
 

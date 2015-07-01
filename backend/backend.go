@@ -1,3 +1,5 @@
+// package backend provides the backend implementations of the goed
+// editor text buffers.
 package backend
 
 import (
