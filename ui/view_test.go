@@ -122,8 +122,10 @@ func TestViewSelections(t *testing.T) {
 	b, sel = v.Selected(2, 2)
 	assert.True(t, b, "2, 2")
 	assert.Equal(t, sel.String(), s.String(), "sel 2,2")
+	oldcb, _ := clipboard.ReadAll()
 	v.SelectionCopy(s)
 	cb, _ := clipboard.ReadAll()
+	defer clipboard.WriteAll(oldcb) // restore the clipbaord after tests
 	assert.Equal(t, cb, "bcdefghijklmnopqrstuvwxyz\nABCDEFGH", "copy")
 	s = v.ExpandSelectionPath(0, 2)
 	assert.Equal(t, core.RunesToString(v.SelectionText(s)), "1234567890", "path2")
