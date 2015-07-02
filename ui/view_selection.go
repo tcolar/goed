@@ -206,7 +206,7 @@ func (v *View) OpenSelection(newView bool) {
 	vv := ed.ViewByLoc(loc)
 	if vv != nil {
 		// Already open
-		ed.ActivateView(vv.(*View), col, line)
+		ed.ActivateView(vv.(*View), line, col)
 		return
 	}
 	v2 := ed.NewView()
@@ -223,5 +223,5 @@ func (v *View) OpenSelection(newView bool) {
 	} else {
 		ed.ReplaceView(v, v2)
 	}
-	ed.ActivateView(v2, col, line)
+	ed.ActivateView(v2, line, col)
 }

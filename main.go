@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os/exec"
 	"runtime/debug"
 	"time"
 
@@ -55,6 +56,8 @@ func main() {
 			log.Fatal(string(data))
 		}
 		core.Cleanup()
+		// attempts to reset the terminal in case we left it in a bad state
+		exec.Command("reset").Run()
 	}()
 
 	apiServer.Start()

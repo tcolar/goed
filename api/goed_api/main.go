@@ -46,7 +46,7 @@ func Instances() {
 }
 
 func ApiVersion() {
-	id := 0 // TODO get insatnceid as arg
+	id := int64(0) // TODO get instanceid as arg
 	version, err := client.ApiVersion(id)
 	if err != nil {
 		fmt.Println(err.Error())
