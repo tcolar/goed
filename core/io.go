@@ -109,7 +109,6 @@ func InitHome(id int64) {
 	os.MkdirAll(path.Join(Home, "buffers"), 0755)
 	os.MkdirAll(path.Join(Home, "logs"), 0755)
 	os.MkdirAll(path.Join(Home, "instances"), 0755)
-	// TODO : Update config if new version ??
 	ioutil.WriteFile(path.Join(Home, "Version.txt"), []byte(Version), 644)
 
 	// RCP instance socket
@@ -123,6 +122,8 @@ func InitHome(id int64) {
 		panic(err)
 	}
 	log.SetOutput(LogFile)
+
+	UpdateResources()
 }
 
 // Instances returns a list of known Goed Instances

@@ -40,7 +40,7 @@ func NewEditor() *Editor {
 func NewMockEditor() *Editor {
 	return &Editor{
 		term:   core.NewMockTerm(),
-		config: core.LoadDefaultConfig(),
+		config: core.LoadConfig("config.toml"),
 	}
 }
 
@@ -53,7 +53,7 @@ func (e *Editor) Start(loc string) {
 	defer e.term.Close()
 	e.term.SetExtendedColors(core.Colors == 256)
 	e.evtState = &EvtState{}
-	e.theme, err = core.ReadTheme(path.Join(core.Home, "themes", e.config.Theme))
+	e.theme, err = core.ReadTheme(core.FindResource(path.Join("themes", e.config.Theme)))
 	if err != nil {
 		panic(err)
 	}
