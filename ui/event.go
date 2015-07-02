@@ -245,11 +245,19 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		ln := ev.MouseY - v.y1 + v.offy - 2
 		if isMouseUp(ev) && ev.MouseX == e.evtState.LastClickX &&
 			ev.MouseY == e.evtState.LastClickY &&
-			time.Now().Unix()-e.evtState.LastLeftClick < 2 {
+			time.Now().Unix()-e.evtState.LastLeftClick <= 2 {
 			ev.Key = MouseLeftDbl
+			e.evtState.LastClickX = -1
 		}
 		switch ev.Key {
 		case MouseLeftDbl:
+			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
+				e.SwapViews(e.CurView().(*View), v)
+				e.ActivateView(v, v.CurLine(), v.CurCol())
+				e.evtState.MovingView = false
+				e.SetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
+				return
+			}
 			if selection := v.ExpandSelectionWord(ln, col); selection != nil {
 				v.selections = []core.Selection{
 					*selection,
@@ -276,6 +284,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			if e.evtState.MovingView && isMouseUp(ev) {
 				e.evtState.MovingView = false
 				e.ViewMove(e.evtState.LastClickY, e.evtState.LastClickX, ev.MouseY, ev.MouseX)
+				e.SetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
 				return
 			}
 			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
@@ -287,7 +296,8 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				e.evtState.MovingView = true
 				e.evtState.LastClickX = ev.MouseX
 				e.evtState.LastClickY = ev.MouseY
-				e.SetStatusErr("Starting move, click new position.")
+				e.evtState.LastLeftClick = time.Now().Unix()
+				e.SetStatusErr("Starting move, click new position or dbl click to swap")
 				return
 			}
 			if ev.MouseX <= v.x1 {
@@ -297,7 +307,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				if !e.evtState.InDrag {
 					e.evtState.InDrag = true
 					v.ClearSelections()
-					e.ActivateView(v, e.evtState.DragCol, e.evtState.DragLn)
+					e.ActivateView(v, e.evtState.DragLn, e.evtState.DragCol)
 				}
 				// continued drag
 				x1 := e.evtState.DragCol
@@ -333,7 +343,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				}
 				if !e.evtState.InDrag {
 					v.ClearSelections()
-					e.ActivateView(v, col, ln)
+					e.ActivateView(v, ln, col)
 					e.evtState.LastLeftClick = time.Now().Unix()
 					e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
 					e.SetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))

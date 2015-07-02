@@ -343,7 +343,7 @@ func (e *Editor) DelCol(col *Col, terminateViews bool) {
 				e.CurCol = e.Cols[i+1]
 			}
 			v := e.CurCol.Views[0]
-			e.ActivateView(v, v.CurCol(), v.CurLine())
+			e.ActivateView(v, v.CurLine(), v.CurCol())
 			e.Cols = append(e.Cols[:i], e.Cols[i+1:]...)
 			break
 		}
@@ -383,7 +383,7 @@ func (e *Editor) DelView(v core.Viewable, terminate bool) {
 			}
 			c.Views = append(c.Views[:i], c.Views[i+1:]...)
 			cv := e.curView
-			e.ActivateView(cv, cv.CurCol(), cv.CurLine())
+			e.ActivateView(cv, cv.CurLine(), cv.CurCol())
 			if terminate {
 				e.TerminateView(v)
 			}
@@ -426,7 +426,7 @@ func (e *Editor) DelColCheck(c *Col) {
 	e.DelCol(c, true)
 }
 
-func (e *Editor) ActivateView(v *View, cursorx, cursory int) {
+func (e *Editor) ActivateView(v *View, cursory, cursorx int) {
 	e.curView = v
 	e.CurCol = e.ViewColumn(v)
 	v.MoveCursor(cursory-v.CurLine(), cursorx-v.CurCol())
@@ -466,4 +466,16 @@ func (e *Editor) ViewByLoc(loc string) core.Viewable {
 		}
 	}
 	return nil
+}
+
+// SwapView swaps 2 views (UI wise)
+func (e *Editor) SwapViews(v1, v2 *View) {
+	c1 := e.ViewColumn(v1)
+	i1 := e.ViewIndex(c1, v1)
+	c2 := e.ViewColumn(v2)
+	i2 := e.ViewIndex(c2, v2)
+	c1.Views[i1], c2.Views[i2] = v2, v1
+	v1.HeightRatio, v2.HeightRatio = v2.HeightRatio, v1.HeightRatio
+	v1.y1, v1.x1, v2.y1, v2.x1 = v2.y1, v2.x1, v1.y1, v1.x1
+	v1.y2, v1.x2, v2.y2, v2.x2 = v2.y2, v2.x2, v1.y2, v1.x2
 }
