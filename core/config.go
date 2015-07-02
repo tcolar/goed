@@ -1,12 +1,6 @@
 package core
 
-import (
-	"io/ioutil"
-	"os"
-	"path"
-
-	"github.com/BurntSushi/toml"
-)
+import "github.com/BurntSushi/toml"
 
 // Config represents the Goed configuration data.
 type Config struct {
@@ -16,9 +10,9 @@ type Config struct {
 }
 
 func LoadConfig(file string) *Config {
-	conf := LoadDefaultConfig()
-	loc := path.Join(Home, file)
-	if _, err := toml.DecodeFile(loc, &conf); err != nil {
+	conf := &Config{}
+	loc := FindResource(file)
+	if _, err := toml.DecodeFile(loc, conf); err != nil {
 		panic(err)
 	}
 	if conf.MaxCmdBufferLines == 0 {
@@ -26,25 +20,3 @@ func LoadConfig(file string) *Config {
 	}
 	return conf
 }
-
-func LoadDefaultConfig() *Config {
-	loc := path.Join(Home, "config.toml")
-	// If the config does not exist yet(first start ?), create it
-	if _, err := os.Stat(loc); os.IsNotExist(err) {
-		os.MkdirAll(Home, 0755)
-		err := ioutil.WriteFile(loc, []byte(defaultConfig), 0755)
-		if err != nil {
-			panic(err)
-		}
-	}
-	var conf *Config
-	if _, err := toml.DecodeFile(loc, &conf); err != nil {
-		panic(err)
-	}
-	return conf
-}
-
-var defaultConfig = `SyntaxHighlighting=true
-Theme="default.toml"
-MaxCmdBufferLines=10000
-`
