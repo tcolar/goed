@@ -105,10 +105,10 @@ func IsTextFile(file string) bool {
 // InitHome initializes the ~/.goed directory structure
 func InitHome(id int64) {
 	Home = GoedHome()
-	os.MkdirAll(Home, 0755)
-	os.MkdirAll(path.Join(Home, "buffers"), 0755)
-	os.MkdirAll(path.Join(Home, "logs"), 0755)
-	os.MkdirAll(path.Join(Home, "instances"), 0755)
+	os.MkdirAll(Home, 0750)
+	os.MkdirAll(path.Join(Home, "buffers"), 0750)
+	os.MkdirAll(path.Join(Home, "logs"), 0750)
+	os.MkdirAll(path.Join(Home, "instances"), 0750)
 	ioutil.WriteFile(path.Join(Home, "Version.txt"), []byte(Version), 644)
 
 	// RCP instance socket
@@ -190,5 +190,9 @@ func LookupLocation(dir, loc string) (string, bool) {
 
 func Cleanup() {
 	LogFile.Close()
+	info, err := LogFile.Stat()
+	if err == nil && info.Size() == 0 {
+		os.Remove(LogFile.Name())
+	}
 	os.Remove(Socket)
 }

@@ -96,7 +96,7 @@ func (b *FileBackend) Reload() error {
 	}
 	var err error
 	// TODO: is sync necessary or better to call it selectively ??
-	b.file, err = os.OpenFile(b.bufferLoc, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0666)
+	b.file, err = os.OpenFile(b.bufferLoc, os.O_RDWR|os.O_CREATE|os.O_SYNC, 0640)
 	if err != nil {
 		return err
 	}
