@@ -17,7 +17,7 @@ func init() {
 	core.Testing = true
 	core.InitHome(id)
 	core.Ed = ui.NewMockEditor()
-	core.Ed.Start("../test_data/file1.txt")
+	core.Ed.Start([]string{"../test_data/file1.txt"})
 }
 
 func TestApi(t *testing.T) {

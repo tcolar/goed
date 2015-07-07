@@ -31,8 +31,8 @@ func (s *Statusbar) RenderPos() {
 	e := core.Ed
 	t := e.Theme()
 	e.TermFB(t.StatusbarText, t.Statusbar.Bg)
-	v := e.CurView()
-	if v == nil {
+	v := e.CurView().(*View)
+	if v == nil || v.Backend() == nil {
 		return
 	}
 	col, ln := v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()), v.CurLine()

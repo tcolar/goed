@@ -23,7 +23,7 @@ func UpdateResources() {
 			target := path.Join(Home, path.Join(parts[1:]...))
 			asset, _ := Asset(nm)
 			os.MkdirAll(path.Dir(target), 0750)
-			err := ioutil.WriteFile(target, asset, 0750)
+			err := ioutil.WriteFile(target, asset, 0640)
 			if err != nil {
 				panic(err)
 			}

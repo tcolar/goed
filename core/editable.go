@@ -7,7 +7,7 @@ type Editable interface {
 	DelView(view Viewable, terminate bool)
 	// CmdOn indicates whether the CommandBar is currently active
 	CmdOn() bool
-	// Openopens a file in the given view.
+	// Open opens a file in the given view.
 	Open(loc string, view Viewable, title string) (Viewable, error)
 	// Render updates the whole editor UI
 	Render()
@@ -19,7 +19,7 @@ type Editable interface {
 	SetCurView(id int64) error
 	// SetCmdOn activates or desactives the CommandBar
 	SetCmdOn(v bool)
-	Start(loc string)
+	Start(locs []string)
 	TermChar(y, x int, c rune)
 	TermFB(fg, bg Style)
 	TermFill(c rune, y1, x1, y2, x2 int)

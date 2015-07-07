@@ -125,15 +125,11 @@ func (c *Cmdbar) open(args []string) error {
 	}
 	ed := core.Ed.(*Editor)
 	v := ed.NewView()
-	_, err := ed.Open(args[0], v, "")
+	_, err := ed.Open(args[0], v, ed.CurView().WorkDir())
 	if err != nil {
 		return err
 	}
-	if ed.curView.Dirty() {
-		ed.InsertViewSmart(v)
-	} else {
-		ed.ReplaceView(ed.curView, v)
-	}
+	ed.InsertViewSmart(v)
 	ed.ActivateView(v, 0, 0)
 	return nil
 }

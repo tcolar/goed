@@ -45,11 +45,12 @@ func NewMockEditor() *Editor {
 }
 
 // Start starts-up the editor
-func (e *Editor) Start(loc string) {
+func (e *Editor) Start(locs []string) {
 	err := e.term.Init()
 	if err != nil {
 		panic(err)
 	}
+
 	defer e.term.Close()
 	e.term.SetExtendedColors(core.Colors == 256)
 	e.evtState = &EvtState{}
@@ -65,27 +66,45 @@ func (e *Editor) Start(loc string) {
 	e.Cmdbar.SetBounds(0, 0, 0, w)
 	e.Statusbar = &Statusbar{}
 	e.Statusbar.SetBounds(h-1, 0, h-1, w)
-	view1 := e.NewView()
-	e.curView = view1
-	e.Open(loc, view1, "")
-	if view1.backend == nil { // new file that does not exist yet
-		view1.backend, _ = backend.NewFileBackend("", view1.Id())
+	dirs := []string{}
+	files := []string{}
+	for _, loc := range locs {
+		if stat, err := os.Stat(loc); err == nil && stat.IsDir() {
+			dirs = append(dirs, loc)
+		} else {
+			files = append(files, loc)
+		}
 	}
-	view1.HeightRatio = 1.0
-
-	c := e.NewCol(1.0, []*View{view1})
-	e.Cols = []*Col{c}
-
-	e.CurCol = c
-
-	// Add a directory listing view if we don't already have one
-	if stat, err := os.Stat(loc); err == nil && !stat.IsDir() {
-		view2 := e.NewView()
-		e.Open(".", view2, "")
-		view2.HeightRatio = 1.0
-		c.WidthRatio = 0.75
-		c2 := e.NewCol(0.25, []*View{view2})
-		e.Cols = append([]*Col{c2}, c)
+	if len(dirs) == 0 {
+		if len(files) > 0 {
+			dirs = []string{path.Dir(locs[0])}
+		} else {
+			dirs = []string{"."}
+		}
+	}
+	e.Cols = append(e.Cols, &Col{WidthRatio: 1.0})
+	ratio := 1.0 / float64(len(dirs))
+	for _, dir := range dirs {
+		view := e.NewView()
+		view.HeightRatio = ratio
+		e.Open(dir, view, "")
+		e.Cols[0].Views = append(e.Cols[0].Views, view)
+	}
+	e.CurCol = e.Cols[0]
+	e.curView = e.CurCol.Views[0]
+	if len(files) > 0 {
+		e.CurCol.WidthRatio = 0.2
+		c := &Col{WidthRatio: 0.8}
+		ratio := 1.0 / float64(len(files))
+		for _, f := range files {
+			view := e.NewView()
+			view.HeightRatio = ratio
+			e.Open(f, view, "")
+			c.Views = append(c.Views, view)
+		}
+		e.Cols = append(e.Cols, c)
+		e.CurCol = c
+		e.curView = c.Views[0]
 	}
 
 	e.Resize(e.term.Size())
@@ -105,6 +124,15 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable,
 		loc = path.Join(rel, loc)
 	}
 	stat, err := os.Stat(loc)
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(path.Dir(loc), 0750); err != nil {
+			return nil, err
+		}
+		if _, err := os.Create(loc); err != nil {
+			return nil, err
+		}
+	}
+	stat, err = os.Stat(loc)
 	if err != nil {
 		return nil, fmt.Errorf("File not found %s", loc)
 	}
@@ -133,7 +161,6 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable,
 	view.SetWorkDir(filepath.Dir(loc))
 	if nv {
 		e.InsertView(view.(*View), e.CurView().(*View), 0.2)
-		//		e.ActivateView(view.(*View), 0, 0)
 	}
 	return view, err
 }
