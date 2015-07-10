@@ -28,11 +28,3 @@ func TestQuitCheck(t *testing.T) {
 	assert.True(t, v2.lastCloseTs.After(then), "quitcheck ts")
 	assert.True(t, Ed.QuitCheck(), "quitcheck3")
 }
-
-func TestStartMany(t *testing.T) {
-	ed := NewMockEditor()
-	ed.Start([]string{"./test_data", "./test_data/empty.txt", "./test_data/file1.txt"})
-	assert.Equal(t, len(ed.Cols), 2)
-	assert.Equal(t, len(ed.Cols[0].Views), 1)
-	assert.Equal(t, len(ed.Cols[1].Views), 2)
-}

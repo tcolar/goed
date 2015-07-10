@@ -179,14 +179,14 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 func (b *MemBackend) Slice(row, col, row2, col2 int) *core.Slice {
 	slice := core.NewSlice(row, col, row2, col2, [][]rune{})
 	text := slice.Text()
-	if row < 0 || col < 0 {
-		return slice
-	}
 	if row2 != -1 && row > row2 {
 		row, row2 = row2, row
 	}
 	if col2 != -1 && col > col2 {
 		col, col2 = col2, col
+	}
+	if row < 0 || col < 0 {
+		return slice
 	}
 	r := row
 	for ; row2 == -1 || r <= row2; r++ {

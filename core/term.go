@@ -110,6 +110,9 @@ func (t *MockTerm) SetCursor(y, x int) {
 }
 
 func (t *MockTerm) Char(y, x int, c rune, fg, bg Style) {
+	if x < 0 || y < 0 {
+		return
+	}
 	if x < t.w && y < t.h {
 		t.text[y][x] = c
 	}

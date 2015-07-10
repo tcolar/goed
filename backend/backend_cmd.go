@@ -146,6 +146,9 @@ func (c *BackendCmd) flush(o, e *bytes.Buffer, buf []byte) {
 	}
 	if refresh {
 		limit := core.Ed.Config().MaxCmdBufferLines
+		if v == nil {
+			return
+		}
 		if v.LineCount() > limit {
 			c.Backend.Remove(1, 1, v.LineCount()-limit+1, 0)
 		}
