@@ -61,9 +61,7 @@ func (v *View) SelectionCopy(s *core.Selection) {
 }
 
 func (v *View) SelectionDelete(s *core.Selection) {
-	y, x := s.LineFrom-v.CurLine(), s.ColFrom-v.CurCol()
 	v.Delete(s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
-	v.MoveCursor(y, x)
 }
 
 func (v *View) Paste() {
