@@ -2,10 +2,13 @@ package ui
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/termbox-go"
 )
+
+var lock sync.Mutex
 
 // Col represent a column of the editor (a set of views)
 type Col struct {
@@ -43,6 +46,10 @@ func (e *Editor) WidgetAt(y, x int) Renderer {
 }
 
 func (e Editor) Render() {
+	// crude render lock for now until I implement have a proper
+	// UI eventing (channels)
+	lock.Lock()
+	defer lock.Unlock()
 	e.TermFB(e.theme.Fg, e.theme.Bg)
 	e.term.Clear(e.Bg.Uint16(), e.Bg.Uint16())
 
