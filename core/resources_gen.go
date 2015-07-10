@@ -115,7 +115,7 @@ func resActionsReadmeMd() (*asset, error) {
 	return a, nil
 }
 
-var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\x36\x33\xb1\xb0\x34\x35\xb6\xe0\x02\x04\x00\x00\xff\xff\x56\x79\xc3\xb9\x0b\x00\x00\x00")
+var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\x36\x33\xb1\x34\x34\xb4\x30\xe3\x02\x04\x00\x00\xff\xff\x0a\xb4\x5b\x5f\x0b\x00\x00\x00")
 
 func resResources_versionTxtBytes() ([]byte, error) {
 	return bindataRead(
@@ -130,7 +130,7 @@ func resResources_versionTxt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1436489538, 0)}
+	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1436491186, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
