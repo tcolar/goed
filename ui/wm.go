@@ -246,7 +246,7 @@ func (e *Editor) ColIndex(col *Col) int {
 // AddCol adds a new column, space is "taken" from toCol
 func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	r := toCol.WidthRatio
-	nv := e.NewView()
+	nv := e.NewView("")
 	nv.HeightRatio = 1.0
 	c := e.NewCol(r*ratio, []*View{nv})
 	toCol.WidthRatio = r - (r * ratio)
@@ -300,7 +300,7 @@ func (e *Editor) InsertViewSmart(view *View) {
 
 // AddCol adds a new view in the current column, space is "taken" from toView
 func (e *Editor) AddView(toView *View, ratio float64) *View {
-	nv := e.NewView()
+	nv := e.NewView("")
 	e.InsertView(nv, toView, ratio)
 	e.ActivateView(nv, 0, 0)
 	return nv

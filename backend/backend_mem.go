@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"unicode/utf8"
 
 	"github.com/tcolar/goed/core"
@@ -17,10 +18,10 @@ type MemBackend struct {
 }
 
 // NewmemBackend creates a new in memory backend by reading a file.
-func NewMemBackend(path string, viewId int64) (*MemBackend, error) {
+func NewMemBackend(loc string, viewId int64) (*MemBackend, error) {
 	m := &MemBackend{
 		text:   [][]rune{[]rune{}},
-		file:   path,
+		file:   loc,
 		viewId: viewId,
 	}
 	err := m.Reload()
@@ -33,6 +34,9 @@ func (m *MemBackend) Reload() error {
 	if len(m.file) == 0 {
 		return nil
 	}
+	if _, err := os.Stat(m.file); os.IsNotExist(err) {
+		return nil
+	}
 	data, err := ioutil.ReadFile(m.file)
 	if err != nil {
 		return err
@@ -43,14 +47,25 @@ func (m *MemBackend) Reload() error {
 	}
 	if core.Ed != nil {
 		v := core.Ed.ViewById(m.viewId)
-		v.SetDirty(false)
+		if v != nil {
+			v.SetDirty(false)
+		}
 	}
 	return nil
 }
 
 func (b *MemBackend) Save(loc string) error {
 	if len(loc) == 0 {
+		loc = b.file
+	}
+	if len(loc) == 0 {
 		return fmt.Errorf("Save where ? Use save [path]")
+	}
+	_, err := os.Stat(loc)
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(path.Dir(loc), 0750); err != nil {
+			return err
+		}
 	}
 	f, err := os.Create(loc)
 	if err != nil {

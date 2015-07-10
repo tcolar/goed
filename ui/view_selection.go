@@ -209,7 +209,7 @@ func (v *View) OpenSelection(newView bool) {
 		ed.ActivateView(vv.(*View), line, col)
 		return
 	}
-	v2 := ed.NewView()
+	v2 := ed.NewView(loc)
 	if _, err := ed.Open(loc, v2, v.WorkDir()); err != nil {
 		ed.SetStatusErr(err.Error())
 		return

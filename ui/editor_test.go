@@ -17,8 +17,8 @@ func init() {
 
 func TestQuitCheck(t *testing.T) {
 	Ed := core.Ed.(*Editor)
-	v := Ed.NewView()
-	v2 := Ed.NewView()
+	v := Ed.NewView("")
+	v2 := Ed.NewView("")
 	col := Ed.NewCol(1.0, []*View{v, v2})
 	Ed.Cols = []*Col{col}
 	then := time.Now()

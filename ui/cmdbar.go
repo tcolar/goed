@@ -124,7 +124,7 @@ func (c *Cmdbar) open(args []string) error {
 		return fmt.Errorf("No path provided")
 	}
 	ed := core.Ed.(*Editor)
-	v := ed.NewView()
+	v := ed.NewView(args[0])
 	_, err := ed.Open(args[0], v, ed.CurView().WorkDir())
 	if err != nil {
 		return err

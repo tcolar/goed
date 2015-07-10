@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"path"
 	"path/filepath"
 	"time"
 
@@ -33,22 +34,25 @@ type View struct {
 	autoScrollSelect bool
 }
 
-func (e *Editor) NewView() *View {
+func (e *Editor) NewView(loc string) *View {
 	d, _ := filepath.Abs(".")
+	if len(loc) > 0 {
+		d = path.Dir(loc)
+	}
 	v := &View{
 		id:          e.genViewId(),
 		HeightRatio: 0.5,
 		workDir:     d,
 		slice:       core.NewSlice(0, 0, 0, 0, [][]rune{}),
 	}
-	v.backend, _ = backend.NewMemBackend("", v.Id())
+	v.backend, _ = backend.NewMemBackend(loc, v.Id())
 	return v
 }
 
 // NewFileView creates a view for a given file
-func (e Editor) NewFileView(path string) *View {
-	v := e.NewView()
-	e.Open(path, v, "")
+func (e Editor) NewFileView(loc string) *View {
+	v := e.NewView(loc)
+	e.Open(loc, v, "")
 	return v
 }
 

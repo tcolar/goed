@@ -85,7 +85,7 @@ func (e *Editor) Start(locs []string) {
 	e.Cols = append(e.Cols, &Col{WidthRatio: 1.0})
 	ratio := 1.0 / float64(len(dirs))
 	for _, dir := range dirs {
-		view := e.NewView()
+		view := e.NewView(dir)
 		view.HeightRatio = ratio
 		e.Open(dir, view, "")
 		e.Cols[0].Views = append(e.Cols[0].Views, view)
@@ -97,7 +97,7 @@ func (e *Editor) Start(locs []string) {
 		c := &Col{WidthRatio: 0.8}
 		ratio := 1.0 / float64(len(files))
 		for _, f := range files {
-			view := e.NewView()
+			view := e.NewView(f)
 			view.HeightRatio = ratio
 			e.Open(f, view, "")
 			c.Views = append(c.Views, view)
@@ -119,44 +119,37 @@ func (e *Editor) Start(locs []string) {
 }
 
 // Open opens a given location in the editor (in the given view)
+// or new view if view is nil
 func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable, error) {
 	if len(rel) > 0 && !strings.HasPrefix(loc, string(os.PathSeparator)) {
 		loc = path.Join(rel, loc)
 	}
-	stat, err := os.Stat(loc)
-	if os.IsNotExist(err) {
-		if err := os.MkdirAll(path.Dir(loc), 0750); err != nil {
-			return nil, err
-		}
-		if _, err := os.Create(loc); err != nil {
-			return nil, err
-		}
-	}
-	stat, err = os.Stat(loc)
-	if err != nil {
-		return nil, fmt.Errorf("File not found %s", loc)
-	}
 	// make it absolute
-	loc, err = filepath.Abs(loc)
+	loc, err := filepath.Abs(loc)
 	if err != nil {
 		return nil, err
 	}
+	stat, err := os.Stat(loc)
+	newFile := false
+	if os.IsNotExist(err) {
+		newFile = true
+	}
 	title := filepath.Base(loc)
-	if stat.IsDir() {
+	if !newFile && stat.IsDir() {
 		loc += string(os.PathSeparator)
 		title += string(os.PathSeparator)
 	}
 	nv := false
 	if view == nil {
-		view = e.NewView()
+		view = e.NewFileView(loc)
 		nv = true
 	}
 	view.Reset()
 	view.SetTitle(title)
-	if stat.IsDir() {
-		err = e.openDir(loc, view)
-	} else {
+	if newFile || !stat.IsDir() {
 		err = e.openFile(loc, view)
+	} else {
+		err = e.openDir(loc, view)
 	}
 	view.SetWorkDir(filepath.Dir(loc))
 	if nv {
@@ -184,11 +177,17 @@ func (e *Editor) openFile(loc string, view core.Viewable) error {
 	if !core.IsTextFile(loc) {
 		return fmt.Errorf("Binary file ? %s", loc)
 	}
-	backend, err := backend.NewFileBackend(loc, view.Id())
+	var b core.Backend
+	var err error
+	if _, err := os.Stat(loc); os.IsNotExist(err) {
+		b, err = backend.NewMemBackend(loc, view.Id())
+	} else {
+		b, err = backend.NewFileBackend(loc, view.Id())
+	}
 	if err != nil {
 		return err
 	}
-	view.SetBackend(backend)
+	view.SetBackend(b)
 	e.SetStatus(fmt.Sprintf("%v  [%d]", view.WorkDir(), view.Id()))
 	view.SetDirty(false)
 	return nil

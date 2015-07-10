@@ -13,7 +13,7 @@ import (
 func TestView(t *testing.T) {
 	var err error
 	Ed := core.Ed.(*Editor)
-	v := Ed.NewView()
+	v := Ed.NewView("")
 	v.SetBounds(0, 0, 25, 40)
 
 	_, err = Ed.Open("../test_data/file1.txt", v, "")
@@ -93,7 +93,7 @@ func assertCursor(t *testing.T, v *View, y, x, offsetY, offsetX int, msg string)
 func TestViewSelections(t *testing.T) {
 	var err error
 	Ed := core.Ed.(*Editor)
-	v := Ed.NewView()
+	v := Ed.NewView("")
 	v.SetBounds(5, 5, 30, 140)
 	_, err = Ed.Open("../test_data/file1.txt", v, "")
 	assert.Nil(t, err, "open")
@@ -160,7 +160,7 @@ func TestViewEdition(t *testing.T) {
 	// Note: more tests done directly on backemds
 	var err error
 	Ed := core.Ed.(*Editor)
-	v := Ed.NewView()
+	v := Ed.NewView("")
 	v.SetBounds(5, 5, 30, 140)
 	_, err = Ed.Open("../test_data/empty.txt", v, "")
 	assert.Nil(t, err, "open")
@@ -202,7 +202,7 @@ func TestDelete(t *testing.T) {
 	// Test some edge cases
 	var err error
 	Ed := core.Ed.(*Editor)
-	v := Ed.NewView()
+	v := Ed.NewView("")
 	v.SetBounds(5, 5, 30, 140)
 	_, err = Ed.Open("../test_data/empty.txt", v, "")
 	assert.Nil(t, err, "open")

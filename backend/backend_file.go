@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path"
 	"strings"
 	"unicode/utf8"
 
@@ -242,8 +243,14 @@ func (f *FileBackend) Save(loc string) error {
 	if loc == f.bufferLoc {
 		return nil // editing in place
 	}
+	_, err := os.Stat(loc)
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(path.Dir(loc), 0750); err != nil {
+			return err
+		}
+	}
 	f.srcLoc = loc
-	err := core.CopyFile(f.bufferLoc, loc)
+	err = core.CopyFile(f.bufferLoc, loc)
 	// some sort of rsync would be nice ?
 	if err != nil {
 		return err
