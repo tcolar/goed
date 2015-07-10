@@ -29,6 +29,7 @@ func TestApi(t *testing.T) {
 	version, err := client.ApiVersion(id)
 	assert.Nil(t, err)
 	assert.Equal(t, core.ApiVersion, version, "api_version")
+	
 	/*
 		body, err = get("/v1/version")
 		assert.Nil(t, err)

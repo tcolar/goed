@@ -104,6 +104,7 @@ func IsTextFile(file string) bool {
 
 // InitHome initializes the ~/.goed directory structure
 func InitHome(id int64) {
+	InstanceId = id
 	Home = GoedHome()
 	os.MkdirAll(Home, 0750)
 	os.MkdirAll(path.Join(Home, "buffers"), 0750)

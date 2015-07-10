@@ -28,3 +28,5 @@ var LogFile *os.File
 var ApiPort int
 
 var Socket string // instance RPC socket
+
+var InstanceId int64 // instance ID

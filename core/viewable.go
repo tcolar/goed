@@ -19,6 +19,7 @@ type Viewable interface {
 	Render()
 	// Reset reinitializes the view to it's startup state.
 	Reset()
+	Save() // Save from buffer to src
 	SetBackend(backend Backend)
 	SetDirty(bool)
 	Selections() *[]Selection

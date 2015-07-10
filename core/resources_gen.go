@@ -3,6 +3,7 @@
 // res/Readme.md
 // res/actions/Readme.md
 // res/resources_version.txt
+// res/standard/actions/goimports.sh
 // res/standard/config.toml
 // res/standard/themes/default.toml
 // res/themes/Readme.md
@@ -114,7 +115,7 @@ func resActionsReadmeMd() (*asset, error) {
 	return a, nil
 }
 
-var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\x36\xb5\x30\x33\xb2\xb4\xb4\xe4\x02\x04\x00\x00\xff\xff\x8f\x4f\x6c\xe3\x0b\x00\x00\x00")
+var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\x36\x33\xb1\xb0\x34\x35\xb6\xe0\x02\x04\x00\x00\xff\xff\x56\x79\xc3\xb9\x0b\x00\x00\x00")
 
 func resResources_versionTxtBytes() ([]byte, error) {
 	return bindataRead(
@@ -129,7 +130,27 @@ func resResources_versionTxt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1435862999, 0)}
+	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1436489538, 0)}
+	a := &asset{bytes: bytes, info:  info}
+	return a, nil
+}
+
+var _resStandardActionsGoimportsSh = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x4c\x8d\x41\x4e\x86\x30\x10\x85\xf7\x73\x8a\x31\x74\xfb\x87\x13\xb0\x30\x4a\x0c\x1b\x5c\x68\x74\x59\x0a\x4c\x71\x92\xd2\x21\x6d\x15\xbd\xbd\x2d\xc1\xc8\x72\xde\xbc\xef\x7b\xd5\x5d\x3d\xb2\xaf\x47\x13\x3f\x20\x52\xc2\x1b\x7d\x63\x65\x0d\x3b\x24\x13\xdc\x0f\xc0\x17\xd3\xde\xa8\xa7\xe7\xf6\x51\xbf\x75\xed\x3b\xb0\x8f\xe9\xbc\xbb\xfe\xe5\xf5\xbe\x7f\x68\x01\x2a\x5c\x32\x6b\xd9\x11\x3a\x99\x4c\x62\xf1\x10\xc3\xd4\x0c\x8b\xd0\xac\xcd\xc6\x58\x34\x3a\x47\x3a\xff\x51\x15\x09\xaa\x92\x0d\x58\x60\xe1\x75\x93\x90\x22\x8a\x3f\x2c\xf0\x9f\xdc\x76\x54\x99\xcb\xad\x40\x4e\xcc\x7c\x98\x70\xfc\xb4\x96\x02\xda\x20\xeb\x1f\x70\x1d\x3a\xab\x97\x1d\x84\xdf\x00\x00\x00\xff\xff\x4e\x39\x38\xf4\xea\x00\x00\x00")
+
+func resStandardActionsGoimportsShBytes() ([]byte, error) {
+	return bindataRead(
+		_resStandardActionsGoimportsSh,
+		"res/standard/actions/goimports.sh",
+	)
+}
+
+func resStandardActionsGoimportsSh() (*asset, error) {
+	bytes, err := resStandardActionsGoimportsShBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "res/standard/actions/goimports.sh", size: 234, mode: os.FileMode(493), modTime: time.Unix(1436489398, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
@@ -249,6 +270,7 @@ var _bindata = map[string]func() (*asset, error){
 	"res/Readme.md": resReadmeMd,
 	"res/actions/Readme.md": resActionsReadmeMd,
 	"res/resources_version.txt": resResources_versionTxt,
+	"res/standard/actions/goimports.sh": resStandardActionsGoimportsSh,
 	"res/standard/config.toml": resStandardConfigToml,
 	"res/standard/themes/default.toml": resStandardThemesDefaultToml,
 	"res/themes/Readme.md": resThemesReadmeMd,
@@ -304,6 +326,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"resources_version.txt": &bintree{resResources_versionTxt, map[string]*bintree{
 		}},
 		"standard": &bintree{nil, map[string]*bintree{
+			"actions": &bintree{nil, map[string]*bintree{
+				"goimports.sh": &bintree{resStandardActionsGoimportsSh, map[string]*bintree{
+				}},
+			}},
 			"config.toml": &bintree{resStandardConfigToml, map[string]*bintree{
 			}},
 			"themes": &bintree{nil, map[string]*bintree{

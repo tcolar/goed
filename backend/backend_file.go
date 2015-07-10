@@ -2,15 +2,13 @@ package backend
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"os"
-	"os/exec"
-	"path"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/event"
 )
 
 // FileBackend is a backend implemetation that uses a plain unbuffered file as
@@ -250,35 +248,13 @@ func (f *FileBackend) Save(loc string) error {
 	if err != nil {
 		return err
 	}
-	// temporary test hack for go format
-	// this should eventually go trough eventing
+	// temporary hack for go format
+	// should hook-up through action/eventing
 	if strings.HasSuffix(loc, ".go") {
-		e := core.Ed
-		// TODO: make this configurable, ie: gofmt, goimports etc ....
-		// TODO: generalize error panel
-		out, _ := exec.Command("goimports", "-w", loc).CombinedOutput()
-		fp := path.Join(core.Home, "errors.txt")
-		if len(out) > 0 {
-			file, _ := os.Create(fp)
-			file.Write(out)
-			file.Close()
-			v := e.ViewByLoc(fp)
-			v, err = e.Open(fp, v, "Errors")
-			if err != nil {
-				return err
-			}
-			return errors.New("goimports failed")
-		}
-		if err != nil {
-			return errors.New(err.Error())
-		}
-		v := e.ViewByLoc(fp)
-		if v != nil {
-			e.DelView(v, true)
-		}
-		f.Reload()
+		return event.RunAction("goimports.sh")
 	}
-	return err
+
+	return nil
 }
 
 func (f *FileBackend) ViewId() int64 {
