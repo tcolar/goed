@@ -1,13 +1,13 @@
 package backend
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
+	"sync"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
@@ -29,7 +29,7 @@ func (c *BackendCmd) Reload() error {
 	c.Backend.Close()
 	os.Remove(c.BufferLoc())
 	c.Backend.Reload()
-	go c.Start()
+	go c.Start(c.ViewId())
 	return nil
 }
 
@@ -42,25 +42,24 @@ func (c *BackendCmd) Running() bool {
 	return c.runner != nil && c.runner.Process != nil
 }
 
-func (c *BackendCmd) Start() {
+func (c *BackendCmd) Start(viewId int64) {
 	workDir, _ := filepath.Abs(c.dir)
-	v := core.Ed.ViewById(c.ViewId())
-	v.SetWorkDir(workDir)
+	actions.ViewSetWorkdirAction(viewId, workDir)
 	c.runner.Dir = workDir
-	v.SetTitle(fmt.Sprintf("[RUNNING] %s", *c.title))
-	v.Render()
-	core.Ed.TermFlush()
+	actions.ViewSetTitleAction(viewId, fmt.Sprintf("[RUNNING] %s", *c.title))
+	actions.ViewRenderAction(viewId)
+	actions.EdTermFlushAction()
 
 	err := c.Starter.Start(c)
 
 	if err != nil {
-		v.SetTitle(fmt.Sprintf("[FAILED] %s", *c.title))
-		core.Ed.SetStatusErr(err.Error())
+		actions.ViewSetTitleAction(viewId, fmt.Sprintf("[FAILED] %s", *c.title))
+		actions.EdSetStatusErrAction(err.Error())
 	} else {
-		v.SetTitle(*c.title)
+		actions.ViewSetTitleAction(viewId, *c.title)
 	}
-	v.SetWorkDir(workDir) // start() could have modified this
-	core.Ed.Render()
+	actions.ViewSetWorkdirAction(viewId, workDir) // might have chnaged
+	actions.EdRenderAction()
 }
 
 func (c *BackendCmd) stop() {
@@ -102,58 +101,44 @@ func (s *MemCmdStarter) Start(c *BackendCmd) error {
 }
 
 func (c *BackendCmd) stream() error {
-	var outBuf bytes.Buffer
-	var errBuf bytes.Buffer
-	c.runner.Stdout = &outBuf
-	c.runner.Stderr = &errBuf
+	w := backendAppender{backend: c.Backend, viewId: c.ViewId()}
+	c.runner.Stdout = w
+	c.runner.Stderr = w
 	err := c.runner.Start()
 	if err != nil {
 		return err
 	}
-	done := false
-	go func() {
-		buf := make([]byte, 50000)
-		for {
-			c.flush(&outBuf, &errBuf, buf)
-			if done {
-				c.flush(&outBuf, &errBuf, buf)
-				break
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-	}()
 	err = c.runner.Wait()
-	done = true
 	return err
 }
 
-func (c *BackendCmd) flush(o, e *bytes.Buffer, buf []byte) {
-	refresh := false
-	v := core.Ed.ViewById(c.ViewId())
-	if o.Len() > 0 {
-		nb, _ := o.Read(buf)
-		if nb > 0 {
-			c.Backend.Append(string(buf[:nb]))
-			refresh = true
-		}
+type backendAppender struct {
+	backend core.Backend
+	viewId  int64
+	lock    sync.Mutex
+}
+
+func (b backendAppender) Write(data []byte) (int, error) {
+	var err error
+	b.lock.Lock()
+	err = b.backend.Append(string(data))
+	b.lock.Unlock()
+	if err != nil {
+		return 0, err
 	}
-	if e.Len() > 0 {
-		nb, _ := e.Read(buf)
-		if nb > 0 {
-			c.Backend.Append(string(buf[:nb]))
-			refresh = true
-		}
-	}
-	if refresh {
-		limit := core.Ed.Config().MaxCmdBufferLines
-		if v == nil {
-			return
-		}
-		if v.LineCount() > limit {
-			c.Backend.Remove(1, 1, v.LineCount()-limit+1, 0)
-		}
-		v.MoveCursor(v.LineCount(), 0)
-		v.Render()
-		core.Ed.TermFlush()
-	}
+	/*
+				limit := core.Ed.Config().MaxCmdBufferLines
+				if v == nil {
+					return
+				}
+				if v.LineCount() > limit {
+					c.Backend.Remove(1, 1, v.LineCount()-limit+1, 0)
+				}
+
+		event.ViewMoveCursorEvt(v, v.LineCount(), 0)
+	*/
+	//event.ViewMoveCursorEvt(v.LineCount(), 0)
+	actions.ViewRenderAction(b.viewId)
+	actions.EdTermFlushAction()
+	return len(data), nil
 }

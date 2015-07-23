@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
@@ -22,7 +23,7 @@ func (v *View) InsertCur(s string) {
 	_, y, x := v.CurChar()
 	if len(v.selections) > 0 {
 		s := v.selections[0]
-		v.MoveCursorRoll(s.LineFrom-y, s.ColFrom-x)
+		actions.ViewMoveCursorRollAction(v.Id(), s.LineFrom-y, s.ColFrom-x)
 		v.SelectionDelete(&s)
 		v.ClearSelections()
 	}
@@ -64,7 +65,7 @@ func (v *View) Insert(line, col int, s string) {
 	}
 	v.Render()
 	e.TermFlush()
-	v.MoveCursor(offy, offx)
+	actions.ViewMoveCursorAction(v.Id(), offy, offx)
 }
 
 func (v *View) lineIndent(line int) []rune {
@@ -94,7 +95,7 @@ func (v *View) Reload() {
 }
 
 // Delete removes characters at the given text location
-func (v *View) Delete(line1, col1, line2, col2 int) {
+func (v *View) delete(line1, col1, line2, col2 int) {
 	err := v.backend.Remove(line1, col1, line2, col2)
 	if err != nil {
 		core.Ed.SetStatusErr("Delete Failed " + err.Error())
@@ -110,13 +111,13 @@ func (v *View) DeleteCur() {
 	c, y, x := v.CurChar()
 	if len(v.selections) > 0 {
 		s := v.selections[0]
-		v.MoveCursorRoll(s.LineFrom-y, s.ColFrom-x)
+		actions.ViewMoveCursorRollAction(v.Id(), s.LineFrom-y, s.ColFrom-x)
 		v.SelectionDelete(&s)
 		v.ClearSelections()
 		return
 	}
 	if c != nil {
-		v.Delete(y, x, y, x)
+		v.delete(y, x, y, x)
 	}
 }
 
@@ -126,7 +127,7 @@ func (v *View) Backspace() {
 		return
 	}
 	if len(v.selections) == 0 {
-		v.MoveCursorRoll(0, -1)
+		actions.ViewMoveCursorRollAction(v.Id(), 0, -1)
 	}
 	v.DeleteCur()
 }

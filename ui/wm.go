@@ -2,13 +2,11 @@ package ui
 
 import (
 	"fmt"
-	"sync"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/termbox-go"
 )
-
-var lock sync.Mutex
 
 // Col represent a column of the editor (a set of views)
 type Col struct {
@@ -46,10 +44,6 @@ func (e *Editor) WidgetAt(y, x int) Renderer {
 }
 
 func (e Editor) Render() {
-	// crude render lock for now until I implement have a proper
-	// UI eventing (channels)
-	lock.Lock()
-	defer lock.Unlock()
 	e.TermFB(e.theme.Fg, e.theme.Bg)
 	e.term.Clear(e.Bg.Uint16(), e.Bg.Uint16())
 
@@ -412,8 +406,9 @@ func (e *Editor) TerminateView(v *View) {
 }
 
 // Delete (close) a view, but with dirty check
-func (e *Editor) DelViewCheck(v *View) {
-	if !v.canClose() {
+func (e *Editor) DelViewCheck(v core.Viewable) {
+	view := v.(*View)
+	if !view.canClose() {
 		e.SetStatusErr("Unsaved changes. Save or request close again.")
 		return
 	}
@@ -433,10 +428,10 @@ func (e *Editor) DelColCheck(c *Col) {
 	e.DelCol(c, true)
 }
 
-func (e *Editor) ActivateView(v *View, cursory, cursorx int) {
-	e.curView = v
-	e.CurCol = e.ViewColumn(v)
-	v.MoveCursor(cursory-v.CurLine(), cursorx-v.CurCol())
+func (e *Editor) ActivateView(v core.Viewable, cursory, cursorx int) {
+	e.curView = v.(*View)
+	e.CurCol = e.ViewColumn(e.curView)
+	actions.ViewMoveCursorAction(v.Id(), cursory-v.CurLine(), cursorx-v.CurCol())
 }
 
 func (e *Editor) SetCurView(id int64) error {
@@ -444,7 +439,7 @@ func (e *Editor) SetCurView(id int64) error {
 	if v == nil {
 		return fmt.Errorf("No such view %d", id)
 	}
-	e.ActivateView(v.(*View), 0, 0)
+	e.ActivateView(v, 0, 0)
 	return nil
 }
 

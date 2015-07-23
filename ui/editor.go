@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
 )
@@ -42,6 +43,10 @@ func NewMockEditor() *Editor {
 		term:   core.NewMockTerm(),
 		config: core.LoadConfig("config.toml"),
 	}
+}
+
+func (e *Editor) Dispatch(action core.Action) {
+	core.Bus.Dispatch(action)
 }
 
 // Start starts-up the editor
@@ -87,8 +92,8 @@ func (e *Editor) Start(locs []string) {
 	for _, dir := range dirs {
 		view := e.NewView(dir)
 		view.HeightRatio = ratio
-		e.Open(dir, view, "")
 		e.Cols[0].Views = append(e.Cols[0].Views, view)
+		e.Open(dir, view, "")
 	}
 	e.CurCol = e.Cols[0]
 	e.curView = e.CurCol.Views[0]
@@ -99,8 +104,8 @@ func (e *Editor) Start(locs []string) {
 		for _, f := range files {
 			view := e.NewView(f)
 			view.HeightRatio = ratio
-			e.Open(f, view, "")
 			c.Views = append(c.Views, view)
+			e.Open(f, view, "")
 		}
 		e.Cols = append(e.Cols, c)
 		e.CurCol = c
@@ -146,15 +151,15 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable,
 	}
 	view.Reset()
 	view.SetTitle(title)
+	if nv {
+		e.InsertView(view.(*View), e.CurView().(*View), 0.2)
+	}
 	if newFile || !stat.IsDir() {
 		err = e.openFile(loc, view)
 	} else {
 		err = e.openDir(loc, view)
 	}
-	view.SetWorkDir(filepath.Dir(loc))
-	if nv {
-		e.InsertView(view.(*View), e.CurView().(*View), 0.2)
-	}
+	actions.ViewSetWorkdirAction(view.Id(), filepath.Dir(loc))
 	return view, err
 }
 
@@ -319,6 +324,6 @@ func (e *Editor) autoScroller() {
 		v.selections = []core.Selection{
 			s,
 		}
-		e.Render()
+		actions.EdRenderAction()
 	}
 }

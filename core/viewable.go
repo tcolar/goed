@@ -2,17 +2,28 @@ package core
 
 // Viewable is the interface to a View
 type Viewable interface {
+	Backspace()
 	Bounds() (y1, x1, y2, x2 int)
 	Backend() Backend
+	ClearSelections()
+	Copy()
 	CurCol() int
 	CurLine() int
+	CursorMvmt(mvmt CursorMvmt)
+	Delete()
+	DeleteCur()
 	Dirty() bool
 	Id() int64
+	InsertCur(text string)
+	InsertNewLineCur()
 	LineCount() int
 	// LineRunesTo returns the number of raw runes to the given line column
 	LineRunesTo(s *Slice, line, col int) int
 	// MoveCursor moves the cursor by the y, x offsets (in runes)
 	MoveCursor(y, x int)
+	MoveCursorRoll(y, x int)
+	OpenSelection(newView bool)
+	Paste()
 	// Reload reloads the view data from it's source (backend)
 	Reload()
 	// Render forec re=-rendering the view UI.

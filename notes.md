@@ -80,7 +80,7 @@ Fortune.sh
     fortune > $GOED_HOME/buffers/$viewid
     goed reload $GOED_VIEW_ID
     
-case study 3 : structs/funcs viewer
+#### case study 3 : structs/funcs viewer
     Trigger: SavedView
     Match: "*.go"
     Action: "structure.sh"

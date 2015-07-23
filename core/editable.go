@@ -2,15 +2,21 @@ package core
 
 // Editable provides editor features entry poins.
 type Editable interface {
+	ActivateView(v Viewable, y, x int)
+	CmdbarToggle()
+	CmdbarRun()
 	Config() Config
 	CurView() Viewable
 	DelView(view Viewable, terminate bool)
+	DelViewCheck(view Viewable)
+	Dispatch(action Action)
 	// CmdOn indicates whether the CommandBar is currently active
 	CmdOn() bool
 	// Open opens a file in the given view.
 	Open(loc string, view Viewable, title string) (Viewable, error)
 	// Render updates the whole editor UI
 	Render()
+	Resize(h, w int)
 	// SetStatusErr displays an error message in the status bar
 	SetStatusErr(err string)
 	// SetStatusErr displays a message in the status bar
@@ -30,4 +36,5 @@ type Editable interface {
 	// ViewByLoc finds if there is an existing view for the given file (loc)
 	ViewByLoc(loc string) Viewable
 	ViewById(id int64) Viewable
+	ViewMove(y1, x1, y2, x2 int)
 }

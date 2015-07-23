@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/ui"
@@ -42,6 +43,7 @@ func main() {
 	id := time.Now().UnixNano()
 
 	core.Colors = *colors
+	core.Bus = actions.NewActionBus()
 	core.InitHome(id)
 	core.ConfFile = *config
 	core.Ed = ui.NewEditor()
@@ -56,10 +58,16 @@ func main() {
 			log.Fatal(string(data))
 		}
 		core.Cleanup()
+
+		core.Bus.Shutdown()
+
 		// attempts to reset the terminal in case we left it in a bad state
 		exec.Command("reset").Run()
 	}()
 
 	apiServer.Start()
+
+	go core.Bus.Start()
+
 	core.Ed.Start(*locs)
 }

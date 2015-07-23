@@ -80,16 +80,16 @@ func (v *View) Render() {
 		ti = ti[:v.x2-v.x1-4]
 	}
 	e.TermStr(v.y1, v.x1+2, ti)
-	v.RenderClose()
-	v.RenderScroll()
-	v.RenderIsDirty()
-	v.RenderMargin()
+	v.renderClose()
+	v.renderScroll()
+	v.renderIsDirty()
+	v.renderMargin()
 	if v.backend != nil {
-		v.RenderText()
+		v.renderText()
 	}
 }
 
-func (v *View) RenderMargin() {
+func (v *View) renderMargin() {
 	e := core.Ed
 	t := e.Theme()
 	if v.offx < 80 && v.offx+v.LastViewCol() >= 80 {
@@ -101,14 +101,14 @@ func (v *View) RenderMargin() {
 	}
 }
 
-func (v *View) RenderScroll() {
+func (v *View) renderScroll() {
 	e := core.Ed
 	t := e.Theme()
 	e.TermFB(t.Scrollbar.Fg, t.Scrollbar.Bg)
 	e.TermFill(t.Scrollbar.Rune, v.y1+1, v.x1, v.y2, v.x1)
 }
 
-func (v *View) RenderIsDirty() {
+func (v *View) renderIsDirty() {
 	e := core.Ed
 	t := e.Theme()
 	style := t.FileClean
@@ -119,14 +119,14 @@ func (v *View) RenderIsDirty() {
 	e.TermChar(v.y1, v.x1, style.Rune)
 }
 
-func (v *View) RenderClose() {
+func (v *View) renderClose() {
 	e := core.Ed
 	t := e.Theme()
 	e.TermFB(t.Close.Fg, t.Close.Bg)
 	e.TermChar(v.y1, v.x2-1, t.Close.Rune)
 }
 
-func (v *View) RenderText() {
+func (v *View) renderText() {
 	e := core.Ed
 	t := e.Theme()
 	y := v.y1 + 2
@@ -302,7 +302,6 @@ func (v *View) MoveCursorRoll(y, x int) {
 // This makes all the checks to make sure it's in a valid location
 // as well as scrolling the view as needed.
 func (v *View) MoveCursor(y, x int) {
-
 	slice := v.slice
 
 	curCol := v.CurCol()
@@ -475,4 +474,44 @@ func (v *View) Slice() *core.Slice {
 func (v *View) SetAutoScroll(y, x int, isSelect bool) {
 	v.autoScrollX, v.autoScrollY = x, y
 	v.autoScrollSelect = isSelect
+}
+
+func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
+	ln, col := v.CurLine(), v.CurCol()
+	switch mvmt {
+	case core.CursorMvmtRight:
+		offset := 1
+		c, _, _ := v.CurChar()
+		if c != nil {
+			offset = v.runeSize(*c)
+		}
+		v.MoveCursor(0, offset)
+	case core.CursorMvmtLeft:
+		offset := 1
+		c, _, _ := v.CursorChar(v.slice, ln, col-1)
+		if c != nil {
+			offset = v.runeSize(*c)
+		}
+		v.MoveCursor(0, -offset)
+	case core.CursorMvmtUp:
+		v.MoveCursor(-1, 0)
+	case core.CursorMvmtDown:
+		v.MoveCursor(1, 0)
+	case core.CursorMvmtPgDown:
+		dist := v.LastViewLine() + 1
+		if v.LineCount()-ln < dist {
+			dist = v.LineCount() - ln - 1
+		}
+		v.MoveCursor(dist, 0)
+	case core.CursorMvmtPgUp:
+		dist := v.LastViewLine() + 1
+		if dist > ln {
+			dist = ln
+		}
+		v.MoveCursor(-dist, 0)
+	case core.CursorMvmtEnd:
+		v.MoveCursor(0, v.lineCols(v.slice, ln)-col)
+	case core.CursorMvmtHome:
+		v.MoveCursor(0, -col)
+	}
 }

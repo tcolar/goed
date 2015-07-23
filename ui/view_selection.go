@@ -54,6 +54,20 @@ func (v *View) Selected(col, line int) (bool, *core.Selection) {
 	return false, nil
 }
 
+func (v *View) Copy() {
+	if len(v.selections) == 0 {
+		v.SelectLine(v.CurLine())
+	}
+	v.SelectionCopy(&v.selections[0])
+}
+
+func (v *View) Delete() {
+	if len(v.selections) == 0 {
+		v.SelectLine(v.CurLine())
+	}
+	v.SelectionDelete(&v.selections[0])
+}
+
 func (v *View) SelectionCopy(s *core.Selection) {
 	t := v.SelectionText(s)
 	core.Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
@@ -61,7 +75,7 @@ func (v *View) SelectionCopy(s *core.Selection) {
 }
 
 func (v *View) SelectionDelete(s *core.Selection) {
-	v.Delete(s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
+	v.delete(s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
 }
 
 func (v *View) Paste() {
@@ -204,14 +218,10 @@ func (v *View) OpenSelection(newView bool) {
 	vv := ed.ViewByLoc(loc)
 	if vv != nil {
 		// Already open
-		ed.ActivateView(vv.(*View), line, col)
+		ed.ActivateView(v, line, col)
 		return
 	}
 	v2 := ed.NewView(loc)
-	if _, err := ed.Open(loc, v2, v.WorkDir()); err != nil {
-		ed.SetStatusErr(err.Error())
-		return
-	}
 	if newView {
 		if isDir {
 			ed.InsertView(v2, v, 0.5)
@@ -220,6 +230,10 @@ func (v *View) OpenSelection(newView bool) {
 		}
 	} else {
 		ed.ReplaceView(v, v2)
+	}
+	if _, err := ed.Open(loc, v2, v.WorkDir()); err != nil {
+		ed.SetStatusErr(err.Error())
+		return
 	}
 	ed.ActivateView(v2, line, col)
 }

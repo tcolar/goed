@@ -25,8 +25,23 @@ var ConfFile string
 // LogFile holds the path of the log file currently in use.
 var LogFile *os.File
 
+var Bus ActionDispatcher
+
 var ApiPort int
 
 var Socket string // instance RPC socket
 
 var InstanceId int64 // instance ID
+
+type CursorMvmt byte
+
+const (
+	CursorMvmtRight CursorMvmt = iota
+	CursorMvmtLeft
+	CursorMvmtUp
+	CursorMvmtDown
+	CursorMvmtPgDown
+	CursorMvmtPgUp
+	CursorMvmtHome
+	CursorMvmtEnd
+)

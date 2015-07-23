@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
 )
@@ -31,6 +32,17 @@ func (c *Cmdbar) Render() {
 	}
 	ed.TermFB(t.CmdbarText, t.Cmdbar.Bg)
 	ed.TermStr(c.y1, c.x2-11, fmt.Sprintf("|GoEd %s", core.Version))
+}
+
+func (e *Editor) CmdbarToggle() {
+	if !e.cmdOn {
+		e.Cmdbar.Cmd = []rune{}
+	}
+	e.cmdOn = !e.cmdOn
+}
+
+func (e *Editor) CmdbarRun() {
+	e.Cmdbar.RunCmd()
 }
 
 func (c *Cmdbar) RunCmd() {
@@ -89,12 +101,12 @@ func (c *Cmdbar) RunCmd() {
 func (c *Cmdbar) paste(args []string) {
 	ed := core.Ed.(*Editor)
 	v := ed.curView
-	v.MoveCursorRoll(1, -v.CurCol())
+	actions.ViewMoveCursorRollAction(v.Id(), 1, -v.CurCol())
 	l := v.CurLine()
 	v.Paste()
 	x, y := v.CurCol(), v.CurLine()
 	v.Insert(y, x, "\n")
-	v.MoveCursorRoll(l-y, -x)
+	actions.ViewMoveCursorRollAction(v.Id(), l-y, -x)
 	v.SetDirty(true)
 }
 
@@ -125,11 +137,11 @@ func (c *Cmdbar) open(args []string) error {
 	}
 	ed := core.Ed.(*Editor)
 	v := ed.NewView(args[0])
+	ed.InsertViewSmart(v)
 	_, err := ed.Open(args[0], v, ed.CurView().WorkDir())
 	if err != nil {
 		return err
 	}
-	ed.InsertViewSmart(v)
 	ed.ActivateView(v, 0, 0)
 	return nil
 }
@@ -152,8 +164,8 @@ func (c *Cmdbar) line(args []string) {
 		ed.SetStatusErr("Expected a line number argument.")
 		return
 	}
-	if ed.CurView != nil {
-		ed.curView.MoveCursor(l-ed.curView.CurLine()-1, 0)
+	if ed.curView != nil {
+		actions.ViewMoveCursorAction(ed.curView.Id(), l-ed.curView.CurLine()-1, 0)
 	}
 }
 

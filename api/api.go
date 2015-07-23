@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/rpc"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
@@ -42,11 +43,7 @@ func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
 }
 
 func (r *GoedRpc) ViewReload(viewId int64, _ *struct{}) error {
-	v := core.Ed.ViewById(viewId)
-	if v == nil {
-		return fmt.Errorf("No such view : %d", viewId)
-	}
-	v.Reload()
+	actions.ViewReloadAction(viewId)
 	return nil
 }
 

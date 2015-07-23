@@ -8,8 +8,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
-	"github.com/tcolar/goed/event"
 )
 
 // FileBackend is a backend implemetation that uses a plain unbuffered file as
@@ -258,7 +258,7 @@ func (f *FileBackend) Save(loc string) error {
 	// temporary hack for go format
 	// should hook-up through action/eventing
 	if strings.HasSuffix(loc, ".go") {
-		return event.RunAction("goimports.sh")
+		return actions.RunAction("goimports.sh")
 	}
 
 	return nil

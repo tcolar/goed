@@ -49,7 +49,7 @@ func NewMemBackendCmd(args []string, dir string, viewId int64, title *string) (*
 	}
 	c.Backend = b
 	c.Starter = &MemCmdStarter{}
-	go c.Start()
+	go c.Start(viewId)
 	return c, nil
 }
 
