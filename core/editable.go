@@ -4,9 +4,10 @@ package core
 type Editable interface {
 	ActivateView(v Viewable, y, x int)
 	CmdbarToggle()
-	CmdbarRun()
 	Config() Config
+	CurColIndex() int
 	CurView() Viewable
+	DelColCheckByIndex(col int)
 	DelView(view Viewable, terminate bool)
 	DelViewCheck(view Viewable)
 	Dispatch(action Action)

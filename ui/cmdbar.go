@@ -41,10 +41,6 @@ func (e *Editor) CmdbarToggle() {
 	e.cmdOn = !e.cmdOn
 }
 
-func (e *Editor) CmdbarRun() {
-	e.Cmdbar.RunCmd()
-}
-
 func (c *Cmdbar) RunCmd() {
 	ed := core.Ed.(*Editor)
 	// TODO: This is temporary until I create real fs based events & actions
@@ -56,26 +52,10 @@ func (c *Cmdbar) RunCmd() {
 	args := parts[1:]
 	var err error
 	switch parts[0] {
-	//case "d", "del": // as vi del
-	//case "dd":
-	case "dc", "delcol":
-		ed.DelColCheck(ed.CurCol)
-	case "dv", "delview":
-		ed.DelViewCheck(ed.curView)
 	case "e", "exec":
 		c.exec(args)
-	//case "h", "help":
-	//	ed.SetStatus("TBD help")
-	case "nc", "newcol":
-		c.newCol(args)
-	case "nv", "newview":
-		c.newView(args)
 	case "o", "open":
 		err = c.open(args)
-	case "p", "paste": // as vi
-		c.paste(args)
-	case "s", "save":
-		c.save(args)
 	case ":", "line":
 		c.line(args)
 	case "/", "search":
@@ -84,50 +64,28 @@ func (c *Cmdbar) RunCmd() {
 		}
 		query := string(c.Cmd[2:])
 		c.Search(query)
-	case "y", "yank": // as vi copy
-		err = c.yank(args)
-	case "yy":
-		err = c.yank([]string{"1"})
+		/*	case "nc", "newcol":
+								c.newCol(args)
+							case "nv", "newview":
+								c.newView(args)
+
+					case "p", "paste": // as vi
+						c.viPaste(args)
+					case "s", "save":
+						c.save(args)
+			case "y", "yank": // as vi copy
+				err = c.viYank(args)
+			case "yy":
+				err = c.viYank([]string{"1"})
+		*/
 	default:
-		ed.SetStatusErr("Unexpected command " + parts[0])
+		actions.EdSetStatusErrAction("Unexpected command " + parts[0])
 	}
 	if err == nil {
 		ed.cmdOn = false
 	} else {
-		ed.SetStatus(err.Error())
+		actions.EdSetStatusErrAction(err.Error())
 	}
-}
-
-func (c *Cmdbar) paste(args []string) {
-	ed := core.Ed.(*Editor)
-	v := ed.curView
-	actions.ViewMoveCursorRollAction(v.Id(), 1, -v.CurCol())
-	l := v.CurLine()
-	v.Paste()
-	x, y := v.CurCol(), v.CurLine()
-	v.Insert(y, x, "\n")
-	actions.ViewMoveCursorRollAction(v.Id(), l-y, -x)
-	v.SetDirty(true)
-}
-
-func (c *Cmdbar) yank(args []string) error {
-	ed := core.Ed.(*Editor)
-	v := ed.curView
-	if len(args) == 0 {
-		return fmt.Errorf("Expected an argument")
-	}
-	nb, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("Expected a numericargument")
-	}
-	nb--
-	s := &core.Selection{
-		LineFrom: v.CurLine(),
-		LineTo:   v.CurLine() + nb,
-		ColTo:    -1,
-	}
-	ed.curView.SelectionCopy(s)
-	return nil
 }
 
 func (c *Cmdbar) open(args []string) error {
@@ -144,13 +102,6 @@ func (c *Cmdbar) open(args []string) error {
 	}
 	ed.ActivateView(v, 0, 0)
 	return nil
-}
-
-func (c *Cmdbar) save(args []string) {
-	ed := core.Ed.(*Editor)
-	if ed.CurView != nil {
-		ed.curView.Save()
-	}
 }
 
 func (c *Cmdbar) line(args []string) {
@@ -171,6 +122,60 @@ func (c *Cmdbar) line(args []string) {
 
 func (c *Cmdbar) Search(query string) {
 	c.exec([]string{"grep", "-rn", query})
+}
+
+func (c *Cmdbar) exec(args []string) {
+	ed := core.Ed.(*Editor)
+	workDir := "."
+	if ed.curView != nil {
+		workDir = ed.CurView().WorkDir()
+	}
+	v := ed.AddViewSmart()
+	b, err := backend.NewMemBackendCmd(args, workDir, v.Id(), nil)
+	if err != nil {
+		ed.SetStatusErr(err.Error())
+	}
+	v.backend = b
+}
+
+/*
+func (c *Cmdbar) viPaste(args []string) {
+	ed := core.Ed.(*Editor)
+	v := ed.curView
+	actions.ViewMoveCursorRollAction(v.Id(), 1, -v.CurCol())
+	l := v.CurLine()
+	v.Paste()
+	x, y := v.CurCol(), v.CurLine()
+	v.Insert(y, x, "\n")
+	actions.ViewMoveCursorRollAction(v.Id(), l-y, -x)
+	v.SetDirty(true)
+}
+
+func (c *Cmdbar) viYank(args []string) error {
+	ed := core.Ed.(*Editor)
+	v := ed.curView
+	if len(args) == 0 {
+		return fmt.Errorf("Expected an argument")
+	}
+	nb, err := strconv.Atoi(args[0])
+	if err != nil {
+		return fmt.Errorf("Expected a numericargument")
+	}
+	nb--
+	s := &core.Selection{
+		LineFrom: v.CurLine(),
+		LineTo:   v.CurLine() + nb,
+		ColTo:    -1,
+	}
+	ed.curView.SelectionCopy(s)
+	return nil
+}
+
+func (c *Cmdbar) save(args []string) {
+	ed := core.Ed.(*Editor)
+	if ed.CurView != nil {
+		ed.curView.Save()
+	}
 }
 
 func (c *Cmdbar) newCol(args []string) {
@@ -217,18 +222,4 @@ func (c *Cmdbar) newView(args []string) {
 	if len(loc) > 0 {
 		ed.Open(loc, v, "")
 	}
-}
-
-func (c *Cmdbar) exec(args []string) {
-	ed := core.Ed.(*Editor)
-	workDir := "."
-	if ed.curView != nil {
-		workDir = ed.CurView().WorkDir()
-	}
-	v := ed.AddViewSmart()
-	b, err := backend.NewMemBackendCmd(args, workDir, v.Id(), nil)
-	if err != nil {
-		ed.SetStatusErr(err.Error())
-	}
-	v.backend = b
-}
+}*/

@@ -48,11 +48,7 @@ func (r *GoedRpc) ViewReload(viewId int64, _ *struct{}) error {
 }
 
 func (r *GoedRpc) ViewSave(viewId int64, _ *struct{}) error {
-	v := core.Ed.ViewById(viewId)
-	if v == nil {
-		return fmt.Errorf("No such view : %d", viewId)
-	}
-	v.Save()
+	actions.ViewSaveAction(viewId)
 	return nil
 }
 

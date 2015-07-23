@@ -237,6 +237,10 @@ func (e *Editor) ColIndex(col *Col) int {
 	return -1
 }
 
+func (e *Editor) CurColIndex() int {
+	return e.ColIndex(e.CurCol)
+}
+
 // AddCol adds a new column, space is "taken" from toCol
 func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	r := toCol.WidthRatio
@@ -326,6 +330,10 @@ func (e *Editor) ReplaceView(oldView, newView *View) {
 	i := e.ViewIndex(col, oldView)
 	col.Views[i] = newView
 	e.TerminateView(oldView)
+}
+
+func (e *Editor) DelColCheckByIndex(index int) {
+	e.DelColCheck(e.Cols[index])
 }
 
 func (e *Editor) DelCol(col *Col, terminateViews bool) {

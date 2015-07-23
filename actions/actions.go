@@ -11,16 +11,16 @@ func d(action core.Action) {
 	core.Bus.Dispatch(action)
 }
 
-func CmdbarRunAction() {
-	d(cmdbarRunAction{})
-}
-
 func CmdbarToggleAction() {
 	d(cmdbarToggleAction{})
 }
 
 func EdActivateViewAction(viewId int64, y, x int) {
 	d(edActivateViewAction{viewId: viewId, y: y, x: x})
+}
+
+func EdDelColCheckAction(colIndex int) {
+	d(edDelColCheckAction{colIndex: colIndex})
 }
 
 func EdDelViewCheckAction(viewId int64) {
@@ -393,14 +393,6 @@ func (e viewCopyAction) Run() error {
 	return nil
 }
 
-type cmdbarRunAction struct {
-}
-
-func (e cmdbarRunAction) Run() error {
-	core.Ed.CmdbarRun()
-	return nil
-}
-
 type edActivateViewAction struct {
 	viewId int64
 	y, x   int
@@ -482,3 +474,31 @@ func (e viewSetDirtyAction) Run() error {
 	v.SetDirty(e.on)
 	return nil
 }
+
+type edDelColCheckAction struct {
+	colIndex int
+}
+
+func (e edDelColCheckAction) Run() error {
+	core.Ed.DelColCheckByIndex(e.colIndex)
+	return nil
+}
+
+/*
+type viewSearchAction struct {
+	viewId int64
+}
+
+func (e viewSearchAction) Run() error {
+	v := core.Ed.ViewById(e.viewId)
+	if v == nil {
+		return nil
+	}
+	if len(v.Selections()) == 0 {
+		v.SelectWord(ln, col)
+	}
+	if len(v.Selections()) > 0 {
+		text := core.RunesToString(v.SelectionText(&v.selections[0]))
+		e.Cmdbar.Search(text)
+	}
+}*/

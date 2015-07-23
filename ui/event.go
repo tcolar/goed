@@ -78,7 +78,7 @@ func (c *Cmdbar) Event(e *Editor, ev *termbox.Event) {
 				c.Cmd = c.Cmd[:len(c.Cmd)-1]
 			}
 		case termbox.KeyEnter:
-			actions.CmdbarRunAction()
+			c.RunCmd()
 		default:
 			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
 				c.Cmd = append(c.Cmd, ev.Ch)
@@ -187,13 +187,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.KeyCtrlR:
 			actions.ViewReloadAction(v.Id())
 		case termbox.KeyCtrlF:
-			if len(v.selections) == 0 {
-				v.SelectWord(ln, col)
-			}
-			if len(v.selections) > 0 {
-				text := core.RunesToString(v.SelectionText(&v.selections[0]))
-				e.Cmdbar.Search(text)
-			}
+			//			actions.ViewSearchAction(v.Id())
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 && ev.Meta == 0 { // otherwise some special key combo

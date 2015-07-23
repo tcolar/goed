@@ -1,3 +1,9 @@
+cmdbar.exec -> make nc, search ect.. into actions
+builtin actions vs external actions ??
+searchAction
+
+events.go -> few more things need to be actions
+
 ## Eventing design
 
 Make it possible to send but also intercept events.
