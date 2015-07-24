@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 
-	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/termbox-go"
 )
@@ -439,7 +438,7 @@ func (e *Editor) DelColCheck(c *Col) {
 func (e *Editor) ActivateView(v core.Viewable, cursory, cursorx int) {
 	e.curView = v.(*View)
 	e.CurCol = e.ViewColumn(e.curView)
-	actions.ViewMoveCursorAction(v.Id(), cursory-v.CurLine(), cursorx-v.CurCol())
+	v.MoveCursor(cursory-v.CurLine(), cursorx-v.CurCol())
 }
 
 func (e *Editor) SetCurView(id int64) error {

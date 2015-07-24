@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
@@ -12,6 +13,8 @@ func init() {
 	core.Testing = true
 	core.InitHome(time.Now().Unix())
 	core.Ed = NewMockEditor()
+	core.Bus = actions.NewActionBus()
+	go core.Bus.Start()
 	core.Ed.Start([]string{})
 }
 

@@ -3,7 +3,6 @@ package ui
 import (
 	"bytes"
 
-	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
@@ -23,7 +22,7 @@ func (v *View) InsertCur(s string) {
 	_, y, x := v.CurChar()
 	if len(v.selections) > 0 {
 		s := v.selections[0]
-		actions.ViewMoveCursorRollAction(v.Id(), s.LineFrom-y, s.ColFrom-x)
+		v.MoveCursorRoll(s.LineFrom-y, s.ColFrom-x)
 		v.SelectionDelete(&s)
 		v.ClearSelections()
 	}
@@ -65,7 +64,7 @@ func (v *View) Insert(line, col int, s string) {
 	}
 	v.Render()
 	e.TermFlush()
-	actions.ViewMoveCursorAction(v.Id(), offy, offx)
+	v.MoveCursor(offy, offx)
 }
 
 func (v *View) lineIndent(line int) []rune {
@@ -111,7 +110,7 @@ func (v *View) DeleteCur() {
 	c, y, x := v.CurChar()
 	if len(v.selections) > 0 {
 		s := v.selections[0]
-		actions.ViewMoveCursorRollAction(v.Id(), s.LineFrom-y, s.ColFrom-x)
+		v.MoveCursorRoll(s.LineFrom-y, s.ColFrom-x)
 		v.SelectionDelete(&s)
 		v.ClearSelections()
 		return
@@ -127,7 +126,7 @@ func (v *View) Backspace() {
 		return
 	}
 	if len(v.selections) == 0 {
-		actions.ViewMoveCursorRollAction(v.Id(), 0, -1)
+		v.MoveCursorRoll(0, -1)
 	}
 	v.DeleteCur()
 }

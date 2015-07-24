@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
@@ -14,6 +15,8 @@ var id2 int64 = 9998
 func init() {
 	core.Testing = true
 	core.InitHome(time.Now().Unix())
+	core.Bus = actions.NewActionBus()
+	go core.Bus.Start()
 }
 
 func TestFileBackend(t *testing.T) {

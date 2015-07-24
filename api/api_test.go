@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/api/client"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/ui"
@@ -17,6 +18,8 @@ func init() {
 	core.Testing = true
 	core.InitHome(id)
 	core.Ed = ui.NewMockEditor()
+	core.Bus = actions.NewActionBus()
+	go core.Bus.Start()
 	core.Ed.Start([]string{"../test_data/file1.txt"})
 }
 
@@ -29,7 +32,7 @@ func TestApi(t *testing.T) {
 	version, err := client.ApiVersion(id)
 	assert.Nil(t, err)
 	assert.Equal(t, core.ApiVersion, version, "api_version")
-	
+
 	/*
 		body, err = get("/v1/version")
 		assert.Nil(t, err)

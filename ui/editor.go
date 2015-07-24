@@ -159,7 +159,7 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable,
 	} else {
 		err = e.openDir(loc, view)
 	}
-	actions.ViewSetWorkdirAction(view.Id(), filepath.Dir(loc))
+	view.SetWorkDir(filepath.Dir(loc))
 	return view, err
 }
 
