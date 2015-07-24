@@ -218,7 +218,7 @@ func (v *View) OpenSelection(newView bool) {
 	vv := ed.ViewByLoc(loc)
 	if vv != nil {
 		// Already open
-		ed.ActivateView(v, line, col)
+		ed.ActivateView(vv, line, col)
 		return
 	}
 	v2 := ed.NewView(loc)
