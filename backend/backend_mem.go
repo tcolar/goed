@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/tcolar/goed/core"
@@ -15,6 +16,7 @@ type MemBackend struct {
 	text   [][]rune
 	file   string
 	viewId int64
+	lock   sync.Mutex
 }
 
 // NewmemBackend creates a new in memory backend by reading a file.
@@ -31,6 +33,8 @@ func NewMemBackend(loc string, viewId int64) (*MemBackend, error) {
 func (m *MemBackend) Reload() error {
 	// TODO: check dirty ?
 	m.Wipe()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	if len(m.file) == 0 {
 		return nil
 	}
@@ -55,6 +59,8 @@ func (m *MemBackend) Reload() error {
 }
 
 func (b *MemBackend) Save(loc string) error {
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if len(loc) == 0 {
 		loc = b.file
 	}
@@ -99,6 +105,8 @@ func (b *MemBackend) BufferLoc() string {
 }
 
 func (b *MemBackend) Append(text string) error {
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	runes := core.StringToRunes(text)
 	row := len(b.text) - 1
 	for i, ln := range runes {
@@ -112,6 +120,9 @@ func (b *MemBackend) Append(text string) error {
 }
 
 func (b *MemBackend) Insert(row, col int, text string) error {
+	b.Wipe()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	runes := core.StringToRunes(text)
 	if len(runes) == 0 {
 		return nil
@@ -150,7 +161,8 @@ func (b *MemBackend) Insert(row, col int, text string) error {
 }
 
 func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
-
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if row1 < 0 {
 		row1 = 0
 	}
@@ -192,6 +204,8 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 }
 
 func (b *MemBackend) Slice(row, col, row2, col2 int) *core.Slice {
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	slice := core.NewSlice(row, col, row2, col2, [][]rune{})
 	text := slice.Text()
 	if row2 != -1 && row > row2 {
@@ -225,6 +239,8 @@ func (b *MemBackend) Slice(row, col, row2, col2 int) *core.Slice {
 }
 
 func (b *MemBackend) LineCount() int {
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	count := len(b.text)
 	if count > 0 {
 		last := len(b.text) - 1
@@ -244,5 +260,7 @@ func (b *MemBackend) ViewId() int64 {
 }
 
 func (b *MemBackend) Wipe() {
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	b.text = [][]rune{[]rune{}}
 }

@@ -15,6 +15,7 @@ type Editable interface {
 	CmdOn() bool
 	// Open opens a file in the given view.
 	Open(loc string, view Viewable, title string) (Viewable, error)
+	QuitCheck() bool
 	// Render updates the whole editor UI
 	Render()
 	Resize(h, w int)

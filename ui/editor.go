@@ -112,9 +112,9 @@ func (e *Editor) Start(locs []string) {
 		e.curView = c.Views[0]
 	}
 
-	e.Resize(e.term.Size())
+	actions.EdResizeAction(e.term.Size())
 
-	e.Render()
+	actions.EdRenderAction()
 
 	go e.autoScroller()
 
@@ -216,19 +216,6 @@ func (e Editor) SetStatus(s string) {
 	e.Statusbar.Render()
 }
 
-// QuitCheck check if it's ok to quit
-// if there are no dirty buffer
-// or if requested twice in a row
-func (e *Editor) QuitCheck() bool {
-	ok := true
-	for _, c := range e.Cols {
-		for _, v := range c.Views {
-			ok = ok && v.canClose()
-		}
-	}
-	return ok
-}
-
 func (e Editor) Config() core.Config {
 	return *e.config
 }
@@ -257,73 +244,93 @@ func (e *Editor) TermFlush() {
 	e.term.Flush()
 }
 
+func (e *Editor) QuitCheck() bool {
+	for _, c := range e.Cols {
+		for _, v := range c.Views {
+			if !v.canClose() {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 // Handle selection auto scrolling of views
 func (e *Editor) autoScroller() {
+	action := autoScrollAction{}
 	for {
 		time.Sleep(200 * time.Millisecond)
-		v := e.CurView().(*View)
-		if v == nil {
-			continue
-		}
-		x, y := v.autoScrollX, v.autoScrollY
-		if x == 0 && y == 0 {
-			continue
-		}
-		if len(v.selections) == 0 {
-			continue
-		}
-		s := v.selections[0]
-		ln := v.CurLine()
-		v.offx += x
-		v.offy += y
-		if y > 0 {
-			s.LineTo += y
-		} else {
-			s.LineFrom += y
-		}
-		if x > 0 {
-			s.ColTo += x
-		} else {
-			s.ColFrom += x
-		}
-		// handle scroll / selection "overflows"
-		lnLen := v.LineLen(v.Slice(), ln)
-		if v.offy >= v.LineCount()-v.LastViewLine() {
-			v.offy = v.LineCount() - v.LastViewLine()
-		}
-		if v.offy < 0 {
-			v.offy = 0
-		}
-		if v.offx > lnLen-v.LastViewCol() {
-			v.offx = lnLen - v.LastViewCol()
-		}
-		if v.offx < 0 {
-			v.offx = 0
-		}
-		if s.LineFrom < 0 {
-			s.LineFrom = 0
-		} else if s.LineFrom > v.LineCount() {
-			s.LineFrom = v.LineCount()
-		}
-		if s.LineTo < 0 {
-			s.LineTo = 0
-		} else if s.LineTo > v.LineCount() {
-			s.LineTo = v.LineCount()
-		}
-		if s.ColFrom < 0 {
-			s.ColFrom = 0
-		} else if s.ColFrom > lnLen {
-			s.ColFrom = lnLen
-		}
-		if s.ColTo < 0 {
-			s.ColTo = 0
-		} else if s.ColTo > lnLen {
-			s.ColTo = lnLen
-		}
-		s.Normalize()
-		v.selections = []core.Selection{
-			s,
-		}
-		actions.EdRenderAction()
+		core.Bus.Dispatch(action)
 	}
+}
+
+type autoScrollAction struct {
+}
+
+func (e autoScrollAction) Run() error {
+	v := core.Ed.CurView().(*View)
+	if v == nil {
+		return nil
+	}
+	x, y := v.autoScrollX, v.autoScrollY
+	if x == 0 && y == 0 {
+		return nil
+	}
+	if len(v.selections) == 0 {
+		return nil
+	}
+	s := v.selections[0]
+	ln := v.CurLine()
+	v.offx += x
+	v.offy += y
+	if y > 0 {
+		s.LineTo += y
+	} else {
+		s.LineFrom += y
+	}
+	if x > 0 {
+		s.ColTo += x
+	} else {
+		s.ColFrom += x
+	}
+	// handle scroll / selection "overflows"
+	lnLen := v.LineLen(v.Slice(), ln)
+	if v.offy >= v.LineCount()-v.LastViewLine() {
+		v.offy = v.LineCount() - v.LastViewLine()
+	}
+	if v.offy < 0 {
+		v.offy = 0
+	}
+	if v.offx > lnLen-v.LastViewCol() {
+		v.offx = lnLen - v.LastViewCol()
+	}
+	if v.offx < 0 {
+		v.offx = 0
+	}
+	if s.LineFrom < 0 {
+		s.LineFrom = 0
+	} else if s.LineFrom > v.LineCount() {
+		s.LineFrom = v.LineCount()
+	}
+	if s.LineTo < 0 {
+		s.LineTo = 0
+	} else if s.LineTo > v.LineCount() {
+		s.LineTo = v.LineCount()
+	}
+	if s.ColFrom < 0 {
+		s.ColFrom = 0
+	} else if s.ColFrom > lnLen {
+		s.ColFrom = lnLen
+	}
+	if s.ColTo < 0 {
+		s.ColTo = 0
+	} else if s.ColTo > lnLen {
+		s.ColTo = lnLen
+	}
+	s.Normalize()
+	v.selections = []core.Selection{
+		s,
+	}
+	core.Ed.Render()
+	return nil
 }

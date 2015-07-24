@@ -42,7 +42,6 @@ func (e *Editor) CmdbarToggle() {
 }
 
 func (c *Cmdbar) RunCmd() {
-	ed := core.Ed.(*Editor)
 	// TODO: This is temporary until I create real fs based events & actions
 	s := string(c.Cmd)
 	parts := strings.Fields(s)
@@ -82,7 +81,7 @@ func (c *Cmdbar) RunCmd() {
 		actions.EdSetStatusErrAction("Unexpected command " + parts[0])
 	}
 	if err == nil {
-		ed.cmdOn = false
+		actions.CmdbarEnableAction(false)
 	} else {
 		actions.EdSetStatusErrAction(err.Error())
 	}

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/tcolar/goed/actions"
@@ -27,6 +28,7 @@ type FileBackend struct {
 	offset           int64
 	lnCount          int
 	length           int64
+	lock             sync.Mutex
 }
 
 // NewFileBackend creates a backend from a copy of the file in the buffer dir.
@@ -61,6 +63,8 @@ func (f *FileBackend) Close() error {
 }
 
 func (b *FileBackend) Reload() error {
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	// TODO : check dirty
 	b.Close()
 	fb := BufferFile(b.viewId)
@@ -129,6 +133,8 @@ func (b *FileBackend) Reload() error {
 }
 
 func (f *FileBackend) Append(text string) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
 	b := []byte(text)
 	_, err := f.file.WriteAt(b, f.length)
 	if err != nil {
@@ -140,6 +146,8 @@ func (f *FileBackend) Append(text string) error {
 }
 
 func (f *FileBackend) Insert(row, col int, text string) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
 	b := []byte(text)
 	ln := int64(len(b))
 	err := f.seek(row, col)
@@ -162,6 +170,8 @@ func (f *FileBackend) Insert(row, col int, text string) error {
 }
 
 func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
 	err := f.seek(row2, col2)
 	if err != nil {
 		return err
@@ -200,6 +210,8 @@ func (f *FileBackend) LineCount() int {
 // Slice returns the runes that are in the given rectangle.
 // line2 / col2 maybe -1, meaning all lines / whole lines
 func (f *FileBackend) Slice(line1, col, line2, col2 int) *core.Slice {
+	f.lock.Lock()
+	defer f.lock.Unlock()
 	slice := core.NewSlice(line1, col, line2, col2, [][]rune{})
 	text := slice.Text()
 	if line1 < 0 || col < 0 {
@@ -240,6 +252,8 @@ func (f *FileBackend) Slice(line1, col, line2, col2 int) *core.Slice {
 }
 
 func (f *FileBackend) Save(loc string) error {
+	f.lock.Lock()
+	defer f.lock.Unlock()
 	if loc == f.bufferLoc {
 		return nil // editing in place
 	}
@@ -266,6 +280,19 @@ func (f *FileBackend) Save(loc string) error {
 
 func (f *FileBackend) ViewId() int64 {
 	return f.viewId
+}
+
+func (f *FileBackend) Wipe() {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	os.Truncate(f.bufferLoc, 0)
+	f.file.Seek(0, 0)
+	f.offset = 0
+	f.ln = 0
+	f.col = 0
+	f.prevCol = 0
+	f.lnCount = 1
+	f.length = 0
 }
 
 // seek moves the offest to the given line/col
@@ -476,15 +503,4 @@ func (f *FileBackend) shiftFileBits(shift int64) error {
 	}
 	f.length += shift
 	return nil
-}
-
-func (f *FileBackend) Wipe() {
-	os.Truncate(f.bufferLoc, 0)
-	f.file.Seek(0, 0)
-	f.offset = 0
-	f.ln = 0
-	f.col = 0
-	f.prevCol = 0
-	f.lnCount = 1
-	f.length = 0
 }

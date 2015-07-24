@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -115,14 +114,11 @@ func (c *BackendCmd) stream() error {
 type backendAppender struct {
 	backend core.Backend
 	viewId  int64
-	lock    sync.Mutex
 }
 
 func (b backendAppender) Write(data []byte) (int, error) {
 	var err error
-	b.lock.Lock()
 	err = b.backend.Append(string(data))
-	b.lock.Unlock()
 	if err != nil {
 		return 0, err
 	}

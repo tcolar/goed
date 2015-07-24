@@ -42,7 +42,7 @@ func (e *Editor) EventLoop() {
 		case termbox.EventKey:
 			switch ev.Key {
 			case termbox.KeyCtrlQ:
-				if !e.QuitCheck() {
+				if !actions.EdQuitCheck() {
 					actions.EdSetStatusErrAction("Unsaved changes. Save or request close again.")
 				} else {
 					return // that's all falks, quit
@@ -111,7 +111,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	actions.ViewAutoScrollAction(v.Id(), 0, 0, false)
 	switch ev.Type {
 	case termbox.EventKey:
-		ln, col := v.CurLine(), v.CurCol()
+		ln, col := actions.ViewCurPosAction(v.Id())
 		e.evtState.InDrag = false
 		// alt combo
 		if ev.Mod == termbox.ModAlt {
@@ -316,7 +316,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				}
 			}
 			e.evtState.InDrag = false
-			e.cmdOn = false
+			actions.CmdbarEnableAction(false)
 			e.evtState.DragLn = ln
 			e.evtState.DragCol = col
 		} // end switch

@@ -11,6 +11,10 @@ func d(action core.Action) {
 	core.Bus.Dispatch(action)
 }
 
+func CmdbarEnableAction(on bool) {
+	d(cmdbarEnableAction{on: on})
+}
+
 func CmdbarToggleAction() {
 	d(cmdbarToggleAction{})
 }
@@ -25,6 +29,17 @@ func EdDelColCheckAction(colIndex int) {
 
 func EdDelViewCheckAction(viewId int64) {
 	d(edDelViewCheckAction{viewId: viewId})
+}
+
+func EdOpenAction(loc string, view core.Viewable, rel string) {
+	d(edOpenAction{loc: loc, view: view, rel: rel})
+}
+
+// Retuns whether the editor can be quit.
+func EdQuitCheck() bool {
+	answer := make(chan (bool), 1)
+	d(edQuitCheckAction{answer: answer})
+	return <-answer
 }
 
 func EdRenderAction() {
@@ -73,6 +88,12 @@ func ViewCopyAction(viewId int64) {
 
 func ViewCutAction(viewId int64) {
 	d(viewCutAction{viewId: viewId})
+}
+
+func ViewCurPosAction(viewId int64) (ln, col int) {
+	answer := make(chan (int), 2)
+	d(viewCurPosAction{viewId: viewId, answer: answer})
+	return <-answer, <-answer
 }
 
 func ViewCursorMvmtAction(viewId int64, mvmt core.CursorMvmt) {
@@ -239,6 +260,15 @@ type cmdbarToggleAction struct{}
 
 func (e cmdbarToggleAction) Run() error {
 	core.Ed.CmdbarToggle()
+	return nil
+}
+
+type cmdbarEnableAction struct {
+	on bool
+}
+
+func (e cmdbarEnableAction) Run() error {
+	core.Ed.SetCmdOn(e.on)
 	return nil
 }
 
@@ -481,6 +511,41 @@ type edDelColCheckAction struct {
 
 func (e edDelColCheckAction) Run() error {
 	core.Ed.DelColCheckByIndex(e.colIndex)
+	return nil
+}
+
+type edOpenAction struct {
+	view     core.Viewable
+	loc, rel string
+}
+
+func (e edOpenAction) Run() error {
+	core.Ed.Open(e.loc, e.view, e.rel)
+	return nil
+}
+
+type edQuitCheckAction struct {
+	answer chan (bool)
+}
+
+func (e edQuitCheckAction) Run() error {
+	e.answer <- core.Ed.QuitCheck()
+	return nil
+}
+
+type viewCurPosAction struct {
+	answer chan (int)
+	viewId int64
+}
+
+func (e viewCurPosAction) Run() error {
+	v := core.Ed.ViewById(e.viewId)
+	if v == nil {
+		e.answer <- 0
+		e.answer <- 0
+	}
+	e.answer <- v.CurLine()
+	e.answer <- v.CurCol()
 	return nil
 }
 
