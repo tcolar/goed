@@ -43,6 +43,7 @@ type Viewable interface {
 	SetTitle(title string)
 	// Slice returns a view's text subset (matrix)
 	Slice() *Slice
+	StretchSelection(prevl, prevc, ln, c int)
 	Title() string
 	WorkDir() string
 }

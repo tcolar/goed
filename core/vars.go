@@ -7,6 +7,8 @@ import "os"
 const Version = "0.0.2"
 const ApiVersion = "v1"
 
+var Trace = true
+
 // Ed is thew editor singleton
 var Ed Editable
 

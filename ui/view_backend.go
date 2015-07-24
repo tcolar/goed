@@ -91,6 +91,8 @@ func (v *View) Reload() {
 	if err != nil {
 		core.Ed.SetStatusErr(err.Error())
 	}
+	v.Render()
+	core.Ed.TermFlush()
 }
 
 // Delete removes characters at the given text location

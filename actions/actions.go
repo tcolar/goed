@@ -5,7 +5,14 @@ concurency safety.
 */
 package actions
 
-import "github.com/tcolar/goed/core"
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path"
+
+	"github.com/tcolar/goed/core"
+)
 
 func d(action core.Action) {
 	core.Bus.Dispatch(action)
@@ -29,6 +36,10 @@ func EdDelColCheckAction(colIndex int) {
 
 func EdDelViewCheckAction(viewId int64) {
 	d(edDelViewCheckAction{viewId: viewId})
+}
+
+func EdExternalAction(name string) {
+	d(edExternalAction{name: name})
 }
 
 func EdOpenAction(loc string, view core.Viewable, rel string) {
@@ -60,6 +71,10 @@ func EdSetStatusErrAction(status string) {
 
 func EdViewMoveAction(viewId int64, y1, x1, y2, x2 int) {
 	d(edViewMoveAction{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
+}
+
+func EdSwapViewsAction(view1Id, view2Id int64) {
+	d(edSwapViewsAction{view1Id: view1Id, view2Id: view2Id})
 }
 
 func EdTermFlushAction() {
@@ -149,21 +164,25 @@ func ViewSetTitleAction(viewId int64, title string) {
 	d(viewSetTitleAction{viewId: viewId, title: title})
 }
 
+func ViewStretchSelection(viewId int64, prevLn, prevCol int) {
+	d(viewStretchSelection{viewId: viewId, prevLn: prevLn, prevCol: prevCol})
+}
+
 // **** impls
 
 type edResizeAction struct {
 	h, w int
 }
 
-func (e edResizeAction) Run() error {
-	core.Ed.Resize(e.h, e.w)
+func (a edResizeAction) Run() error {
+	core.Ed.Resize(a.h, a.w)
 	return nil
 }
 
 type viewReloadAction struct{ viewId int64 }
 
-func (e viewReloadAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewReloadAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.Reload()
 	}
@@ -174,8 +193,8 @@ type viewRenderAction struct {
 	viewId int64
 }
 
-func (e viewRenderAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewRenderAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.Render()
 	}
@@ -187,10 +206,10 @@ type viewSetWorkdirAction struct {
 	workDir string
 }
 
-func (e viewSetWorkdirAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewSetWorkdirAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		v.SetWorkDir(e.workDir)
+		v.SetWorkDir(a.workDir)
 	}
 	return nil
 }
@@ -200,10 +219,10 @@ type viewSetTitleAction struct {
 	title  string
 }
 
-func (e viewSetTitleAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewSetTitleAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		v.SetWorkDir(e.title)
+		v.SetWorkDir(a.title)
 	}
 	return nil
 }
@@ -213,25 +232,25 @@ type edSetStatusAction struct {
 	err    bool
 }
 
-func (e edSetStatusAction) Run() error {
-	if e.err {
-		core.Ed.SetStatusErr(e.status)
+func (a edSetStatusAction) Run() error {
+	if a.err {
+		core.Ed.SetStatusErr(a.status)
 	} else {
-		core.Ed.SetStatus(e.status)
+		core.Ed.SetStatus(a.status)
 	}
 	return nil
 }
 
 type edRenderAction struct{}
 
-func (e edRenderAction) Run() error {
+func (a edRenderAction) Run() error {
 	core.Ed.Render()
 	return nil
 }
 
 type edTermFlushAction struct{}
 
-func (e edTermFlushAction) Run() error {
+func (a edTermFlushAction) Run() error {
 	core.Ed.TermFlush()
 	return nil
 }
@@ -243,22 +262,22 @@ type viewMoveCursorAction struct {
 	roll   bool
 }
 
-func (e viewMoveCursorAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewMoveCursorAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
-	if e.roll {
-		v.MoveCursorRoll(e.y, e.x)
+	if a.roll {
+		v.MoveCursorRoll(a.y, a.x)
 	} else {
-		v.MoveCursor(e.y, e.x)
+		v.MoveCursor(a.y, a.x)
 	}
 	return nil
 }
 
 type cmdbarToggleAction struct{}
 
-func (e cmdbarToggleAction) Run() error {
+func (a cmdbarToggleAction) Run() error {
 	core.Ed.CmdbarToggle()
 	return nil
 }
@@ -267,8 +286,8 @@ type cmdbarEnableAction struct {
 	on bool
 }
 
-func (e cmdbarEnableAction) Run() error {
-	core.Ed.SetCmdOn(e.on)
+func (a cmdbarEnableAction) Run() error {
+	core.Ed.SetCmdOn(a.on)
 	return nil
 }
 
@@ -277,12 +296,12 @@ type viewOpenSelectionAction struct {
 	newView bool
 }
 
-func (e viewOpenSelectionAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewOpenSelectionAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
-	v.OpenSelection(e.newView)
+	v.OpenSelection(a.newView)
 	return nil
 }
 
@@ -291,12 +310,12 @@ type viewCursorMvmtAction struct {
 	mvmt   core.CursorMvmt
 }
 
-func (e viewCursorMvmtAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewCursorMvmtAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
-	v.CursorMvmt(e.mvmt)
+	v.CursorMvmt(a.mvmt)
 	return nil
 }
 
@@ -306,12 +325,12 @@ type viewAutoScrollAction struct {
 	on     bool
 }
 
-func (e viewAutoScrollAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewAutoScrollAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
-	v.SetAutoScroll(e.y, e.x, e.on)
+	v.SetAutoScroll(a.y, a.x, a.on)
 	return nil
 }
 
@@ -320,12 +339,12 @@ type viewInsertCurAction struct {
 	text   string
 }
 
-func (e viewInsertCurAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewInsertCurAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
-	v.InsertCur(e.text)
+	v.InsertCur(a.text)
 	return nil
 }
 
@@ -333,8 +352,8 @@ type viewInsertNewLineAction struct {
 	viewId int64
 }
 
-func (e viewInsertNewLineAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewInsertNewLineAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -346,8 +365,8 @@ type viewDeleteCurAction struct {
 	viewId int64
 }
 
-func (e viewDeleteCurAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewDeleteCurAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -359,8 +378,8 @@ type viewBackspaceAction struct {
 	viewId int64
 }
 
-func (e viewBackspaceAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewBackspaceAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -372,8 +391,8 @@ type viewSaveAction struct {
 	viewId int64
 }
 
-func (e viewSaveAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewSaveAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -385,8 +404,8 @@ type edDelViewCheckAction struct {
 	viewId int64
 }
 
-func (e edDelViewCheckAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a edDelViewCheckAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -398,8 +417,8 @@ type viewCmdStopAction struct {
 	viewId int64
 }
 
-func (e viewCmdStopAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewCmdStopAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -414,8 +433,8 @@ type viewCopyAction struct {
 	viewId int64
 }
 
-func (e viewCopyAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewCopyAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -428,12 +447,12 @@ type edActivateViewAction struct {
 	y, x   int
 }
 
-func (e edActivateViewAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a edActivateViewAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
-	core.Ed.ActivateView(v, e.y, e.x)
+	core.Ed.ActivateView(v, a.y, a.x)
 	return nil
 }
 
@@ -442,12 +461,12 @@ type edViewMoveAction struct {
 	y1, x1, y2, x2 int
 }
 
-func (e edViewMoveAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a edViewMoveAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
-	core.Ed.ViewMove(e.y1, e.x1, e.y2, e.x2)
+	core.Ed.ViewMove(a.y1, a.x1, a.y2, a.x2)
 	return nil
 }
 
@@ -455,8 +474,8 @@ type viewPasteAction struct {
 	viewId int64
 }
 
-func (e viewPasteAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewPasteAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -468,8 +487,8 @@ type viewCutAction struct {
 	viewId int64
 }
 
-func (e viewCutAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewCutAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -482,8 +501,8 @@ type viewClearSelectionsAction struct {
 	viewId int64
 }
 
-func (e viewClearSelectionsAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewClearSelectionsAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
@@ -496,12 +515,12 @@ type viewSetDirtyAction struct {
 	on     bool
 }
 
-func (e viewSetDirtyAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewSetDirtyAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}
-	v.SetDirty(e.on)
+	v.SetDirty(a.on)
 	return nil
 }
 
@@ -509,18 +528,32 @@ type edDelColCheckAction struct {
 	colIndex int
 }
 
-func (e edDelColCheckAction) Run() error {
-	core.Ed.DelColCheckByIndex(e.colIndex)
+func (a edDelColCheckAction) Run() error {
+	core.Ed.DelColCheckByIndex(a.colIndex)
+	return nil
+}
+
+type edSwapViewsAction struct {
+	view1Id, view2Id int64
+}
+
+func (a edSwapViewsAction) Run() error {
+	v := core.Ed.ViewById(a.view1Id)
+	v2 := core.Ed.ViewById(a.view2Id)
+	if v == nil || v2 == nil {
+		return nil
+	}
+	core.Ed.SwapViews(v, v2)
 	return nil
 }
 
 type edOpenAction struct {
-	view     core.Viewable
 	loc, rel string
+	view     core.Viewable
 }
 
-func (e edOpenAction) Run() error {
-	core.Ed.Open(e.loc, e.view, e.rel)
+func (a edOpenAction) Run() error {
+	core.Ed.Open(a.loc, a.view, a.rel)
 	return nil
 }
 
@@ -528,8 +561,27 @@ type edQuitCheckAction struct {
 	answer chan (bool)
 }
 
-func (e edQuitCheckAction) Run() error {
-	e.answer <- core.Ed.QuitCheck()
+func (a edQuitCheckAction) Run() error {
+	a.answer <- core.Ed.QuitCheck()
+	return nil
+}
+
+type viewStretchSelection struct {
+	viewId          int64
+	prevLn, prevCol int
+}
+
+func (a viewStretchSelection) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		return nil
+	}
+	v.StretchSelection(
+		a.prevLn,
+		v.LineRunesTo(v.Slice(), a.prevLn, a.prevCol),
+		v.CurLine(),
+		v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()),
+	)
 	return nil
 }
 
@@ -538,14 +590,52 @@ type viewCurPosAction struct {
 	viewId int64
 }
 
-func (e viewCurPosAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewCurPosAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
-		e.answer <- 0
-		e.answer <- 0
+		a.answer <- 0
+		a.answer <- 0
 	}
-	e.answer <- v.CurLine()
-	e.answer <- v.CurCol()
+	a.answer <- v.CurLine()
+	a.answer <- v.CurCol()
+	return nil
+}
+
+type edExternalAction struct {
+	name string
+}
+
+func (a edExternalAction) Run() error {
+	e := core.Ed
+	v := e.CurView()
+	loc := core.FindResource(path.Join("actions", a.name))
+	if _, err := os.Stat(loc); os.IsNotExist(err) {
+		return fmt.Errorf("Action not found : %s", a.name)
+	}
+	env := os.Environ()
+	env = append(env, fmt.Sprintf("GOED_INSTANCE=%d", core.InstanceId))
+	env = append(env, fmt.Sprintf("GOED_VIEW=%d", v.Id()))
+	cmd := exec.Command(loc)
+	cmd.Env = env
+	out, err := cmd.CombinedOutput()
+	fp := path.Join(core.Home, "errors.txt")
+	if err != nil {
+		file, _ := os.Create(fp)
+		file.Write([]byte(err.Error()))
+		file.Write([]byte{'\n'})
+		file.Write(out)
+		file.Close()
+		errv := e.ViewByLoc(fp)
+		errv, err = e.Open(fp, errv, "Errors")
+		if err != nil {
+			e.SetStatusErr(err.Error())
+		}
+		return fmt.Errorf("%s failed", a.name)
+	}
+	errv := e.ViewByLoc(fp)
+	if errv != nil {
+		e.DelView(errv, true)
+	}
 	return nil
 }
 
@@ -554,8 +644,8 @@ type viewSearchAction struct {
 	viewId int64
 }
 
-func (e viewSearchAction) Run() error {
-	v := core.Ed.ViewById(e.viewId)
+func (a viewSearchAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
 	}

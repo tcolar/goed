@@ -27,6 +27,7 @@ type Editable interface {
 	SetCurView(id int64) error
 	// SetCmdOn activates or desactives the CommandBar
 	SetCmdOn(v bool)
+	SwapViews(v1, v2 Viewable)
 	Start(locs []string)
 	TermChar(y, x int, c rune)
 	TermFB(fg, bg Style)

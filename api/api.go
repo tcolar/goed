@@ -44,6 +44,7 @@ func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
 
 func (r *GoedRpc) ViewReload(viewId int64, _ *struct{}) error {
 	actions.ViewReloadAction(viewId)
+	actions.EdRenderAction()
 	return nil
 }
 

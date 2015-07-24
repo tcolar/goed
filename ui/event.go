@@ -197,12 +197,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		}
 		// extend keyboard selection
 		if es && ev.Meta == termbox.Shift {
-			v.StretchSelection(
-				ln,
-				v.LineRunesTo(v.slice, ln, col),
-				v.CurLine(),
-				v.LineRunesTo(v.slice, v.CurLine(), v.CurCol()),
-			)
+			actions.ViewStretchSelection(v.Id(), ln, col)
 		} else {
 			actions.ViewClearSelectionsAction(v.Id())
 		}
@@ -218,7 +213,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		switch ev.Key {
 		case MouseLeftDbl:
 			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
-				e.SwapViews(e.CurView().(*View), v)
+				actions.EdSwapViewsAction(e.CurView().Id(), v.Id())
 				actions.EdActivateViewAction(v.Id(), v.CurLine(), v.CurCol())
 				e.evtState.MovingView = false
 				actions.EdSetStatusAction(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))

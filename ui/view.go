@@ -485,14 +485,14 @@ func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
 		if c != nil {
 			offset = v.runeSize(*c)
 		}
-		v.MoveCursor(0, offset)
+		v.MoveCursorRoll(0, offset)
 	case core.CursorMvmtLeft:
 		offset := 1
 		c, _, _ := v.CursorChar(v.slice, ln, col-1)
 		if c != nil {
 			offset = v.runeSize(*c)
 		}
-		v.MoveCursor(0, -offset)
+		v.MoveCursorRoll(0, -offset)
 	case core.CursorMvmtUp:
 		v.MoveCursor(-1, 0)
 	case core.CursorMvmtDown:

@@ -478,7 +478,9 @@ func (e *Editor) ViewByLoc(loc string) core.Viewable {
 }
 
 // SwapView swaps 2 views (UI wise)
-func (e *Editor) SwapViews(v1, v2 *View) {
+func (e *Editor) SwapViews(vv1, vv2 core.Viewable) {
+	v1 := vv1.(*View)
+	v2 := vv2.(*View)
 	c1 := e.ViewColumn(v1)
 	i1 := e.ViewIndex(c1, v1)
 	c2 := e.ViewColumn(v2)
