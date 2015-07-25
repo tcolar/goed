@@ -43,13 +43,13 @@ func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
 }
 
 func (r *GoedRpc) ViewReload(viewId int64, _ *struct{}) error {
-	actions.ViewReloadAction(viewId)
-	actions.EdRenderAction()
+	actions.ViewReload(viewId)
+	actions.EdRender()
 	return nil
 }
 
 func (r *GoedRpc) ViewSave(viewId int64, _ *struct{}) error {
-	actions.ViewSaveAction(viewId)
+	actions.ViewSave(viewId)
 	return nil
 }
 

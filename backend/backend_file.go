@@ -272,7 +272,7 @@ func (f *FileBackend) Save(loc string) error {
 	// temporary hack for go format
 	// should hook-up through action/eventing
 	if strings.HasSuffix(loc, ".go") {
-		actions.EdExternalAction("goimports.sh")
+		actions.EdExternal("goimports.sh")
 	}
 
 	return nil

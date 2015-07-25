@@ -11,28 +11,28 @@ func d(action core.Action) {
 	core.Bus.Dispatch(action)
 }
 
-func CmdbarEnableAction(on bool) {
-	d(cmdbarEnableAction{on: on})
+func CmdbarEnable(on bool) {
+	d(cmdbarEnable{on: on})
 }
 
-func CmdbarToggleAction() {
-	d(cmdbarToggleAction{})
+func CmdbarToggle() {
+	d(cmdbarToggle{})
 }
 
 // ########  Impl ......
 
-type cmdbarToggleAction struct{}
+type cmdbarToggle struct{}
 
-func (a cmdbarToggleAction) Run() error {
+func (a cmdbarToggle) Run() error {
 	core.Ed.CmdbarToggle()
 	return nil
 }
 
-type cmdbarEnableAction struct {
+type cmdbarEnable struct {
 	on bool
 }
 
-func (a cmdbarEnableAction) Run() error {
+func (a cmdbarEnable) Run() error {
 	core.Ed.SetCmdOn(a.on)
 	return nil
 }

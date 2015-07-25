@@ -43,22 +43,22 @@ func (c *BackendCmd) Running() bool {
 
 func (c *BackendCmd) Start(viewId int64) {
 	workDir, _ := filepath.Abs(c.dir)
-	actions.ViewSetWorkdirAction(viewId, workDir)
+	actions.ViewSetWorkdir(viewId, workDir)
 	c.runner.Dir = workDir
-	actions.ViewSetTitleAction(viewId, fmt.Sprintf("[RUNNING] %s", *c.title))
-	actions.ViewRenderAction(viewId)
-	actions.EdTermFlushAction()
+	actions.ViewSetTitle(viewId, fmt.Sprintf("[RUNNING] %s", *c.title))
+	actions.ViewRender(viewId)
+	actions.EdTermFlush()
 
 	err := c.Starter.Start(c)
 
 	if err != nil {
-		actions.ViewSetTitleAction(viewId, fmt.Sprintf("[FAILED] %s", *c.title))
-		actions.EdSetStatusErrAction(err.Error())
+		actions.ViewSetTitle(viewId, fmt.Sprintf("[FAILED] %s", *c.title))
+		actions.EdSetStatusErr(err.Error())
 	} else {
-		actions.ViewSetTitleAction(viewId, *c.title)
+		actions.ViewSetTitle(viewId, *c.title)
 	}
-	actions.ViewSetWorkdirAction(viewId, workDir) // might have chnaged
-	actions.EdRenderAction()
+	actions.ViewSetWorkdir(viewId, workDir) // might have chnaged
+	actions.EdRender()
 }
 
 func (c *BackendCmd) stop() {
@@ -134,7 +134,7 @@ func (b backendAppender) Write(data []byte) (int, error) {
 		event.ViewMoveCursorEvt(v, v.LineCount(), 0)
 	*/
 	//event.ViewMoveCursorEvt(v.LineCount(), 0)
-	actions.ViewRenderAction(b.viewId)
-	actions.EdTermFlushAction()
+	actions.ViewRender(b.viewId)
+	actions.EdTermFlush()
 	return len(data), nil
 }

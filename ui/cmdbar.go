@@ -78,12 +78,12 @@ func (c *Cmdbar) RunCmd() {
 				err = c.viYank([]string{"1"})
 		*/
 	default:
-		actions.EdSetStatusErrAction("Unexpected command " + parts[0])
+		actions.EdSetStatusErr("Unexpected command " + parts[0])
 	}
 	if err == nil {
-		actions.CmdbarEnableAction(false)
+		actions.CmdbarEnable(false)
 	} else {
-		actions.EdSetStatusErrAction(err.Error())
+		actions.EdSetStatusErr(err.Error())
 	}
 }
 
@@ -115,7 +115,7 @@ func (c *Cmdbar) line(args []string) {
 		return
 	}
 	if ed.curView != nil {
-		actions.ViewMoveCursorAction(ed.curView.Id(), l-ed.curView.CurLine()-1, 0)
+		actions.ViewMoveCursor(ed.curView.Id(), l-ed.curView.CurLine()-1, 0)
 	}
 }
 

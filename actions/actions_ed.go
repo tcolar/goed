@@ -9,78 +9,78 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-func EdActivateViewAction(viewId int64, y, x int) {
-	d(edActivateViewAction{viewId: viewId, y: y, x: x})
+func EdActivateView(viewId int64, y, x int) {
+	d(edActivateView{viewId: viewId, y: y, x: x})
 }
 
-func EdDelColCheckAction(colIndex int) {
-	d(edDelColCheckAction{colIndex: colIndex})
+func EdDelColCheck(colIndex int) {
+	d(edDelColCheck{colIndex: colIndex})
 }
 
-func EdDelViewCheckAction(viewId int64) {
-	d(edDelViewCheckAction{viewId: viewId})
+func EdDelViewCheck(viewId int64) {
+	d(edDelViewCheck{viewId: viewId})
 }
 
-func EdExternalAction(name string) {
-	d(edExternalAction{name: name})
+func EdExternal(name string) {
+	d(edExternal{name: name})
 }
 
-func EdOpenAction(loc string, view core.Viewable, rel string) {
-	d(edOpenAction{loc: loc, view: view, rel: rel})
+func EdOpen(loc string, view core.Viewable, rel string) {
+	d(edOpen{loc: loc, view: view, rel: rel})
 }
 
 // Retuns whether the editor can be quit.
 func EdQuitCheck() bool {
 	answer := make(chan (bool), 1)
-	d(edQuitCheckAction{answer: answer})
+	d(edQuitCheck{answer: answer})
 	return <-answer
 }
 
-func EdRenderAction() {
-	d(edRenderAction{})
+func EdRender() {
+	d(edRender{})
 }
 
-func EdResizeAction(h, w int) {
-	d(edResizeAction{h: h, w: w})
+func EdResize(h, w int) {
+	d(edResize{h: h, w: w})
 }
 
-func EdSetStatusAction(status string) {
-	d(edSetStatusAction{status: status, err: false})
+func EdSetStatus(status string) {
+	d(edSetStatus{status: status, err: false})
 }
 
-func EdSetStatusErrAction(status string) {
-	d(edSetStatusAction{status: status, err: true})
+func EdSetStatusErr(status string) {
+	d(edSetStatus{status: status, err: true})
 }
 
-func EdViewMoveAction(viewId int64, y1, x1, y2, x2 int) {
-	d(edViewMoveAction{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
+func EdViewMove(viewId int64, y1, x1, y2, x2 int) {
+	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
 }
 
-func EdSwapViewsAction(view1Id, view2Id int64) {
-	d(edSwapViewsAction{view1Id: view1Id, view2Id: view2Id})
+func EdSwapViews(view1Id, view2Id int64) {
+	d(edSwapViews{view1Id: view1Id, view2Id: view2Id})
 }
 
-func EdTermFlushAction() {
-	d(edTermFlushAction{})
+func EdTermFlush() {
+	d(edTermFlush{})
 }
 
 // ########  Impl ......
 
-type edResizeAction struct {
+type edResize struct {
 	h, w int
 }
 
-func (a edResizeAction) Run() error {
+func (a edResize) Run() error {
 	core.Ed.Resize(a.h, a.w)
 	return nil
 }
 
-type edSetStatusAction struct {
+type edSetStatus struct {
 	status string
 	err    bool
 }
 
-func (a edSetStatusAction) Run() error {
+func (a edSetStatus) Run() error {
 	if a.err {
 		core.Ed.SetStatusErr(a.status)
 	} else {
@@ -89,25 +89,25 @@ func (a edSetStatusAction) Run() error {
 	return nil
 }
 
-type edRenderAction struct{}
+type edRender struct{}
 
-func (a edRenderAction) Run() error {
+func (a edRender) Run() error {
 	core.Ed.Render()
 	return nil
 }
 
-type edTermFlushAction struct{}
+type edTermFlush struct{}
 
-func (a edTermFlushAction) Run() error {
+func (a edTermFlush) Run() error {
 	core.Ed.TermFlush()
 	return nil
 }
 
-type edDelViewCheckAction struct {
+type edDelViewCheck struct {
 	viewId int64
 }
 
-func (a edDelViewCheckAction) Run() error {
+func (a edDelViewCheck) Run() error {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
@@ -116,12 +116,12 @@ func (a edDelViewCheckAction) Run() error {
 	return nil
 }
 
-type edActivateViewAction struct {
+type edActivateView struct {
 	viewId int64
 	y, x   int
 }
 
-func (a edActivateViewAction) Run() error {
+func (a edActivateView) Run() error {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
@@ -130,12 +130,12 @@ func (a edActivateViewAction) Run() error {
 	return nil
 }
 
-type edViewMoveAction struct {
+type edViewMove struct {
 	viewId         int64
 	y1, x1, y2, x2 int
 }
 
-func (a edViewMoveAction) Run() error {
+func (a edViewMove) Run() error {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
@@ -144,29 +144,29 @@ func (a edViewMoveAction) Run() error {
 	return nil
 }
 
-type edQuitCheckAction struct {
+type edQuitCheck struct {
 	answer chan (bool)
 }
 
-func (a edQuitCheckAction) Run() error {
+func (a edQuitCheck) Run() error {
 	a.answer <- core.Ed.QuitCheck()
 	return nil
 }
 
-type edDelColCheckAction struct {
+type edDelColCheck struct {
 	colIndex int
 }
 
-func (a edDelColCheckAction) Run() error {
+func (a edDelColCheck) Run() error {
 	core.Ed.DelColCheckByIndex(a.colIndex)
 	return nil
 }
 
-type edSwapViewsAction struct {
+type edSwapViews struct {
 	view1Id, view2Id int64
 }
 
-func (a edSwapViewsAction) Run() error {
+func (a edSwapViews) Run() error {
 	v := core.Ed.ViewById(a.view1Id)
 	v2 := core.Ed.ViewById(a.view2Id)
 	if v == nil || v2 == nil {
@@ -176,21 +176,21 @@ func (a edSwapViewsAction) Run() error {
 	return nil
 }
 
-type edOpenAction struct {
+type edOpen struct {
 	loc, rel string
 	view     core.Viewable
 }
 
-func (a edOpenAction) Run() error {
+func (a edOpen) Run() error {
 	core.Ed.Open(a.loc, a.view, a.rel)
 	return nil
 }
 
-type edExternalAction struct {
+type edExternal struct {
 	name string
 }
 
-func (a edExternalAction) Run() error {
+func (a edExternal) Run() error {
 	e := core.Ed
 	v := e.CurView()
 	loc := core.FindResource(path.Join("actions", a.name))
@@ -225,11 +225,11 @@ func (a edExternalAction) Run() error {
 }
 
 /*
-type viewSearchAction struct {
+type viewSearch struct {
 	viewId int64
 }
 
-func (a viewSearchAction) Run() error {
+func (a viewSearch) Run() error {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		return nil
