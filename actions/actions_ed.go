@@ -52,10 +52,6 @@ func EdSetStatusErr(status string) {
 	d(edSetStatus{status: status, err: true})
 }
 
-func EdViewMove(viewId int64, y1, x1, y2, x2 int) {
-	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
-}
-
 func EdSwapViews(view1Id, view2Id int64) {
 	d(edSwapViews{view1Id: view1Id, view2Id: view2Id})
 }
@@ -64,57 +60,11 @@ func EdTermFlush() {
 	d(edTermFlush{})
 }
 
+func EdViewMove(viewId int64, y1, x1, y2, x2 int) {
+	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
+}
+
 // ########  Impl ......
-
-type edResize struct {
-	h, w int
-}
-
-func (a edResize) Run() error {
-	core.Ed.Resize(a.h, a.w)
-	return nil
-}
-
-type edSetStatus struct {
-	status string
-	err    bool
-}
-
-func (a edSetStatus) Run() error {
-	if a.err {
-		core.Ed.SetStatusErr(a.status)
-	} else {
-		core.Ed.SetStatus(a.status)
-	}
-	return nil
-}
-
-type edRender struct{}
-
-func (a edRender) Run() error {
-	core.Ed.Render()
-	return nil
-}
-
-type edTermFlush struct{}
-
-func (a edTermFlush) Run() error {
-	core.Ed.TermFlush()
-	return nil
-}
-
-type edDelViewCheck struct {
-	viewId int64
-}
-
-func (a edDelViewCheck) Run() error {
-	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
-	}
-	core.Ed.DelViewCheck(v)
-	return nil
-}
 
 type edActivateView struct {
 	viewId int64
@@ -130,29 +80,6 @@ func (a edActivateView) Run() error {
 	return nil
 }
 
-type edViewMove struct {
-	viewId         int64
-	y1, x1, y2, x2 int
-}
-
-func (a edViewMove) Run() error {
-	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
-	}
-	core.Ed.ViewMove(a.y1, a.x1, a.y2, a.x2)
-	return nil
-}
-
-type edQuitCheck struct {
-	answer chan (bool)
-}
-
-func (a edQuitCheck) Run() error {
-	a.answer <- core.Ed.QuitCheck()
-	return nil
-}
-
 type edDelColCheck struct {
 	colIndex int
 }
@@ -162,32 +89,17 @@ func (a edDelColCheck) Run() error {
 	return nil
 }
 
-type edSwapViews struct {
-	view1Id, view2Id int64
+type edDelViewCheck struct {
+	viewId int64
 }
 
-func (a edSwapViews) Run() error {
-	v := core.Ed.ViewById(a.view1Id)
-	v2 := core.Ed.ViewById(a.view2Id)
-	if v == nil || v2 == nil {
+func (a edDelViewCheck) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
 		return nil
 	}
-	core.Ed.SwapViews(v, v2)
+	core.Ed.DelViewCheck(v)
 	return nil
-}
-
-type edOpen struct {
-	loc, rel string
-	view     core.Viewable
-}
-
-func (a edOpen) Run() error {
-	core.Ed.Open(a.loc, a.view, a.rel)
-	return nil
-}
-
-type edExternal struct {
-	name string
 }
 
 func (a edExternal) Run() error {
@@ -222,6 +134,94 @@ func (a edExternal) Run() error {
 		e.DelView(errv, true)
 	}
 	return nil
+}
+
+type edOpen struct {
+	loc, rel string
+	view     core.Viewable
+}
+
+func (a edOpen) Run() error {
+	core.Ed.Open(a.loc, a.view, a.rel)
+	return nil
+}
+
+type edQuitCheck struct {
+	answer chan (bool)
+}
+
+func (a edQuitCheck) Run() error {
+	a.answer <- core.Ed.QuitCheck()
+	return nil
+}
+
+type edRender struct{}
+
+func (a edRender) Run() error {
+	core.Ed.Render()
+	return nil
+}
+
+type edResize struct {
+	h, w int
+}
+
+func (a edResize) Run() error {
+	core.Ed.Resize(a.h, a.w)
+	return nil
+}
+
+type edSetStatus struct {
+	status string
+	err    bool
+}
+
+func (a edSetStatus) Run() error {
+	if a.err {
+		core.Ed.SetStatusErr(a.status)
+	} else {
+		core.Ed.SetStatus(a.status)
+	}
+	return nil
+}
+
+type edSwapViews struct {
+	view1Id, view2Id int64
+}
+
+func (a edSwapViews) Run() error {
+	v := core.Ed.ViewById(a.view1Id)
+	v2 := core.Ed.ViewById(a.view2Id)
+	if v == nil || v2 == nil {
+		return nil
+	}
+	core.Ed.SwapViews(v, v2)
+	return nil
+}
+
+type edTermFlush struct{}
+
+func (a edTermFlush) Run() error {
+	core.Ed.TermFlush()
+	return nil
+}
+
+type edViewMove struct {
+	viewId         int64
+	y1, x1, y2, x2 int
+}
+
+func (a edViewMove) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		return nil
+	}
+	core.Ed.ViewMove(a.y1, a.x1, a.y2, a.x2)
+	return nil
+}
+
+type edExternal struct {
+	name string
 }
 
 /*

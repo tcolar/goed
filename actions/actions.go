@@ -21,18 +21,18 @@ func CmdbarToggle() {
 
 // ########  Impl ......
 
-type cmdbarToggle struct{}
-
-func (a cmdbarToggle) Run() error {
-	core.Ed.CmdbarToggle()
-	return nil
-}
-
 type cmdbarEnable struct {
 	on bool
 }
 
 func (a cmdbarEnable) Run() error {
 	core.Ed.SetCmdOn(a.on)
+	return nil
+}
+
+type cmdbarToggle struct{}
+
+func (a cmdbarToggle) Run() error {
+	core.Ed.CmdbarToggle()
 	return nil
 }

@@ -108,62 +108,63 @@ func (s *Statusbar) Event(e *Editor, ev *termbox.Event) {
 func (v *View) Event(e *Editor, ev *termbox.Event) {
 	dirty := false
 	es := false //expand selection
-	actions.ViewAutoScroll(v.Id(), 0, 0, false)
+	vid := v.Id()
+	actions.ViewAutoScroll(vid, 0, 0, false)
 	switch ev.Type {
 	case termbox.EventKey:
-		ln, col := actions.ViewCurPos(v.Id())
+		ln, col := actions.ViewCurPos(vid)
 		e.evtState.InDrag = false
 		// alt combo
 		if ev.Mod == termbox.ModAlt {
 			switch ev.Ch {
 			case 'o':
-				actions.ViewOpenSelection(v.Id(), false)
+				actions.ViewOpenSelection(vid, false)
 				return
 			}
 		}
 
 		switch ev.Key {
 		case termbox.KeyArrowRight:
-			actions.ViewCursorMvmt(v.Id(), core.CursorMvmtRight)
+			actions.ViewCursorMvmt(vid, core.CursorMvmtRight)
 			es = true
 		case termbox.KeyArrowLeft:
-			actions.ViewCursorMvmt(v.Id(), core.CursorMvmtLeft)
+			actions.ViewCursorMvmt(vid, core.CursorMvmtLeft)
 			es = true
 		case termbox.KeyArrowUp:
-			actions.ViewCursorMvmt(v.Id(), core.CursorMvmtUp)
+			actions.ViewCursorMvmt(vid, core.CursorMvmtUp)
 			es = true
 		case termbox.KeyArrowDown:
-			actions.ViewCursorMvmt(v.Id(), core.CursorMvmtDown)
+			actions.ViewCursorMvmt(vid, core.CursorMvmtDown)
 			es = true
 		case termbox.KeyPgdn:
-			actions.ViewCursorMvmt(v.Id(), core.CursorMvmtPgDown)
+			actions.ViewCursorMvmt(vid, core.CursorMvmtPgDown)
 			es = true
 		case termbox.KeyPgup:
-			actions.ViewCursorMvmt(v.Id(), core.CursorMvmtPgUp)
+			actions.ViewCursorMvmt(vid, core.CursorMvmtPgUp)
 			es = true
 		case termbox.KeyEnd:
-			actions.ViewCursorMvmt(v.Id(), core.CursorMvmtEnd)
+			actions.ViewCursorMvmt(vid, core.CursorMvmtEnd)
 			es = true
 		case termbox.KeyHome:
-			actions.ViewCursorMvmt(v.Id(), core.CursorMvmtHome)
+			actions.ViewCursorMvmt(vid, core.CursorMvmtHome)
 			es = true
 		case termbox.KeyTab:
-			actions.ViewInsertCur(v.Id(), "\t")
+			actions.ViewInsertCur(vid, "\t")
 			dirty = true
 			es = true
 		case termbox.KeyEnter:
-			actions.ViewInsertNewLine(v.Id())
+			actions.ViewInsertNewLine(vid)
 			dirty = true
 		case termbox.KeyDelete:
-			actions.ViewDeleteCur(v.Id())
+			actions.ViewDeleteCur(vid)
 			dirty = true
 		case termbox.KeyBackspace, termbox.KeyBackspace2:
-			actions.ViewBackspace(v.Id())
+			actions.ViewBackspace(vid)
 			dirty = true
 		case termbox.KeyCtrlS:
-			actions.ViewSave(v.Id())
+			actions.ViewSave(vid)
 		case termbox.KeyCtrlO:
-			actions.ViewOpenSelection(v.Id(), true)
+			actions.ViewOpenSelection(vid, true)
 		case termbox.KeyCtrlW:
 			actions.EdDelViewCheck(e.curView.Id())
 		case termbox.KeyCtrlC:
@@ -171,35 +172,35 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			case *backend.BackendCmd:
 				// CTRL+C process
 				if v.backend.(*backend.BackendCmd).Running() {
-					actions.ViewCmdStop(v.Id())
+					actions.ViewCmdStop(vid)
 					return
 				}
 			}
-			actions.ViewCopy(v.Id())
+			actions.ViewCopy(vid)
 		case termbox.KeyCtrlX:
-			actions.ViewCut(v.Id())
+			actions.ViewCut(vid)
 			dirty = true
 		case termbox.KeyCtrlV:
-			actions.ViewPaste(v.Id())
+			actions.ViewPaste(vid)
 			dirty = true
 		case termbox.KeyCtrlQ:
 			return
 		case termbox.KeyCtrlR:
-			actions.ViewReload(v.Id())
+			actions.ViewReload(vid)
 		case termbox.KeyCtrlF:
-			//			actions.ViewSearch(v.Id())
+			//			actions.ViewSearch(vid)
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 && ev.Meta == 0 { // otherwise some special key combo
-				actions.ViewInsertCur(v.Id(), string(ev.Ch))
+				actions.ViewInsertCur(vid, string(ev.Ch))
 				dirty = true
 			}
 		}
 		// extend keyboard selection
 		if es && ev.Meta == termbox.Shift {
-			actions.ViewStretchSelection(v.Id(), ln, col)
+			actions.ViewStretchSelection(vid, ln, col)
 		} else {
-			actions.ViewClearSelections(v.Id())
+			actions.ViewClearSelections(vid)
 		}
 	case termbox.EventMouse:
 		col := ev.MouseX - v.x1 + v.offx - 2
@@ -213,10 +214,10 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		switch ev.Key {
 		case MouseLeftDbl:
 			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
-				actions.EdSwapViews(e.CurView().Id(), v.Id())
-				actions.EdActivateView(v.Id(), v.CurLine(), v.CurCol())
+				actions.EdSwapViews(e.CurView().Id(), vid)
+				actions.EdActivateView(vid, v.CurLine(), v.CurCol())
 				e.evtState.MovingView = false
-				actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
+				actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
 				return
 			}
 			if selection := v.ExpandSelectionWord(ln, col); selection != nil {
@@ -226,30 +227,30 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			}
 			return
 		case termbox.MouseScrollUp:
-			actions.ViewMoveCursor(v.Id(), -1, 0)
+			actions.ViewMoveCursor(vid, -1, 0)
 			return
 		case termbox.MouseScrollDown:
-			actions.ViewMoveCursor(v.Id(), 1, 0)
+			actions.ViewMoveCursor(vid, 1, 0)
 			return
 		case termbox.MouseRight:
 			if isMouseUp(ev) {
 				e.evtState.InDrag = false
 				e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
 				e.evtState.LastRightClick = time.Now().Unix()
-				actions.ViewClearSelections(v.Id())
-				actions.ViewMoveCursor(v.Id(), ev.MouseY-v.y1-2-v.CursorY, ev.MouseX-v.x1-2-v.CursorX)
-				actions.ViewOpenSelection(v.Id(), true)
+				actions.ViewClearSelections(vid)
+				actions.ViewMoveCursor(vid, ev.MouseY-v.y1-2-v.CursorY, ev.MouseX-v.x1-2-v.CursorX)
+				actions.ViewOpenSelection(vid, true)
 			}
 			return
 		case termbox.MouseLeft:
 			if e.evtState.MovingView && isMouseUp(ev) {
 				e.evtState.MovingView = false
-				actions.EdViewMove(v.Id(), e.evtState.LastClickY, e.evtState.LastClickX, ev.MouseY, ev.MouseX)
-				actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
+				actions.EdViewMove(vid, e.evtState.LastClickY, e.evtState.LastClickX, ev.MouseY, ev.MouseX)
+				actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
 				return
 			}
 			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
-				actions.EdDelViewCheck(v.Id())
+				actions.EdDelViewCheck(vid)
 				return
 			}
 			if ev.MouseX == v.x1 && ev.MouseY == v.y1 && isMouseUp(ev) {
@@ -267,8 +268,8 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			if ev.DragOn {
 				if !e.evtState.InDrag {
 					e.evtState.InDrag = true
-					actions.ViewClearSelections(v.Id())
-					actions.EdActivateView(v.Id(), e.evtState.DragLn, e.evtState.DragCol)
+					actions.ViewClearSelections(vid)
+					actions.EdActivateView(vid, e.evtState.DragLn, e.evtState.DragCol)
 				}
 				// continued drag
 				x1 := e.evtState.DragCol
@@ -276,23 +277,23 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				x2 := col
 				y2 := ln
 
-				s := core.NewSelection(
+				actions.ViewClearSelections(vid)
+				actions.ViewAddSelection(
+					vid,
 					y1,
 					v.LineRunesTo(v.slice, y1, x1),
 					y2,
 					v.LineRunesTo(v.slice, y2, x2))
-				v.selections = []core.Selection{
-					*s,
-				}
+
 				// Handling scrolling while dragging
 				if ln < v.offy { // scroll up
-					actions.ViewAutoScroll(v.Id(), -v.LineCount()/10, 0, true)
+					actions.ViewAutoScroll(vid, -v.LineCount()/10, 0, true)
 				} else if ln >= v.offy+(v.y2-v.y1)-2 { // scroll down
-					actions.ViewAutoScroll(v.Id(), v.LineCount()/10, 0, true)
+					actions.ViewAutoScroll(vid, v.LineCount()/10, 0, true)
 				} else if col < v.offx { //scroll left
-					actions.ViewAutoScroll(v.Id(), 0, -5, true)
+					actions.ViewAutoScroll(vid, 0, -5, true)
 				} else if col >= v.offx+(v.x2-v.x1)-3 { // scroll right
-					actions.ViewAutoScroll(v.Id(), 0, 5, true)
+					actions.ViewAutoScroll(vid, 0, 5, true)
 				}
 				return
 			}
@@ -303,11 +304,11 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 					// otherwise it could be the mouseUp at the end of a drag.
 				}
 				if !e.evtState.InDrag {
-					actions.ViewClearSelections(v.Id())
-					actions.EdActivateView(v.Id(), ln, col)
+					actions.ViewClearSelections(vid)
+					actions.EdActivateView(vid, ln, col)
 					e.evtState.LastLeftClick = time.Now().Unix()
 					e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
-					actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), v.Id()))
+					actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
 				}
 			}
 			e.evtState.InDrag = false
@@ -318,7 +319,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	}
 
 	if dirty {
-		actions.ViewSetDirty(v.Id(), true)
+		actions.ViewSetDirty(vid, true)
 	}
 }
 
