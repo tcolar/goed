@@ -12,6 +12,7 @@ import (
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/termbox-go"
 )
 
 // Editor is goed's main Editor pane (singleton)
@@ -56,7 +57,11 @@ func (e *Editor) Start(locs []string) {
 		panic(err)
 	}
 
-	defer e.term.Close()
+	defer func() {
+		// TODO: should set it to original value, but how to read it ??
+		e.term.SetMouseMode(termbox.MouseClick)
+		e.term.Close()
+	}()
 	e.term.SetExtendedColors(core.Colors == 256)
 	e.evtState = &EvtState{}
 	e.theme, err = core.ReadTheme(core.FindResource(path.Join("themes", e.config.Theme)))
