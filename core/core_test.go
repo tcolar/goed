@@ -74,3 +74,9 @@ func TestTheme(t *testing.T) {
 	s = s.WithAttr(Bold)
 	assert.Equal(t, s, NewStyle(0x0141), "style attr2")
 }
+
+func TestIsText(t *testing.T) {
+	assert.Equal(t, IsTextFile("../test_data/empty.txt"), true)
+	assert.Equal(t, IsTextFile("../test_data/test.txt"), true)
+	assert.Equal(t, IsTextFile("../test_data/test.bin"), false)
+}
