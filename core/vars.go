@@ -46,4 +46,6 @@ const (
 	CursorMvmtPgUp
 	CursorMvmtHome
 	CursorMvmtEnd
+	CursorMvmtTop
+	CursorMvmtBottom
 )

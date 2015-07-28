@@ -52,7 +52,7 @@ func (e *Editor) NewView(loc string) *View {
 // NewFileView creates a view for a given file
 func (e Editor) NewFileView(loc string) *View {
 	v := e.NewView(loc)
-	e.Open(loc, v, "")
+	e.Open(loc, v, "", true)
 	return v
 }
 
@@ -513,5 +513,9 @@ func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
 		v.MoveCursor(0, v.lineCols(v.slice, ln)-col)
 	case core.CursorMvmtHome:
 		v.MoveCursor(0, -col)
+	case core.CursorMvmtTop:
+		v.MoveCursor(-v.CurLine(), 0)
+	case core.CursorMvmtBottom:
+		v.MoveCursor(v.LineCount()-v.CurLine(), 0)
 	}
 }

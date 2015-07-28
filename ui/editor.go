@@ -98,7 +98,7 @@ func (e *Editor) Start(locs []string) {
 		view := e.NewView(dir)
 		view.HeightRatio = ratio
 		e.Cols[0].Views = append(e.Cols[0].Views, view)
-		e.Open(dir, view, "")
+		e.Open(dir, view, "", true)
 	}
 	e.CurCol = e.Cols[0]
 	e.curView = e.CurCol.Views[0]
@@ -110,7 +110,7 @@ func (e *Editor) Start(locs []string) {
 			view := e.NewView(f)
 			view.HeightRatio = ratio
 			c.Views = append(c.Views, view)
-			e.Open(f, view, "")
+			e.Open(f, view, "", true)
 		}
 		e.Cols = append(e.Cols, c)
 		e.CurCol = c
@@ -130,7 +130,7 @@ func (e *Editor) Start(locs []string) {
 
 // Open opens a given location in the editor (in the given view)
 // or new view if view is nil
-func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable, error) {
+func (e Editor) Open(loc string, view core.Viewable, rel string, create bool) (core.Viewable, error) {
 	if len(rel) > 0 && !strings.HasPrefix(loc, string(os.PathSeparator)) {
 		loc = path.Join(rel, loc)
 	}
@@ -142,6 +142,9 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable,
 	stat, err := os.Stat(loc)
 	newFile := false
 	if os.IsNotExist(err) {
+		if !create {
+			return nil, err
+		}
 		newFile = true
 	}
 	title := filepath.Base(loc)
@@ -156,16 +159,19 @@ func (e Editor) Open(loc string, view core.Viewable, rel string) (core.Viewable,
 	}
 	view.Reset()
 	view.SetTitle(title)
-	if nv {
-		e.InsertView(view.(*View), e.CurView().(*View), 0.2)
-	}
 	if newFile || !stat.IsDir() {
 		err = e.openFile(loc, view)
 	} else {
 		err = e.openDir(loc, view)
 	}
+	if err != nil {
+		return nil, err
+	}
+	if nv {
+		e.InsertView(view.(*View), e.CurView().(*View), 0.2)
+	}
 	view.SetWorkDir(filepath.Dir(loc))
-	return view, err
+	return view, nil
 }
 
 // OpenDir opens a directory listing
