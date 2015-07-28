@@ -94,6 +94,10 @@ func ViewSetWorkdir(viewId int64, workDir string) {
 	d(viewSetWorkdir{viewId: viewId, workDir: workDir})
 }
 
+func ViewTrim(viewId int64, limit int) {
+	d(viewTrim{viewId: viewId, limit: limit})
+}
+
 // ########  Impl ......
 
 type viewAddSelection struct {
@@ -370,7 +374,7 @@ type viewSetTitle struct {
 func (a viewSetTitle) Run() error {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		v.SetWorkDir(a.title)
+		v.SetTitle(a.title)
 	}
 	return nil
 }
@@ -404,5 +408,21 @@ func (a viewStretchSelection) Run() error {
 		v.CurLine(),
 		v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()),
 	)
+	return nil
+}
+
+type viewTrim struct {
+	viewId int64
+	limit  int
+}
+
+func (a viewTrim) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		return nil
+	}
+	if v.LineCount() > a.limit {
+		v.Backend().Remove(1, 1, v.LineCount()-a.limit+1, 0)
+	}
 	return nil
 }
