@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -57,7 +58,7 @@ func (c *BackendCmd) Start(viewId int64) {
 	} else {
 		actions.ViewSetTitle(viewId, *c.title)
 	}
-	actions.ViewSetWorkdir(viewId, workDir) // might have chnaged
+	actions.ViewSetWorkdir(viewId, workDir) // might have changed
 	actions.EdRender()
 }
 
@@ -108,12 +109,15 @@ func (c *BackendCmd) stream() error {
 		return err
 	}
 	err = c.runner.Wait()
+
+	actions.EdRender()
 	return err
 }
 
 type backendAppender struct {
-	backend core.Backend
-	viewId  int64
+	backend   core.Backend
+	viewId    int64
+	lastFlush int64
 }
 
 func (b backendAppender) Write(data []byte) (int, error) {
@@ -122,19 +126,17 @@ func (b backendAppender) Write(data []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	/*
-				limit := core.Ed.Config().MaxCmdBufferLines
-				if v == nil {
-					return
-				}
-				if v.LineCount() > limit {
-					c.Backend.Remove(1, 1, v.LineCount()-limit+1, 0)
-				}
 
-		event.ViewMoveCursorEvt(v, v.LineCount(), 0)
-	*/
-	//event.ViewMoveCursorEvt(v.LineCount(), 0)
-	actions.ViewRender(b.viewId)
-	actions.EdTermFlush()
+	actions.ViewTrim(b.viewId, core.Ed.Config().MaxCmdBufferLines)
+
+	actions.ViewCursorMvmt(b.viewId, core.CursorMvmtBottom)
+
+	now := time.Now().Unix()
+
+	// render every so often
+	if now > b.lastFlush+500 {
+		b.lastFlush = now
+		actions.EdRender()
+	}
 	return len(data), nil
 }
