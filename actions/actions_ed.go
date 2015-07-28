@@ -25,8 +25,8 @@ func EdExternal(name string) {
 	d(edExternal{name: name})
 }
 
-func EdOpen(loc string, view core.Viewable, rel string) {
-	d(edOpen{loc: loc, view: view, rel: rel})
+func EdOpen(loc string, view core.Viewable, rel string, create bool) {
+	d(edOpen{loc: loc, view: view, rel: rel, create: create})
 }
 
 // Retuns whether the editor can be quit.
@@ -123,10 +123,11 @@ func (a edExternal) Run() error {
 		file.Write(out)
 		file.Close()
 		errv := e.ViewByLoc(fp)
-		errv, err = e.Open(fp, errv, "Errors")
+		errv, err = e.Open(fp, errv, "", true)
 		if err != nil {
 			e.SetStatusErr(err.Error())
 		}
+		e.Render()
 		return fmt.Errorf("%s failed", a.name)
 	}
 	errv := e.ViewByLoc(fp)
@@ -139,11 +140,12 @@ func (a edExternal) Run() error {
 type edOpen struct {
 	loc, rel string
 	view     core.Viewable
+	create   bool
 }
 
 func (a edOpen) Run() error {
-	core.Ed.Open(a.loc, a.view, a.rel)
-	return nil
+	_, err := core.Ed.Open(a.loc, a.view, a.rel, a.create)
+	return err
 }
 
 type edQuitCheck struct {

@@ -14,7 +14,7 @@ type Editable interface {
 	// CmdOn indicates whether the CommandBar is currently active
 	CmdOn() bool
 	// Open opens a file in the given view.
-	Open(loc string, view Viewable, title string) (Viewable, error)
+	Open(loc string, view Viewable, rel string, create bool) (Viewable, error)
 	QuitCheck() bool
 	// Render updates the whole editor UI
 	Render()

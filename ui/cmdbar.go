@@ -95,7 +95,7 @@ func (c *Cmdbar) open(args []string) error {
 	ed := core.Ed.(*Editor)
 	v := ed.NewView(args[0])
 	ed.InsertViewSmart(v)
-	_, err := ed.Open(args[0], v, ed.CurView().WorkDir())
+	_, err := ed.Open(args[0], v, ed.CurView().WorkDir(), true)
 	if err != nil {
 		return err
 	}

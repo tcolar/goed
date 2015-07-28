@@ -222,6 +222,10 @@ func (v *View) OpenSelection(newView bool) {
 		return
 	}
 	v2 := ed.NewView(loc)
+	if _, err := ed.Open(loc, v2, v.WorkDir(), false); err != nil {
+		ed.SetStatusErr(err.Error())
+		return
+	}
 	if newView {
 		if isDir {
 			ed.InsertView(v2, v, 0.5)
@@ -230,10 +234,6 @@ func (v *View) OpenSelection(newView bool) {
 		}
 	} else {
 		ed.ReplaceView(v, v2)
-	}
-	if _, err := ed.Open(loc, v2, v.WorkDir()); err != nil {
-		ed.SetStatusErr(err.Error())
-		return
 	}
 	ed.ActivateView(v2, line, col)
 }
