@@ -31,7 +31,6 @@ func NewMemBackend(loc string, viewId int64) (*MemBackend, error) {
 }
 
 func (m *MemBackend) Reload() error {
-	// TODO: check dirty ?
 	m.Wipe()
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -59,6 +58,7 @@ func (m *MemBackend) Reload() error {
 }
 
 func (b *MemBackend) Save(loc string) error {
+	// TODO: check dirty ?
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if len(loc) == 0 {
@@ -120,7 +120,6 @@ func (b *MemBackend) Append(text string) error {
 }
 
 func (b *MemBackend) Insert(row, col int, text string) error {
-	b.Wipe()
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	runes := core.StringToRunes(text)
@@ -136,7 +135,7 @@ func (b *MemBackend) Insert(row, col int, text string) error {
 		}
 		copy(b.text[row+last:], b.text[row:])
 	}
-	if row == len(b.text) { // appending ne wline at end of file
+	if row == len(b.text) { // appending new line at end of file
 		b.text = append(b.text, []rune{})
 	}
 	for i, ln := range runes {
