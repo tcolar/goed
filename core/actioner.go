@@ -5,7 +5,8 @@ type Action interface {
 }
 
 type ActionDispatcher interface {
-	Start()
 	Dispatch(action Action)
+	Flush()
 	Shutdown()
+	Start()
 }

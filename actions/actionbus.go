@@ -19,14 +19,14 @@ func NewActionBus() core.ActionDispatcher {
 	}
 }
 
-func (e actionBus) Dispatch(action core.Action) {
-	e.actionChan <- action
+func (a actionBus) Dispatch(action core.Action) {
+	a.actionChan <- action
 }
 
-func (e actionBus) Start() {
+func (a actionBus) Start() {
 	for {
 		select {
-		case action := <-e.actionChan:
+		case action := <-a.actionChan:
 			if core.Trace {
 				pretty.Logln(action)
 			}
@@ -35,12 +35,28 @@ func (e actionBus) Start() {
 				core.Ed.SetStatusErr(err.Error())
 				log.Println(err.Error())
 			}
-		case <-e.quitc:
+		case <-a.quitc:
 			break
 		}
 	}
 }
 
-func (e actionBus) Shutdown() {
-	e.quitc <- struct{}{}
+// Flush waits for all actions sent before it to have been processed
+func (a actionBus) Flush() {
+	c := make(chan (struct{}), 1)
+	d(flushAction{c})
+	<-c
+}
+
+func (a actionBus) Shutdown() {
+	a.quitc <- struct{}{}
+}
+
+type flushAction struct {
+	c chan (struct{})
+}
+
+func (a flushAction) Run() error {
+	a.c <- struct{}{}
+	return nil
 }
