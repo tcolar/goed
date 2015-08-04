@@ -70,8 +70,12 @@ func (v *View) Delete() {
 
 func (v *View) SelectionCopy(s *core.Selection) {
 	t := v.SelectionText(s)
+	text := core.RunesToString(t)
+	if len(text) == 0 {
+		return
+	}
 	core.Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
-	clipboard.WriteAll(core.RunesToString(t))
+	clipboard.WriteAll(text)
 }
 
 func (v *View) SelectionDelete(s *core.Selection) {
