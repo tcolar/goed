@@ -20,7 +20,7 @@ func TestWm(t *testing.T) {
 	c := Ed.Cols[0]
 	assert.Equal(t, len(c.Views), 1)
 	v = c.Views[0]
-	v, err = Ed.Open("file1.txt", v, "../test_data")
+	v, err = Ed.Open("file1.txt", v, "../test_data", false)
 	assertBounds(t, v, 1, 0, 23, 49)
 	assert.Nil(t, err)
 	assert.Equal(t, len(c.Views), 1)
@@ -54,7 +54,7 @@ func TestWm(t *testing.T) {
 
 	c2 := Ed.AddCol(c, 0.5)
 	assert.Equal(t, len(Ed.Cols), 2)
-	v2, err = Ed.Open("no_eol.txt", c2.Views[0], "../test_data")
+	v2, err = Ed.Open("no_eol.txt", c2.Views[0], "../test_data", false)
 	assert.Equal(t, len(c.Views), 1)
 	assert.Equal(t, len(c2.Views), 1)
 	assertBounds(t, v, 1, 0, 23, 24)
