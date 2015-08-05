@@ -40,8 +40,16 @@ func ViewCursorMvmt(viewId int64, mvmt core.CursorMvmt) {
 	d(viewCursorMvmt{viewId: viewId, mvmt: mvmt})
 }
 
+func ViewDelete(viewId int64, row1, col1, row2, col2 int, undoable bool) {
+	d(viewDeleteAction{viewId: viewId, row1: row1, col1: col1, row2: row2, col2: col2, undoable: undoable})
+}
+
 func ViewDeleteCur(viewId int64) {
 	d(viewDeleteCur{viewId: viewId})
+}
+
+func ViewInsert(viewId int64, row, col int, text string, undoable bool) {
+	d(viewInsertAction{viewId: viewId, row: row, col: col, text: text, undoable: undoable})
 }
 
 func ViewInsertCur(viewId int64, text string) {
@@ -67,6 +75,11 @@ func ViewPaste(viewId int64) {
 func ViewOpenSelection(viewId int64, newView bool) {
 	d(viewOpenSelection{viewId: viewId, newView: newView})
 }
+
+func ViewRedo(viewId int64) {
+	d(viewRedo{viewId: viewId})
+}
+
 func ViewReload(viewId int64) {
 	d(viewReload{viewId: viewId})
 }
@@ -74,6 +87,7 @@ func ViewReload(viewId int64) {
 func ViewRender(viewId int64) {
 	d(viewRender{viewId: viewId})
 }
+
 func ViewSave(viewId int64) {
 	d(viewSave{viewId: viewId})
 }
@@ -96,6 +110,10 @@ func ViewSetWorkdir(viewId int64, workDir string) {
 
 func ViewTrim(viewId int64, limit int) {
 	d(viewTrim{viewId: viewId, limit: limit})
+}
+
+func ViewUndo(viewId int64) {
+	d(viewUndo{viewId: viewId})
 }
 
 // ########  Impl ......
@@ -225,8 +243,22 @@ func (a viewCut) Run() error {
 	if v == nil {
 		return nil
 	}
-	v.Copy()
-	v.Delete()
+	v.Cut()
+	return nil
+}
+
+type viewDeleteAction struct {
+	viewId                 int64
+	row1, col1, row2, col2 int
+	undoable               bool
+}
+
+func (a viewDeleteAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		return nil
+	}
+	v.Delete(a.row1, a.col1, a.row2, a.col2, a.undoable)
 	return nil
 }
 
@@ -240,6 +272,22 @@ func (a viewDeleteCur) Run() error {
 		return nil
 	}
 	v.DeleteCur()
+	return nil
+}
+
+type viewInsertAction struct {
+	viewId   int64
+	row, col int
+	text     string
+	undoable bool
+}
+
+func (a viewInsertAction) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		return nil
+	}
+	v.Insert(a.row, a.col, a.text, a.undoable)
 	return nil
 }
 
@@ -315,6 +363,14 @@ func (a viewPaste) Run() error {
 	}
 	v.Paste()
 	return nil
+}
+
+type viewRedo struct {
+	viewId int64
+}
+
+func (a viewRedo) Run() error {
+	return Redo(a.viewId)
 }
 
 type viewReload struct{ viewId int64 }
@@ -425,4 +481,20 @@ func (a viewTrim) Run() error {
 		v.Backend().Remove(1, 1, v.LineCount()-a.limit+1, 0)
 	}
 	return nil
+}
+
+type viewUndo struct {
+	viewId int64
+}
+
+func (a viewUndo) Run() error {
+	return Undo(a.viewId)
+}
+
+func NewViewInsertAction(viewId int64, row, col int, text string, undoable bool) core.Action {
+	return viewInsertAction{viewId: viewId, row: row, col: col, text: text, undoable: undoable}
+}
+
+func NewViewDeleteAction(viewId int64, row1, col1, row2, col2 int, undoable bool) core.Action {
+	return viewDeleteAction{viewId: viewId, row1: row1, col1: col1, row2: row2, col2: col2, undoable: undoable}
 }

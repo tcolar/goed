@@ -54,18 +54,19 @@ func (v *View) Selected(col, line int) (bool, *core.Selection) {
 	return false, nil
 }
 
+func (v *View) Cut() {
+	if len(v.selections) == 0 {
+		v.SelectLine(v.CurLine())
+	}
+	v.SelectionCopy(&v.selections[0])
+	v.SelectionDelete(&v.selections[0])
+}
+
 func (v *View) Copy() {
 	if len(v.selections) == 0 {
 		v.SelectLine(v.CurLine())
 	}
 	v.SelectionCopy(&v.selections[0])
-}
-
-func (v *View) Delete() {
-	if len(v.selections) == 0 {
-		v.SelectLine(v.CurLine())
-	}
-	v.SelectionDelete(&v.selections[0])
 }
 
 func (v *View) SelectionCopy(s *core.Selection) {
@@ -79,7 +80,7 @@ func (v *View) SelectionCopy(s *core.Selection) {
 }
 
 func (v *View) SelectionDelete(s *core.Selection) {
-	v.delete(s.LineFrom, s.ColFrom, s.LineTo, s.ColTo)
+	v.Delete(s.LineFrom, s.ColFrom, s.LineTo, s.ColTo, true)
 }
 
 func (v *View) Paste() {
@@ -92,7 +93,7 @@ func (v *View) Paste() {
 		v.DeleteCur()
 	}
 	_, y, x := v.CurChar()
-	v.Insert(y, x, text)
+	v.Insert(y, x, text, true)
 }
 
 var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?(:\d+)?`)

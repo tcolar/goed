@@ -10,10 +10,12 @@ type Viewable interface {
 	CurCol() int
 	CurLine() int
 	CursorMvmt(mvmt CursorMvmt)
-	Delete()
+	Cut()
+	Delete(row1, col1, row, col2 int, undoable bool)
 	DeleteCur()
 	Dirty() bool
 	Id() int64
+	Insert(row, col int, text string, undoable bool)
 	InsertCur(text string)
 	InsertNewLineCur()
 	LineCount() int

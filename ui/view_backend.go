@@ -2,7 +2,9 @@ package ui
 
 import (
 	"bytes"
+	"fmt"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
@@ -27,11 +29,11 @@ func (v *View) InsertCur(s string) {
 		v.ClearSelections()
 	}
 	_, y, x = v.CurChar()
-	v.Insert(y, x, s)
+	v.Insert(y, x, s, true)
 }
 
 // Insert inserts text at the given text location
-func (v *View) Insert(line, col int, s string) {
+func (v *View) Insert(line, col int, s string, undoable bool) {
 	e := core.Ed
 	// backend is 1-based indexed
 	err := v.backend.Insert(line, col, s)
@@ -40,11 +42,12 @@ func (v *View) Insert(line, col int, s string) {
 		return
 	}
 	offx, offy := 0, 0
+	indent := []rune{}
 	if s == "\n" {
 		offy = 1
 		if col >= v.LineLen(v.slice, line) {
 			// newline a EOL, copy indentation
-			indent := v.lineIndent(line)
+			indent = v.lineIndent(line)
 			if len(indent) > 0 {
 				v.backend.Insert(line+1, 0, string(indent))
 				offx = v.CurCol() - len(indent)
@@ -61,6 +64,12 @@ func (v *View) Insert(line, col int, s string) {
 			idx = 0
 		}
 		offx = v.strSize(string(b[idx:]))
+	}
+	if undoable {
+		actions.UndoAdd(
+			v.Id(),
+			actions.NewViewInsertAction(v.Id(), line, col, s+string(indent), false),
+			actions.NewViewDeleteAction(v.Id(), line, col, line+offy, col+offx-1, false))
 	}
 	v.Render()
 	e.TermFlush()
@@ -83,7 +92,7 @@ func (v *View) InsertNewLineCur() {
 
 // InsertNewLine inserts a "newline"(Enter key) in the buffer
 func (v *View) InsertNewLine(line, col int) {
-	v.Insert(line, col, "\n")
+	v.Insert(line, col, "\n", true)
 }
 
 func (v *View) Reload() {
@@ -91,20 +100,32 @@ func (v *View) Reload() {
 	if err != nil {
 		core.Ed.SetStatusErr(err.Error())
 	}
+	actions.UndoClear(v.Id())
 	v.Render()
 	core.Ed.TermFlush()
 }
 
 // Delete removes characters at the given text location
-func (v *View) delete(line1, col1, line2, col2 int) {
+func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
+	core.Ed.SetStatus(fmt.Sprintf("del %d %d %d %d", line1, col1, line2, col2))
+	s := core.NewSelection(line1, col1, line2, col2)
+	text := core.RunesToString(v.SelectionText(s))
 	err := v.backend.Remove(line1, col1, line2, col2)
 	if err != nil {
 		core.Ed.SetStatusErr("Delete Failed " + err.Error())
 		return
 	}
-	v.NormalizeCursor()
+	if undoable {
+		actions.UndoAdd(
+			v.Id(),
+			actions.NewViewDeleteAction(v.Id(), line1, col1, line2, col2, false),
+			actions.NewViewInsertAction(v.Id(), line1, col1, text, false))
+	}
 	v.Render()
 	core.Ed.TermFlush()
+	offy := line1 - v.CurLine()
+	offx := col1 - v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol())
+	v.MoveCursor(offy, offx)
 }
 
 // DeleteCur removes a selection or the curent character
@@ -118,7 +139,7 @@ func (v *View) DeleteCur() {
 		return
 	}
 	if c != nil {
-		v.delete(y, x, y, x)
+		v.Delete(y, x, y, x, true)
 	}
 }
 
