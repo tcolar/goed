@@ -26,31 +26,41 @@ type actionTuple struct {
 // TODO : group together quick succesive undos (insert a, insert b, insert c) + Flushing
 // or group by alphanum sequence ??
 func Undo(viewId int64) error {
-	lock.Lock()
-	defer lock.Unlock()
-	tuples, found := undos[viewId]
-	if !found || len(tuples) == 0 {
-		return fmt.Errorf("Nothing to undo.")
+	action, err := func() (core.Action, error) {
+		lock.Lock()
+		defer lock.Unlock()
+		tuples, found := undos[viewId]
+		if !found || len(tuples) == 0 {
+			return nil, fmt.Errorf("Nothing to undo.")
+		}
+		tuple := tuples[len(tuples)-1]
+		undos[viewId] = undos[viewId][:len(tuples)-1]
+		redos[viewId] = append(redos[viewId], tuple)
+		return tuple.undo, nil
+	}()
+	if err != nil {
+		return err
 	}
-	tuple := tuples[len(tuples)-1]
-	undos[viewId] = undos[viewId][:len(tuples)-1]
-	redos[viewId] = append(redos[viewId], tuple)
-	d(tuple.undo)
-	return nil
+	return action.Run()
 }
 
 func Redo(viewId int64) error {
-	lock.Lock()
-	defer lock.Unlock()
-	tuples, found := redos[viewId]
-	if !found || len(tuples) == 0 {
-		return fmt.Errorf("Nothing to redo.")
+	action, err := func() (core.Action, error) {
+		lock.Lock()
+		defer lock.Unlock()
+		tuples, found := redos[viewId]
+		if !found || len(tuples) == 0 {
+			return nil, fmt.Errorf("Nothing to redo.")
+		}
+		tuple := tuples[len(tuples)-1]
+		redos[viewId] = redos[viewId][:len(tuples)-1]
+		undos[viewId] = append(undos[viewId], tuple)
+		return tuple.do, nil
+	}()
+	if err != nil {
+		return err
 	}
-	tuple := tuples[len(tuples)-1]
-	redos[viewId] = redos[viewId][:len(tuples)-1]
-	undos[viewId] = append(undos[viewId], tuple)
-	d(tuple.do)
-	return nil
+	return action.Run()
 }
 
 func UndoAdd(viewId int64, do, undo core.Action) {
