@@ -161,12 +161,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.KeyBackspace, termbox.KeyBackspace2:
 			actions.ViewBackspace(vid)
 			dirty = true
-		case termbox.KeyCtrlS:
-			actions.ViewSave(vid)
-		case termbox.KeyCtrlO:
-			actions.ViewOpenSelection(vid, true)
-		case termbox.KeyCtrlW:
-			actions.EdDelViewCheck(e.curView.Id())
+		// Ctrl keys
 		case termbox.KeyCtrlC:
 			switch v.backend.(type) {
 			case *backend.BackendCmd:
@@ -177,18 +172,28 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				}
 			}
 			actions.ViewCopy(vid)
-		case termbox.KeyCtrlX:
-			actions.ViewCut(vid)
-			dirty = true
-		case termbox.KeyCtrlV:
-			actions.ViewPaste(vid)
-			dirty = true
+		case termbox.KeyCtrlF:
+			//			actions.ViewSearch(vid)
+		case termbox.KeyCtrlO:
+			actions.ViewOpenSelection(vid, true)
 		case termbox.KeyCtrlQ:
 			return
 		case termbox.KeyCtrlR:
 			actions.ViewReload(vid)
-		case termbox.KeyCtrlF:
-			//			actions.ViewSearch(vid)
+		case termbox.KeyCtrlS:
+			actions.ViewSave(vid)
+		case termbox.KeyCtrlV:
+			actions.ViewPaste(vid)
+			dirty = true
+		case termbox.KeyCtrlW:
+			actions.EdDelViewCheck(e.curView.Id())
+		case termbox.KeyCtrlX:
+			actions.ViewCut(vid)
+			dirty = true
+		case termbox.KeyCtrlY:
+			actions.ViewRedo(vid)
+		case termbox.KeyCtrlZ:
+			actions.ViewUndo(vid)
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 && ev.Meta == 0 { // otherwise some special key combo
