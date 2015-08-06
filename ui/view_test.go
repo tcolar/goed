@@ -7,6 +7,7 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/stretchr/testify/assert"
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
@@ -280,8 +281,45 @@ func testChar(t *testing.T, v *View, y, x int, c rune) {
 	assert.Equal(t, tc, c, fmt.Sprintf("term.charAt %s, y,x"+string(c), y, x))
 }
 
-// TODO: test scrolling etc...
+// TODO: test scrolling etc...{
 func TestViewScrolling(t *testing.T) {
+}
+
+func TestUndo(t *testing.T) {
+	Ed := core.Ed.(*Editor)
+	v := Ed.NewView("")
+	Ed.InsertViewSmart(v)
+	v.SetBounds(0, 0, 25, 40)
+	s := core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "")
+	v.InsertCur("abcd")
+	v.InsertCur("123")
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd123")
+	actions.Undo(v.Id())
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd")
+	actions.Undo(v.Id())
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "")
+	actions.Redo(v.Id())
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd")
+	v.InsertCur("\n123\nαβγ")
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd\n123\nαβγ")
+	v.Insert(1, 3, "\n", false)
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd\n123\n\nαβγ")
+	actions.Undo(v.Id())
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd\n123\nαβγ")
+	v.Insert(1, 0, "I am hungry\nLet's go eat !\nx", true)
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd\nI am hungry\nLet's go eat !\nx123\nαβγ")
+	actions.Undo(v.Id())
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd\n123\nαβγ")
 }
 
 // TODO: test term mock

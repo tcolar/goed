@@ -8,6 +8,7 @@ import (
 )
 
 // TODO  ? var maxUndos = 500
+// TODO : group together quick succesive undos (insert a, insert b, insert c) + Flushing
 
 // viewId keyed map of undo actions
 var undos map[int64][]actionTuple = map[int64][]actionTuple{}
@@ -23,7 +24,6 @@ type actionTuple struct {
 	undo core.Action
 }
 
-// TODO : group together quick succesive undos (insert a, insert b, insert c) + Flushing
 // or group by alphanum sequence ??
 func Undo(viewId int64) error {
 	action, err := func() (core.Action, error) {

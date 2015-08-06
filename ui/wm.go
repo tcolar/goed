@@ -370,7 +370,7 @@ func (e *Editor) DelCol(col *Col, terminateViews bool) {
 func (e *Editor) DelView(v core.Viewable, terminate bool) {
 	view := v.(*View)
 	c := e.ViewColumn(view)
-	if len(e.Cols) <= 1 && len(c.Views) <= 1 {
+	if c == nil || len(c.Views) <= 1 {
 		e.SetStatusErr("Only one view left !")
 		return
 	}
