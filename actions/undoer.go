@@ -76,3 +76,15 @@ func UndoClear(viewId int64) {
 	delete(undos, viewId)
 	delete(redos, viewId)
 }
+
+// Dump prints out the undo/redo stack of a view, for debugging
+func Dump(viewId int64) {
+	fmt.Printf("Undos:\n")
+	for _, u := range undos[viewId] {
+		fmt.Printf("\t %#v\n", u)
+	}
+	fmt.Printf("Redos:\n")
+	for _, r := range redos[viewId] {
+		fmt.Printf("\t %#v\n", r)
+	}
+}
