@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/termbox-go"
 )
@@ -409,6 +410,7 @@ func (e *Editor) TerminateView(v *View) {
 	if v.backend != nil {
 		v.backend.Close()
 	}
+	actions.UndoClear(v.Id())
 	v = nil
 }
 
