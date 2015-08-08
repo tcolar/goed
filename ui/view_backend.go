@@ -35,45 +35,42 @@ func (v *View) InsertCur(s string) {
 // Insert inserts text at the given text location
 func (v *View) Insert(line, col int, s string, undoable bool) {
 	e := core.Ed
-	// backend is 1-based indexed
+	if s == "\n" {
+		if col >= v.LineLen(v.slice, line) {
+			s += string(v.lineIndent(line))
+		}
+	}
 	err := v.backend.Insert(line, col, s)
 	if err != nil {
 		e.SetStatusErr("Insert Failed " + err.Error())
 		return
 	}
-	offx, offy := 0, 0
-	indent := []rune{}
-	if s == "\n" {
-		offy = 1
-		if col >= v.LineLen(v.slice, line) {
-			// newline a EOL, copy indentation
-			indent = v.lineIndent(line)
-			if len(indent) > 0 {
-				v.backend.Insert(line+1, 0, string(indent))
-				offx = v.CurCol() - len(indent)
-			}
-		} else { // splitting line in two
-			offx = -v.CurCol()
-		}
-	} else {
-		// move the cursor to after insertion
-		b := []byte(s)
-		offy = bytes.Count(b, core.LineSep)
-		idx := bytes.LastIndex(b, core.LineSep)
-		if idx < 0 {
-			idx = 0
-		}
-		offx = v.strSize(string(b[idx:]))
+
+	// move the cursor to after insertion
+	c := v.lineColsTo(v.slice, line, col)
+	b := []byte(s)
+	offy := bytes.Count(b, core.LineSep)
+	idx := bytes.LastIndex(b, core.LineSep) + 1
+	lnLen := len(b[idx:])
+	offx := 0
+	if offy > 0 {
+		offx -= c
 	}
+	offx += v.strSize(string(b[idx:]))
+	if offy == 0 {
+		lnLen += col
+	}
+
 	if undoable {
 		actions.UndoAdd(
 			v.Id(),
-			actions.NewViewInsertAction(v.Id(), line, col, s+string(indent), false),
-			actions.NewViewDeleteAction(v.Id(), line, col, line+offy, col+offx-1, false))
+			actions.NewViewInsertAction(v.Id(), line, col, s, false),
+			actions.NewViewDeleteAction(v.Id(), line, col, line+offy, lnLen-1, false))
 	}
 	v.Render()
 	e.TermFlush()
-	v.MoveCursor(offy, offx)
+	e.SetStatus(fmt.Sprintf("v %d %d(%d) - %d %d\n", offy, offx, c, line+offy-v.CurLine(), c+offx-v.CurCol()))
+	v.MoveCursor(line+offy-v.CurLine(), c+offx-v.CurCol())
 }
 
 func (v *View) lineIndent(line int) []rune {
@@ -107,7 +104,6 @@ func (v *View) Reload() {
 
 // Delete removes characters at the given text location
 func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
-	core.Ed.SetStatus(fmt.Sprintf("del %d %d %d %d", line1, col1, line2, col2))
 	s := core.NewSelection(line1, col1, line2, col2)
 	text := core.RunesToString(v.SelectionText(s))
 	err := v.backend.Remove(line1, col1, line2, col2)
@@ -123,9 +119,8 @@ func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
 	}
 	v.Render()
 	core.Ed.TermFlush()
-	offy := line1 - v.CurLine()
-	offx := col1 - v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol())
-	v.MoveCursor(offy, offx)
+	offx := v.lineColsTo(v.Slice(), line1, col1)
+	v.MoveCursor(line1-v.CurLine(), offx-v.CurCol())
 }
 
 // DeleteCur removes a selection or the curent character

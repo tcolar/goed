@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 
@@ -174,6 +175,7 @@ func TestViewEdition(t *testing.T) {
 	v.Render()
 	testChar(t, v, 0, 0, '1')
 	testChar(t, v, 0, 1, 'a')
+	v.MoveCursor(0, 1)
 	v.Backspace()
 	testChar(t, v, 0, 0, '1')
 	v.Delete(0, 0, 0, 0, true)
@@ -271,6 +273,9 @@ func TestDelete(t *testing.T) {
 func testChar(t *testing.T, v *View, y, x int, c rune) {
 	Ed := core.Ed.(*Editor)
 	s := v.backend.Slice(y, x, y, x)
+	if (*s.Text())[0][0] != c {
+		panic(c)
+	}
 	assert.Equal(t, (*s.Text())[0][0], c, "testchar slice "+string(c))
 	c2, _, _ := v.CursorChar(v.slice, y, x)
 	assert.Equal(t, *c2, c, "testchar cursorchar "+string(c))
@@ -278,7 +283,7 @@ func testChar(t *testing.T, v *View, y, x int, c rune) {
 	term := Ed.term.(*core.MockTerm)
 	v.Render()
 	tc := term.CharAt(y+v.y1+2, x+v.x1+2)
-	assert.Equal(t, tc, c, fmt.Sprintf("term.charAt %s, y,x"+string(c), y, x))
+	assert.Equal(t, tc, c, fmt.Sprintf("term.charAt %s, y:%d ,x:%d"+string(c), y, x))
 }
 
 // TODO: test scrolling etc...{
@@ -289,11 +294,19 @@ func TestUndo(t *testing.T) {
 	Ed := core.Ed.(*Editor)
 	v := Ed.NewView("")
 	Ed.InsertViewSmart(v)
-	v.SetBounds(0, 0, 25, 40)
+	v.SetBounds(0, 0, 100, 1000)
+	v.slice = v.backend.Slice(0, 0, 100, 1000)
 	s := core.RunesToString(*v.Slice().Text())
 	assert.Equal(t, s, "")
 	v.InsertCur("abcd")
 	v.InsertCur("123")
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd123")
+	// insert in middle
+	v.Insert(0, 2, "xyz", true)
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abxyzcd123")
+	actions.Undo(v.Id())
 	s = core.RunesToString(*v.Slice().Text())
 	assert.Equal(t, s, "abcd123")
 	actions.Undo(v.Id())
@@ -302,24 +315,63 @@ func TestUndo(t *testing.T) {
 	actions.Undo(v.Id())
 	s = core.RunesToString(*v.Slice().Text())
 	assert.Equal(t, s, "")
+	// Redo
 	actions.Redo(v.Id())
 	s = core.RunesToString(*v.Slice().Text())
 	assert.Equal(t, s, "abcd")
-	v.InsertCur("\n123\nαβγ")
+	// Insert several lines
+	v.InsertCur("\n\t123\nXYX")
 	s = core.RunesToString(*v.Slice().Text())
-	assert.Equal(t, s, "abcd\n123\nαβγ")
-	v.Insert(1, 3, "\n", false)
+	assert.Equal(t, s, "abcd\n\t123\nXYX")
+	// Line feed at eol -> indentation
+	v.Insert(1, 4, "\n", true)
 	s = core.RunesToString(*v.Slice().Text())
-	assert.Equal(t, s, "abcd\n123\n\nαβγ")
+	assert.Equal(t, s, "abcd\n\t123\n\t\nXYX")
 	actions.Undo(v.Id())
 	s = core.RunesToString(*v.Slice().Text())
-	assert.Equal(t, s, "abcd\n123\nαβγ")
-	v.Insert(1, 0, "I am hungry\nLet's go eat !\nx", true)
+	assert.Equal(t, s, "abcd\n\t123\nXYX")
+	// \n at end of line
+	v.Insert(1, 0, "I am hungry\nLet's go eat !\n", true)
 	s = core.RunesToString(*v.Slice().Text())
-	assert.Equal(t, s, "abcd\nI am hungry\nLet's go eat !\nx123\nαβγ")
+	assert.Equal(t, s, "abcd\nI am hungry\nLet's go eat !\n\t123\nXYX")
 	actions.Undo(v.Id())
 	s = core.RunesToString(*v.Slice().Text())
-	assert.Equal(t, s, "abcd\n123\nαβγ")
+	assert.Equal(t, s, "abcd\n\t123\nXYX")
+	// Breaking line in half
+	v.Insert(1, 2, "\n", true)
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd\n\t1\n23\nXYX")
+	actions.Undo(v.Id())
+	s = core.RunesToString(*v.Slice().Text())
+	assert.Equal(t, s, "abcd\n\t123\nXYX")
+
+	type state struct {
+		x, y int
+		txt  string
+	}
+	states := []state{}
+	for i := 0; i != 15; i++ {
+		size := 1 + rand.Int63()%int64(15)
+		//ln := rand.Int63() % int64(v.LineCount())
+		//col := rand.Int63() % (1 + int64(v.LineLen(v.slice, int(ln))))
+		txt := core.RandString(int(size))
+		//v.Insert(int(ln), int(col), txt, false)
+		v.InsertCur(txt)
+		s := state{
+			txt: core.RunesToString(*v.Slice().Text()),
+			x:   v.CurCol(),
+			y:   v.CurLine(),
+		}
+		states = append(states, s)
+	}
+
+	for i := 0; i != 15; i++ {
+		s := states[len(states)-i-1]
+		assert.Equal(t, s.y, v.CurLine(), fmt.Sprintf("cl %d #v", i, s))
+		assert.Equal(t, s.x, v.CurCol(), fmt.Sprintf("cc %d %#v", i, s))
+		assert.Equal(t, s.txt, core.RunesToString(*v.Slice().Text()))
+		actions.Undo(v.Id())
+	}
 }
 
 // TODO: test term mock
