@@ -25,6 +25,7 @@ var (
 )
 
 func main() {
+
 	//defer profile.Start(profile.CPUProfile).Stop()
 	kingpin.Version(core.Version)
 

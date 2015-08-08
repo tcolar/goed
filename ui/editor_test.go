@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"math/rand"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 )
 
 func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
 	core.Testing = true
 	core.InitHome(time.Now().Unix())
 	core.Ed = NewMockEditor()

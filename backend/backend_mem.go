@@ -172,8 +172,8 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 	if col1 < 0 {
 		col1 = 0
 	}
-	if col2 < 0 {
-		col2 = 0
+	if col2 < -1 { // -1 maybe use to remove up to before the line (after prev line EOL)
+		col2 = -1
 	}
 	if row2 < len(b.text) && col2 >= len(b.text[row2]) {
 		// that is, if at end of line, then start from beginning of next row
