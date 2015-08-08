@@ -7,26 +7,6 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-/*
-        Text           Undos     Redos
-        A, B, C, D    [A,B,C,D]  []
-redo -> A, B, C, D    [A,B,C,D]  []       noop
-undo -> A, B, C       [A,B,C]    [D]
-redo -> A, B, C, D    [A,B,C,D]  []
-undo -> A, B, C       [A,B,C]    [D]
-undo -> A, B          [A,B]      [C,D]
-undo -> A             [A]        [B,C,D]
-redo -> A, B          [A,B]      [C,D]
-redo -> A, B, C       [A,B,C]    [D]
-undo -> A, B          [A,B]      [C,D]
-        A, B, *F*     [A,B,F]    []
-redo -> A, B, F       [A,B,F]    []       noop
-undo -> A, B          [A,B]      [F]
-undo -> A             [A]        [B,F]
-undo ->               []         [A,B,F]
-undo ->               []         [A,B,F]  noop
-*/
-
 func init() {
 	core.Bus = NewActionBus()
 	go core.Bus.Start()
@@ -102,6 +82,31 @@ func TestUndo(t *testing.T) {
 
 	assert.Error(t, Undo(v1))
 	assert.Error(t, Redo(v1))
+}
+
+func TestUndoLimit(t *testing.T) {
+	v := int64(3)
+	i := 0
+	maxUndos = 3
+	defer func() { maxUndos = 1000 }()
+	add(v, &i, 3)
+	add(v, &i, 5)
+	add(v, &i, 7)
+	add(v, &i, 11)
+	add(v, &i, 13)
+	core.Bus.Flush()
+	assert.Equal(t, len(undos[v]), 3)
+	assert.Equal(t, i, 39)
+	assert.Nil(t, Undo(v))
+	assert.Equal(t, len(undos[v]), 2)
+	assert.Equal(t, i, 26)
+	assert.Nil(t, Undo(v))
+	assert.Equal(t, len(undos[v]), 1)
+	assert.Equal(t, i, 15)
+	assert.Nil(t, Undo(v))
+	assert.Equal(t, len(undos[v]), 0)
+	assert.Equal(t, i, 8)
+	assert.Error(t, Undo(v))
 }
 
 func add(v int64, i *int, inc int) {
