@@ -7,8 +7,9 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-// TODO  ? var maxUndos = 500
 // TODO : group together quick succesive undos (insert a, insert b, insert c) + Flushing
+
+var maxUndos = 1000
 
 // viewId keyed map of undo actions
 var undos map[int64][]actionTuple = map[int64][]actionTuple{}
@@ -67,7 +68,12 @@ func UndoAdd(viewId int64, do, undo core.Action) {
 	lock.Lock()
 	defer lock.Unlock()
 	delete(redos, viewId)
-	undos[viewId] = append(undos[viewId], actionTuple{do, undo})
+	if len(undos[viewId]) < maxUndos {
+		undos[viewId] = append(undos[viewId], actionTuple{do, undo})
+	} else {
+		copy(undos[viewId], undos[viewId][1:])
+		undos[viewId][len(undos[viewId])-1] = actionTuple{do, undo}
+	}
 }
 
 func UndoClear(viewId int64) {
