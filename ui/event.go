@@ -114,16 +114,70 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	case termbox.EventKey:
 		ln, col := actions.ViewCurPos(vid)
 		e.evtState.InDrag = false
-		// alt combo
+
+		// alt combos
 		if ev.Mod == termbox.ModAlt {
 			switch ev.Ch {
 			case 'o':
 				actions.ViewOpenSelection(vid, false)
 				return
 			}
+			return
+		}
+
+		// Combos not supported directly by termbox
+		if ev.Meta == termbox.Ctrl {
+			switch ev.Key {
+			case termbox.KeyArrowDown:
+				actions.EdViewNavigate(core.CursorMvmtDown)
+				return
+			case termbox.KeyArrowUp:
+				actions.EdViewNavigate(core.CursorMvmtUp)
+				return
+			case termbox.KeyArrowLeft:
+				actions.EdViewNavigate(core.CursorMvmtLeft)
+				return
+			case termbox.KeyArrowRight:
+				actions.EdViewNavigate(core.CursorMvmtRight)
+				return
+			}
 		}
 
 		switch ev.Key {
+		// Ctrl combos
+		case termbox.KeyCtrlC:
+			switch v.backend.(type) {
+			case *backend.BackendCmd:
+				// CTRL+C process
+				if v.backend.(*backend.BackendCmd).Running() {
+					actions.ViewCmdStop(vid)
+					return
+				}
+			}
+			actions.ViewCopy(vid)
+		case termbox.KeyCtrlF:
+			//			actions.ViewSearch(vid)
+		case termbox.KeyCtrlO:
+			actions.ViewOpenSelection(vid, true)
+		case termbox.KeyCtrlQ:
+			return
+		case termbox.KeyCtrlR:
+			actions.ViewReload(vid)
+		case termbox.KeyCtrlS:
+			actions.ViewSave(vid)
+		case termbox.KeyCtrlV:
+			actions.ViewPaste(vid)
+			dirty = true
+		case termbox.KeyCtrlW:
+			actions.EdDelViewCheck(e.curView.Id())
+		case termbox.KeyCtrlX:
+			actions.ViewCut(vid)
+			dirty = true
+		case termbox.KeyCtrlY:
+			actions.ViewRedo(vid)
+		case termbox.KeyCtrlZ:
+			actions.ViewUndo(vid)
+		// "Regular" keys
 		case termbox.KeyArrowRight:
 			actions.ViewCursorMvmt(vid, core.CursorMvmtRight)
 			es = true
@@ -161,39 +215,6 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.KeyBackspace, termbox.KeyBackspace2:
 			actions.ViewBackspace(vid)
 			dirty = true
-		// Ctrl keys
-		case termbox.KeyCtrlC:
-			switch v.backend.(type) {
-			case *backend.BackendCmd:
-				// CTRL+C process
-				if v.backend.(*backend.BackendCmd).Running() {
-					actions.ViewCmdStop(vid)
-					return
-				}
-			}
-			actions.ViewCopy(vid)
-		case termbox.KeyCtrlF:
-			//			actions.ViewSearch(vid)
-		case termbox.KeyCtrlO:
-			actions.ViewOpenSelection(vid, true)
-		case termbox.KeyCtrlQ:
-			return
-		case termbox.KeyCtrlR:
-			actions.ViewReload(vid)
-		case termbox.KeyCtrlS:
-			actions.ViewSave(vid)
-		case termbox.KeyCtrlV:
-			actions.ViewPaste(vid)
-			dirty = true
-		case termbox.KeyCtrlW:
-			actions.EdDelViewCheck(e.curView.Id())
-		case termbox.KeyCtrlX:
-			actions.ViewCut(vid)
-			dirty = true
-		case termbox.KeyCtrlY:
-			actions.ViewRedo(vid)
-		case termbox.KeyCtrlZ:
-			actions.ViewUndo(vid)
 		default:
 			// insert the key
 			if ev.Ch != 0 && ev.Mod == 0 && ev.Meta == 0 { // otherwise some special key combo

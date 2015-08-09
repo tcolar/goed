@@ -39,5 +39,8 @@ type Editable interface {
 	// ViewByLoc finds if there is an existing view for the given file (loc)
 	ViewByLoc(loc string) Viewable
 	ViewById(id int64) Viewable
+	// Move a view
 	ViewMove(y1, x1, y2, x2 int)
+	// Navigate from a view to another
+	ViewNavigate(mvmt CursorMvmt)
 }

@@ -64,6 +64,10 @@ func EdViewMove(viewId int64, y1, x1, y2, x2 int) {
 	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
 }
 
+func EdViewNavigate(mvmt core.CursorMvmt) {
+	d(edViewNavigate{mvmt})
+}
+
 // ########  Impl ......
 
 type edActivateView struct {
@@ -219,6 +223,15 @@ func (a edViewMove) Run() error {
 		return nil
 	}
 	core.Ed.ViewMove(a.y1, a.x1, a.y2, a.x2)
+	return nil
+}
+
+type edViewNavigate struct {
+	mvmt core.CursorMvmt
+}
+
+func (a edViewNavigate) Run() error {
+	core.Ed.ViewNavigate(a.mvmt)
 	return nil
 }
 

@@ -237,6 +237,41 @@ func (e *Editor) ColIndex(col *Col) int {
 	return -1
 }
 
+// ViewNavigate navigates from he current view (left, right, up, down)
+func (e *Editor) ViewNavigate(mvmt core.CursorMvmt) {
+	v := e.curView
+	if v == nil {
+		return
+	}
+	c := e.ViewColumn(v)
+	if c == nil {
+		return
+	}
+	col := e.ColIndex(c)
+	view := e.ViewIndex(e.Cols[col], v)
+	if col < 0 || view < 0 {
+		return
+	}
+	switch mvmt {
+	case core.CursorMvmtLeft:
+		col--
+	case core.CursorMvmtRight:
+		col++
+	case core.CursorMvmtUp:
+		view--
+	case core.CursorMvmtDown:
+		view++
+	}
+	if col < 0 || col >= len(e.Cols) || view < 0 {
+		return
+	}
+	if view >= len(e.Cols[col].Views) {
+		view = len(e.Cols[col].Views) - 1
+	}
+	tv := e.Cols[col].Views[view]
+	e.ActivateView(tv, tv.CurLine(), tv.CurCol())
+}
+
 func (e *Editor) CurColIndex() int {
 	return e.ColIndex(e.CurCol)
 }
