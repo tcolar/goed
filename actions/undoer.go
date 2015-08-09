@@ -7,9 +7,10 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+// TODO : This is kind of memory heavy ....
 // TODO : group together quick succesive undos (insert a, insert b, insert c) + Flushing
 
-var maxUndos = 1000
+var maxUndos = 500
 
 // viewId keyed map of undo actions
 var undos map[int64][]actionTuple = map[int64][]actionTuple{}
