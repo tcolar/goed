@@ -39,13 +39,13 @@ like mouse support or extended colors vary a lot, here is a short list of tested
 setups so far:
 
 - Linux / GnomeTerminal : My usual setup, workd great.
+- Linux / Lxerminal : Works well but does not support mouse events above 256 columns.
+- Linux / Konsole : Works well, seems mouse is offset a bit off maybe.
 - Linux / Terminator : Works ok, but can't use right click for "open" action
-- Linux / Lxerminal : Works well but doesn not spport mouse events above 256 columns.
-- Linux / Konsole : Works well, seems mouse offset a bit off maybe.
 
 OSX (barely tested so far) :
 - OSX / Iterm2 : Pretty good, can't use right mouse click.
-- OSX / Term.app : Not very good, does not seem to support mouse events ??
+- OSX / Term.app : Not very good, does not seem to evesupport mouse ??n 
 
 ### Manual
 TODO: How does it work, UI usage, shortcuts etc ....
