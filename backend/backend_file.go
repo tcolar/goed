@@ -178,8 +178,7 @@ func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {
 	}
 	end := f.offset
 	if end >= f.length {
-
-		return nil
+		end = f.length - 1
 	}
 	err = f.seek(row1, col1)
 	if err != nil {
