@@ -1,18 +1,56 @@
-## GoEd 
-Terminal based code/text editor
+# GoEd 
+Goed is a Terminal based code/text editor.
 
-It's currently in the "prototyping" state and barely usable, there is a lot of 
-prototype code that is meant to be replaced and many features yet to be developed.
+**CURRENT STATE**
+It's currently in **EARLY ALPHA**, meaning it's somewhat usable, and I use it as
+my daily editor, but it's probably still buggy and definitely changing a lot.
+So far, tested mostly only Linux and a tiny bit on OSX.
 
-The end goal is to be powerful yet easy to use.
-
-One of the main source of inspiration is Acme, however it will be more 
-configurable and less mouse reliant.
-
-That is not to say it will be "keyboard only" ant it will likely not rely on 
-"modes" as Vi and Emacs do.
+# What is it ?
+I would say that the main source of inspiration is **Acme**, however it will
+be more configurable and not rquire the mouse quite as much, but still leverage it.
 
 Early screenshot (6/2/2015): 
 ![Screenshot](https://raw.github.com/tcolar/goed/master/screenshot.png)
+
+# Installation
+Prerequities: 
+- Have Go(Golang) installed
+- Setup a good terminal font and size (ie: Monospace, 10 possibly)
+
+```export PATH=$PATH:$GOPATH/bin
+go get github.com/tcolar/goed
+cd $GOPATH/src/github.com/tcolar/goed
+./build.sh
+```
+
+Note: Might distribute binaries once stable.
+
+To run it: ```goed <some files...>
+
+# Supported terminals
+In theory it should work on any terminal, however the level of support for things 
+like mouse support or extended colors vary a lot, here is a short list of tested 
+setups so far:
+
+- Linux / GnomeTerminal : My usual setup, workd great.
+- Linux / Terminator : Works ok, but can't use right click for "open" action
+- Linux / Lxerminal : Works well but doesn not spport mouse events above 256 columns.
+- Linux / Konsole : Works well, seems mouse offset a bit off maybe.
+
+OSX (barely tested so far) :
+- OSX / Iterm2 : Pretty good, can't use right mouse click.
+- OSX / Term.app : Not very good, does not seem to support mouse events ??
+
+# Manual
+TODO: How does it work, UI usage, shortcuts etc ....
+
+# FAQ's
+TODO
+
+# Contributing
+- Reporting issues is welcome.
+- PR's are welcome
+- For new functionality a quick discussion first might be best.
 
     
