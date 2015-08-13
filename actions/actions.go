@@ -5,7 +5,9 @@ concurency safety.
 */
 package actions
 
-import "github.com/tcolar/goed/core"
+import (
+	"github.com/tcolar/goed/core"
+)
 
 func d(action core.Action) {
 	core.Bus.Dispatch(action)
