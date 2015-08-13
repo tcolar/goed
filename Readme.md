@@ -9,7 +9,7 @@ So far, tested mostly only Linux and a tiny bit on OSX.
 
 ### What is it ?
 I would say that the main source of inspiration is **Acme**, however it will
-be more configurable and not rquire the mouse quite as much, but still leverage it.
+be more configurable and not require the mouse quite as much, but still leverage it.
 
 Early screenshot (6/2/2015): 
 ![Screenshot](https://raw.github.com/tcolar/goed/master/screenshot.png)
@@ -28,7 +28,10 @@ cd $GOPATH/src/github.com/tcolar/goed
 
 Note: Might distribute binaries once stable.
 
-To run it: ```goed <some files...>
+To run it: 
+```
+goed <file(s)>
+```
 
 ### Supported terminals
 In theory it should work on any terminal, however the level of support for things 
@@ -52,7 +55,6 @@ TODO
 
 ### Contributing
 - Reporting issues is welcome.
-- PR's are welcome
+- PR's are welcome.
 - For new functionality a quick discussion first might be best.
-
     
