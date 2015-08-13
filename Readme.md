@@ -1,7 +1,7 @@
 ### GoEd 
 Goed is a Terminal based code/text editor.
 
-**CURRENT STATE**
+**CURRENT STATE**:
 
 It's currently in **EARLY ALPHA**, meaning it's somewhat usable, and I use it as
 my daily editor, but it's probably still buggy and definitely changing a lot.
