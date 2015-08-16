@@ -92,6 +92,10 @@ func ViewSave(viewId int64) {
 	d(viewSave{viewId: viewId})
 }
 
+func ViewSelectAll(viewId int64) {
+	d(viewSelectAll{viewId: viewId})
+}
+
 func ViewSetDirty(viewId int64, on bool) {
 	d(viewSetDirty{viewId: viewId, on: on})
 }
@@ -405,6 +409,19 @@ func (a viewSave) Run() error {
 		return nil
 	}
 	v.Save()
+	return nil
+}
+
+type viewSelectAll struct {
+	viewId int64
+}
+
+func (a viewSelectAll) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		return nil
+	}
+	v.SelectAll()
 	return nil
 }
 

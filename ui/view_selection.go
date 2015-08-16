@@ -145,6 +145,14 @@ func isWordRune(r rune) bool {
 	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
 }
 
+func (v *View) SelectAll() {
+	lastLn := v.LineCount() - 1
+	s := core.NewSelection(0, 0, lastLn, v.LineLen(v.slice, lastLn)-1)
+	v.selections = []core.Selection{
+		*s,
+	}
+}
+
 // Select the whole given line
 func (v *View) SelectLine(line int) {
 	s := core.NewSelection(line, 0, line, v.LineLen(v.slice, line))

@@ -145,6 +145,9 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 
 		switch ev.Key {
 		// Ctrl combos
+		case termbox.KeyCtrlA:
+			actions.ViewSelectAll(vid)
+			return
 		case termbox.KeyCtrlC:
 			switch v.backend.(type) {
 			case *backend.BackendCmd:

@@ -35,6 +35,7 @@ type Viewable interface {
 	Save() // Save from buffer to src
 	SetBackend(backend Backend)
 	SetDirty(bool)
+	SelectAll()
 	Selections() *[]Selection
 	// SetAutoScroll is used to make the view scroll contonuously in y,x increments
 	// keeps scrolling until x and y are set to 0.
