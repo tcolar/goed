@@ -3,7 +3,9 @@
 package client
 
 import (
+	"fmt"
 	"net/rpc"
+	"path"
 
 	"github.com/tcolar/goed/core"
 )
@@ -43,4 +45,8 @@ func getClient(id int64) *rpc.Client {
 		panic(err)
 	}
 	return c
+}
+
+func GoedSocket(id int64) string {
+	return path.Join(core.GoedHome(), "instances", fmt.Sprintf("%d.sock", id))
 }

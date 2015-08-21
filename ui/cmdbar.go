@@ -51,8 +51,6 @@ func (c *Cmdbar) RunCmd() {
 	args := parts[1:]
 	var err error
 	switch parts[0] {
-	case "e", "exec":
-		c.exec(args)
 	case "o", "open":
 		err = c.open(args)
 	case ":", "line":
@@ -63,22 +61,8 @@ func (c *Cmdbar) RunCmd() {
 		}
 		query := string(c.Cmd[2:])
 		c.Search(query)
-		/*	case "nc", "newcol":
-								c.newCol(args)
-							case "nv", "newview":
-								c.newView(args)
-
-					case "p", "paste": // as vi
-						c.viPaste(args)
-					case "s", "save":
-						c.save(args)
-			case "y", "yank": // as vi copy
-				err = c.viYank(args)
-			case "yy":
-				err = c.viYank([]string{"1"})
-		*/
 	default:
-		actions.EdSetStatusErr("Unexpected command " + parts[0])
+		c.exec(args)
 	}
 	if err == nil {
 		actions.CmdbarEnable(false)

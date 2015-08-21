@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	// TODO: command line version of the api
 	app = kingpin.New("goed_api", "API service for goed Editor")
 
 	instances   = app.Command("instances", "Returns the known goed instance ID'S, space separated, latest first.")
