@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,6 +18,7 @@ type BackendCmd struct {
 	core.Backend
 	dir     string
 	runner  *exec.Cmd
+	inPipe  io.WriteCloser
 	title   *string
 	Starter CmdStarter
 }
@@ -42,6 +44,10 @@ func (c *BackendCmd) Running() bool {
 	return c.runner != nil && c.runner.Process != nil
 }
 
+func (c *BackendCmd) SendBytes(data []byte) {
+	c.inPipe.Write(data)
+}
+
 func (c *BackendCmd) Start(viewId int64) {
 	workDir, _ := filepath.Abs(c.dir)
 	actions.ViewSetWorkdir(viewId, workDir)
@@ -63,6 +69,9 @@ func (c *BackendCmd) Start(viewId int64) {
 }
 
 func (c *BackendCmd) stop() {
+	if c.inPipe != nil {
+		c.inPipe.Close()
+	}
 	if c.runner != nil && c.runner.Process != nil {
 		c.runner.Process.Kill()
 		c.runner.Process = nil
@@ -73,20 +82,6 @@ func (c *BackendCmd) stop() {
 type CmdStarter interface {
 	Start(c *BackendCmd) error
 }
-
-/*
-// starter impl for file backend
-type FileCmdStarter struct {
-}
-
-func (s *FileCmdStarter) Start(c *BackendCmd) error {
-	b := c.Backend.(*FileBackend)
-	c.runner.Stdout = b.file
-	c.runner.Stderr = b.file
-	err := c.runner.Run()
-	b.Reload()
-	return err
-}*/
 
 // MemCmdStarter is the command starter implementation for mem backend
 // It starts the command and "streams" the output to the backend.
@@ -104,6 +99,7 @@ func (c *BackendCmd) stream() error {
 	w := backendAppender{backend: c.Backend, viewId: c.ViewId()}
 	c.runner.Stdout = w
 	c.runner.Stderr = w
+	c.inPipe, _ = c.runner.StdinPipe()
 	err := c.runner.Start()
 	if err != nil {
 		return err
@@ -121,12 +117,10 @@ type backendAppender struct {
 }
 
 func (b backendAppender) Write(data []byte) (int, error) {
-	var err error
-	err = b.backend.Append(string(data))
+	err := b.backend.Append(string(data))
 	if err != nil {
 		return 0, err
 	}
-
 	actions.ViewTrim(b.viewId, core.Ed.Config().MaxCmdBufferLines)
 
 	actions.ViewCursorMvmt(b.viewId, core.CursorMvmtBottom)

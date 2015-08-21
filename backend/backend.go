@@ -15,27 +15,6 @@ func BufferFile(id int64) string {
 	return path.Join(core.Home, "buffers", strconv.FormatInt(id, 10))
 }
 
-/*
-// Cmd runner with File based backend
-// if title == nil then will show the command name
-func NewFileBackendCmd(args []string, dir string, viewId int, title *string) (*BackendCmd, error) {
-	loc := BufferFile(viewId)
-	os.Remove(loc)
-	b, err := NewFileBackend(loc, viewId)
-	if err != nil {
-		return nil, err
-	}
-	c, err := newBackendCmd(args, dir, viewId, title)
-	if err != nil {
-		return nil, err
-	}
-	c.Backend = b
-	c.Starter = &FileCmdStarter{}
-
-	go c.Start()
-	return c, nil
-}*/
-
 // NewMemBackendCmd creates a Comand runner backed by an In-memory based backend
 // if title == nil then will show the command name
 func NewMemBackendCmd(args []string, dir string, viewId int64, title *string) (*BackendCmd, error) {
