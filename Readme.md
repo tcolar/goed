@@ -45,7 +45,7 @@ setups so far:
 
 OSX (barely tested so far) :
 - OSX / Iterm2 : Pretty good, can't use right mouse click.
-- OSX / Term.app : Not very good, does not seem to evesupport mouse ??n 
+- OSX / Term.app : Not very good, does not seem to even support mouse ?? 
 
 ### Manual
 TODO: How does it work, UI usage, shortcuts etc ....
