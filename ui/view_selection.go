@@ -229,13 +229,13 @@ func (v *View) OpenSelection(newView bool) {
 	isDir := false
 	loc, isDir = core.LookupLocation(v.WorkDir(), loc)
 	vv := ed.ViewByLoc(loc)
-	if vv != nil {
+	if vv > 0 {
 		// Already open
-		ed.ActivateView(vv, line, col)
+		ed.ViewActivate(vv, line, col)
 		return
 	}
 	v2 := ed.NewView(loc)
-	if _, err := ed.Open(loc, v2, v.WorkDir(), false); err != nil {
+	if _, err := ed.Open(loc, v2.Id(), v.WorkDir(), false); err != nil {
 		ed.SetStatusErr(err.Error())
 		return
 	}
@@ -248,5 +248,5 @@ func (v *View) OpenSelection(newView bool) {
 	} else {
 		ed.ReplaceView(v, v2)
 	}
-	ed.ActivateView(v2, line, col)
+	ed.ViewActivate(v2.Id(), line, col)
 }

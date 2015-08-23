@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/backend"
@@ -51,6 +52,8 @@ func (c *Cmdbar) RunCmd() {
 	args := parts[1:]
 	var err error
 	switch parts[0] {
+	case "t":
+		c.test()
 	case "o", "open":
 		err = c.open(args)
 	case ":", "line":
@@ -62,7 +65,7 @@ func (c *Cmdbar) RunCmd() {
 		query := string(c.Cmd[2:])
 		c.Search(query)
 	default:
-		c.exec(args)
+		c.exec(parts)
 	}
 	if err == nil {
 		actions.CmdbarEnable(false)
@@ -79,11 +82,12 @@ func (c *Cmdbar) open(args []string) error {
 	ed := core.Ed.(*Editor)
 	v := ed.NewView(args[0])
 	ed.InsertViewSmart(v)
-	_, err := ed.Open(args[0], v, ed.CurView().WorkDir(), true)
+	cv := ed.CurView()
+	_, err := ed.Open(args[0], cv.Id(), cv.WorkDir(), true)
 	if err != nil {
 		return err
 	}
-	ed.ActivateView(v, 0, 0)
+	ed.ViewActivate(cv.Id(), 0, 0)
 	return nil
 }
 
@@ -98,8 +102,9 @@ func (c *Cmdbar) line(args []string) {
 		ed.SetStatusErr("Expected a line number argument.")
 		return
 	}
-	if ed.curView != nil {
-		actions.ViewMoveCursor(ed.curView.Id(), l-ed.curView.CurLine()-1, 0)
+	v := ed.ViewById(ed.CurViewId())
+	if v != nil {
+		actions.ViewMoveCursor(ed.CurViewId(), l-v.CurLine()-1, 0)
 	}
 }
 
@@ -107,10 +112,28 @@ func (c *Cmdbar) Search(query string) {
 	c.exec([]string{"grep", "-rn", query})
 }
 
+func (c *Cmdbar) test() {
+	ed := core.Ed.(*Editor)
+	workDir := "."
+	if ed.CurView() != nil {
+		workDir = ed.CurView().WorkDir()
+	}
+	v := ed.AddViewSmart()
+	b, err := backend.NewMemBackendCmd([]string{"bash"}, workDir, v.Id(), nil)
+	if err != nil {
+		ed.SetStatusErr(err.Error())
+	}
+	v.backend = b
+	time.Sleep(2 * time.Second)
+	b.SendBytes([]byte("df\n"))
+	time.Sleep(2 * time.Second)
+	b.SendBytes([]byte("exit\n"))
+}
+
 func (c *Cmdbar) exec(args []string) {
 	ed := core.Ed.(*Editor)
 	workDir := "."
-	if ed.curView != nil {
+	if ed.CurView() != nil {
 		workDir = ed.CurView().WorkDir()
 	}
 	v := ed.AddViewSmart()

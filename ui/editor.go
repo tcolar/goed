@@ -23,18 +23,20 @@ type Editor struct {
 	Fg, Bg     core.Style
 	theme      *core.Theme
 	Cols       []*Col
-	curView    *View
+	curViewId  int64
 	CurCol     *Col
 	cmdOn      bool
 	pctw, pcth float64
 	evtState   *EvtState
 	term       core.Term
+	views      map[int64]*View
 }
 
 func NewEditor() *Editor {
 	return &Editor{
 		term:   core.NewTermBox(),
 		config: core.LoadConfig(core.ConfFile),
+		views:  map[int64]*View{},
 	}
 }
 
@@ -43,6 +45,7 @@ func NewMockEditor() *Editor {
 	return &Editor{
 		term:   core.NewMockTerm(),
 		config: core.LoadConfig("config.toml"),
+		views:  map[int64]*View{},
 	}
 }
 
@@ -97,11 +100,11 @@ func (e *Editor) Start(locs []string) {
 	for _, dir := range dirs {
 		view := e.NewView(dir)
 		view.HeightRatio = ratio
-		e.Cols[0].Views = append(e.Cols[0].Views, view)
-		e.Open(dir, view, "", true)
+		e.Cols[0].Views = append(e.Cols[0].Views, view.Id())
+		e.Open(dir, view.Id(), "", true)
 	}
 	e.CurCol = e.Cols[0]
-	e.curView = e.CurCol.Views[0]
+	e.curViewId = e.CurCol.Views[0]
 	if len(files) > 0 {
 		e.CurCol.WidthRatio = 0.2
 		c := &Col{WidthRatio: 0.8}
@@ -109,12 +112,12 @@ func (e *Editor) Start(locs []string) {
 		for _, f := range files {
 			view := e.NewView(f)
 			view.HeightRatio = ratio
-			c.Views = append(c.Views, view)
-			e.Open(f, view, "", true)
+			c.Views = append(c.Views, view.Id())
+			e.Open(f, view.Id(), "", true)
 		}
 		e.Cols = append(e.Cols, c)
 		e.CurCol = c
-		e.curView = c.Views[0]
+		e.curViewId = c.Views[0]
 	}
 
 	actions.EdResize(e.term.Size())
@@ -129,21 +132,21 @@ func (e *Editor) Start(locs []string) {
 }
 
 // Open opens a given location in the editor (in the given view)
-// or new view if view is nil
-func (e Editor) Open(loc string, view core.Viewable, rel string, create bool) (core.Viewable, error) {
+// or new view if viewId < 0
+func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, error) {
 	if len(rel) > 0 && !strings.HasPrefix(loc, string(os.PathSeparator)) {
 		loc = path.Join(rel, loc)
 	}
 	// make it absolute
 	loc, err := filepath.Abs(loc)
 	if err != nil {
-		return nil, err
+		return -1, err
 	}
 	stat, err := os.Stat(loc)
 	newFile := false
 	if os.IsNotExist(err) {
 		if !create {
-			return nil, err
+			return -1, err
 		}
 		newFile = true
 	}
@@ -153,9 +156,12 @@ func (e Editor) Open(loc string, view core.Viewable, rel string, create bool) (c
 		title += string(os.PathSeparator)
 	}
 	nv := false
-	if view == nil {
+	var view core.Viewable
+	if viewId < 0 {
 		view = e.NewFileView(loc)
 		nv = true
+	} else {
+		view = e.ViewById(viewId)
 	}
 	view.Reset()
 	view.SetTitle(title)
@@ -165,13 +171,13 @@ func (e Editor) Open(loc string, view core.Viewable, rel string, create bool) (c
 		err = e.openDir(loc, view)
 	}
 	if err != nil {
-		return nil, err
+		return -1, err
 	}
 	if nv {
 		e.InsertView(view.(*View), e.CurView().(*View), 0.2)
 	}
 	view.SetWorkDir(filepath.Dir(loc))
-	return view, nil
+	return view.Id(), nil
 }
 
 // OpenDir opens a directory listing
@@ -236,7 +242,15 @@ func (e Editor) Theme() *core.Theme {
 }
 
 func (e Editor) CurView() core.Viewable {
-	return e.curView
+	v, found := e.views[e.curViewId]
+	if !found {
+		return nil
+	}
+	return v
+}
+
+func (e Editor) CurViewId() int64 {
+	return e.curViewId
 }
 
 func (e Editor) SetCursor(y, x int) {
@@ -257,8 +271,9 @@ func (e *Editor) TermFlush() {
 
 func (e *Editor) QuitCheck() bool {
 	for _, c := range e.Cols {
-		for _, v := range c.Views {
-			if !v.canClose() {
+		for _, vi := range c.Views {
+			v, found := e.views[vi]
+			if found && !v.canClose() {
 				return false
 			}
 		}
@@ -279,7 +294,7 @@ type autoScrollAction struct {
 }
 
 func (e autoScrollAction) Run() error {
-	v := core.Ed.CurView().(*View)
+	v := core.Ed.ViewById(core.Ed.CurViewId()).(*View)
 	if v == nil {
 		return nil
 	}

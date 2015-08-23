@@ -53,7 +53,7 @@ func (e *Editor) EventLoop() {
 				if e.cmdOn {
 					e.Cmdbar.Event(e, &ev)
 				} else if e.CurView != nil {
-					e.curView.Event(e, &ev)
+					e.CurView().(*View).Event(e, &ev)
 				}
 			}
 		case termbox.EventMouse:
@@ -158,8 +158,8 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 				}
 			}
 			actions.ViewCopy(vid)
-		case termbox.KeyCtrlF:
-			//			actions.ViewSearch(vid)
+		//case termbox.KeyCtrlF:
+		//	actions.External("search.ank")
 		case termbox.KeyCtrlO:
 			actions.ViewOpenSelection(vid, true)
 		case termbox.KeyCtrlQ:
@@ -172,7 +172,8 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			actions.ViewPaste(vid)
 			dirty = true
 		case termbox.KeyCtrlW:
-			actions.EdDelViewCheck(e.curView.Id())
+			actions.EdDelViewCheck(e.curViewId)
+			return
 		case termbox.KeyCtrlX:
 			actions.ViewCut(vid)
 			dirty = true
@@ -243,7 +244,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		switch ev.Key {
 		case MouseLeftDbl:
 			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
-				actions.EdSwapViews(e.CurView().Id(), vid)
+				actions.EdSwapViews(e.CurViewId(), vid)
 				actions.EdActivateView(vid, v.CurLine(), v.CurCol())
 				e.evtState.MovingView = false
 				actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))

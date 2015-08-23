@@ -18,7 +18,7 @@ func TestView(t *testing.T) {
 	v := Ed.NewView("")
 	v.SetBounds(0, 0, 25, 40)
 
-	_, err = Ed.Open("../test_data/file1.txt", v, "", false)
+	_, err = Ed.Open("../test_data/file1.txt", v.Id(), "", false)
 	assert.Nil(t, err, "open")
 
 	v.slice = v.backend.Slice(v.offy, v.offx, v.offy+v.LastViewLine(), v.offx+v.LastViewCol())
@@ -98,7 +98,7 @@ func TestViewSelections(t *testing.T) {
 	Ed := core.Ed.(*Editor)
 	v := Ed.NewView("")
 	v.SetBounds(5, 5, 30, 140)
-	_, err = Ed.Open("../test_data/file1.txt", v, "", false)
+	_, err = Ed.Open("../test_data/file1.txt", v.Id(), "", false)
 	assert.Nil(t, err, "open")
 	v.slice = v.backend.Slice(v.offy, v.offx, v.offy+v.LastViewLine(), v.offx+v.LastViewCol())
 
@@ -165,7 +165,7 @@ func TestViewEdition(t *testing.T) {
 	Ed := core.Ed.(*Editor)
 	v := Ed.NewView("")
 	v.SetBounds(5, 5, 30, 140)
-	_, err = Ed.Open("../test_data/empty.txt", v, "", false)
+	_, err = Ed.Open("../test_data/empty.txt", v.Id(), "", false)
 	assert.Nil(t, err, "open")
 	v.slice = v.backend.Slice(v.offy, v.offx, v.offy+v.LastViewLine(), v.offx+v.LastViewCol())
 
@@ -208,7 +208,7 @@ func TestDelete(t *testing.T) {
 	Ed := core.Ed.(*Editor)
 	v := Ed.NewView("")
 	v.SetBounds(5, 5, 30, 140)
-	_, err = Ed.Open("../test_data/empty.txt", v, "", false)
+	_, err = Ed.Open("../test_data/empty.txt", v.Id(), "", false)
 	assert.Nil(t, err, "open")
 	v.slice = v.backend.Slice(v.offy, v.offx, v.offy+v.LastViewLine(), v.offx+v.LastViewCol())
 
@@ -245,7 +245,7 @@ func TestDelete(t *testing.T) {
 	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
 	assert.Equal(t, s, "")
 
-	_, err = Ed.Open("../test_data/no_eol.txt", v, "", false)
+	_, err = Ed.Open("../test_data/no_eol.txt", v.Id(), "", false)
 	assert.Nil(t, err, "open")
 	v.slice = v.backend.Slice(v.offy, v.offx, v.offy+v.LastViewLine(), v.offx+v.LastViewCol())
 	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())

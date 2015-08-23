@@ -2,19 +2,19 @@ package core
 
 // Editable provides editor features entry poins.
 type Editable interface {
-	ActivateView(v Viewable, y, x int)
 	CmdbarToggle()
 	Config() Config
 	CurColIndex() int
-	CurView() Viewable
+	CurViewId() int64
 	DelColCheckByIndex(col int)
-	DelView(view Viewable, terminate bool)
-	DelViewCheck(view Viewable)
+	DelView(viewId int64, terminate bool)
+	DelViewCheck(viewId int64)
 	Dispatch(action Action)
 	// CmdOn indicates whether the CommandBar is currently active
 	CmdOn() bool
-	// Open opens a file in the given view.
-	Open(loc string, view Viewable, rel string, create bool) (Viewable, error)
+	// Open opens a file in the given view (new view if viewid<0)
+	// create -> create file at loc if does not exist yet
+	Open(loc string, viewId int64, rel string, create bool) (int64, error)
 	QuitCheck() bool
 	// Render updates the whole editor UI
 	Render()
@@ -27,7 +27,7 @@ type Editable interface {
 	SetCurView(id int64) error
 	// SetCmdOn activates or desactives the CommandBar
 	SetCmdOn(v bool)
-	SwapViews(v1, v2 Viewable)
+	SwapViews(v1, v2 int64)
 	Start(locs []string)
 	TermChar(y, x int, c rune)
 	TermFB(fg, bg Style)
@@ -36,8 +36,9 @@ type Editable interface {
 	TermStr(y, x int, s string)
 	TermStrv(y, x int, s string)
 	Theme() *Theme
+	ViewActivate(v int64, y, x int)
 	// ViewByLoc finds if there is an existing view for the given file (loc)
-	ViewByLoc(loc string) Viewable
+	ViewByLoc(loc string) int64
 	ViewById(id int64) Viewable
 	// Move a view
 	ViewMove(y1, x1, y2, x2 int)

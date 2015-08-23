@@ -31,7 +31,11 @@ func (s *Statusbar) RenderPos() {
 	e := core.Ed
 	t := e.Theme()
 	e.TermFB(t.StatusbarText, t.Statusbar.Bg)
-	v := e.CurView().(*View)
+	vid := e.CurViewId()
+	if vid < 0 {
+		return
+	}
+	v := e.ViewById(vid).(*View)
 	if v == nil || v.Backend() == nil {
 		return
 	}

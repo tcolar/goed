@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -11,10 +12,10 @@ import (
 // Col represent a column of the editor (a set of views)
 type Col struct {
 	WidthRatio float64
-	Views      []*View
+	Views      []int64
 }
 
-func (e *Editor) NewCol(width float64, views []*View) *Col {
+func (e *Editor) NewCol(width float64, views []int64) *Col {
 	if len(views) < 1 {
 		panic("Column must have at least one view !")
 	}
@@ -34,8 +35,9 @@ func (e *Editor) WidgetAt(y, x int) Renderer {
 		return e.Statusbar
 	}
 	for _, c := range e.Cols {
-		for _, v := range c.Views {
-			if x >= v.x1 && x <= v.x2 && y >= v.y1 && y <= v.y2 {
+		for _, vid := range c.Views {
+			v, found := e.views[vid]
+			if found && x >= v.x1 && x <= v.x2 && y >= v.y1 && y <= v.y2 {
 				return v
 			}
 		}
@@ -49,12 +51,12 @@ func (e Editor) Render() {
 
 	for _, c := range e.Cols {
 		for _, v := range c.Views {
-			v.Render()
+			e.ViewById(v).Render()
 		}
 	}
 
 	// cursor
-	v := e.curView
+	v := e.CurView().(*View)
 	cc, cl := v.CurCol(), v.CurLine()
 	c, _, _ := v.CurChar()
 	// With some terminals & color schemes the cursor might be "invisible" if we are at a
@@ -98,7 +100,11 @@ func (e *Editor) Resize(height, width int) {
 			w = width - wc // las column gets rest of width
 			c.WidthRatio = 1.0 - wr
 		}
-		for j, v := range c.Views {
+		for j, vi := range c.Views {
+			v, found := e.views[vi]
+			if !found {
+				continue
+			}
 			h := int(float64(height-2) * v.HeightRatio)
 			if h < 1 {
 				h = 1
@@ -121,11 +127,11 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 	h, w := e.term.Size()
 	v1 := e.WidgetAt(y1, x1).(*View)
 	v2 := e.WidgetAt(y2, x2).(*View)
-	c1 := e.ViewColumn(v1)
-	c2 := e.ViewColumn(v2)
+	c1 := e.ViewColumn(v1.Id())
+	c2 := e.ViewColumn(v2.Id())
 	c1i := e.ColIndex(c1)
-	v1i := e.ViewIndex(c1, v1)
-	v2i := e.ViewIndex(c2, v2)
+	v1i := e.ViewIndex(c1, v1.Id())
+	v2i := e.ViewIndex(c2, v2.Id())
 	c2i := e.ColIndex(c2)
 	onSep := x2 == v2.x1 // dropped on a column "scrollbar"
 	if x1 == x2 && y1 == y2 {
@@ -140,33 +146,33 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 				// Reducing a view
 				ratio := float64(y2-y1) / float64(h-2)
 				v1.HeightRatio -= ratio
-				c1.Views[v1i-1].HeightRatio += ratio // giving space to prev view
+				e.views[c1.Views[v1i-1]].HeightRatio += ratio // giving space to prev view
 			}
 		} else if c1i == c2i && v2i == v1i-1 && y2 != v2.y1 {
 			// Expanding the view
 			ratio := float64(y1-y2) / float64(h-2)
 			v1.HeightRatio += ratio
-			c1.Views[v1i-1].HeightRatio -= ratio // taking space from prev view
+			e.views[c1.Views[v1i-1]].HeightRatio -= ratio // taking space from prev view
 		} else if c1i == c2i {
 			// moved within same column
 			i1, i2 := v1i, v2i
 			if i1 < i2 { // down
 				copy(c1.Views[i1:i2], c2.Views[i1+1:i2+1])
-				c1.Views[v2i] = v1
+				c1.Views[v2i] = v1.Id()
 			} else { // up
 				copy(c1.Views[i2+1:i1+1], c1.Views[i2:i1])
-				c1.Views[v2i+1] = v1
+				c1.Views[v2i+1] = v1.Id()
 			}
 		} else {
 			// moved to a different column
 			// taking space out of target view
 			ratio := float64(y2-v2.y1) / float64(v2.y2-v2.y1)
-			e.DelView(v1, false)
+			e.DelView(v1.Id(), false)
 			v1.HeightRatio = v2.HeightRatio * (1.0 - ratio)
 			v2.HeightRatio *= ratio
-			c2.Views = append(c2.Views, nil)
+			c2.Views = append(c2.Views, 0)
 			copy(c2.Views[v2i+2:], c2.Views[v2i+1:])
-			c2.Views[v2i+1] = v1
+			c2.Views[v2i+1] = v1.Id()
 		}
 	} else {
 		// Moving a whole column or a view to it's own column
@@ -174,8 +180,8 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 			// Moving a view to it's own column
 			ratio := float64(x2-v2.x1) / float64(v2.x2-v2.x1)
 			nc := e.AddCol(c2, 1.0-ratio)
-			e.DelView(v1, false)
-			nc.Views[0] = v1
+			e.DelView(v1.Id(), false)
+			nc.Views[0] = v1.Id()
 		} else if c1i == c2i {
 			// Reducing a column
 			if c1i > 0 {
@@ -206,10 +212,10 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 }
 
 // ViewColumn returns the column that is holding a given view
-func (e *Editor) ViewColumn(v *View) *Col {
+func (e *Editor) ViewColumn(vid int64) *Col {
 	for _, c := range e.Cols {
 		for _, view := range c.Views {
-			if v == view {
+			if vid == view {
 				return c
 			}
 		}
@@ -218,9 +224,9 @@ func (e *Editor) ViewColumn(v *View) *Col {
 }
 
 // ViewIndex returns the index of a view in the column
-func (e *Editor) ViewIndex(col *Col, view *View) int {
+func (e *Editor) ViewIndex(col *Col, vid int64) int {
 	for i, v := range col.Views {
-		if v == view {
+		if v == vid {
 			return i
 		}
 	}
@@ -239,16 +245,16 @@ func (e *Editor) ColIndex(col *Col) int {
 
 // ViewNavigate navigates from he current view (left, right, up, down)
 func (e *Editor) ViewNavigate(mvmt core.CursorMvmt) {
-	v := e.curView
+	v := e.CurView().(*View)
 	if v == nil {
 		return
 	}
-	c := e.ViewColumn(v)
+	c := e.ViewColumn(v.Id())
 	if c == nil {
 		return
 	}
 	col := e.ColIndex(c)
-	view := e.ViewIndex(e.Cols[col], v)
+	view := e.ViewIndex(e.Cols[col], v.Id())
 	if col < 0 || view < 0 {
 		return
 	}
@@ -268,8 +274,8 @@ func (e *Editor) ViewNavigate(mvmt core.CursorMvmt) {
 	if view >= len(e.Cols[col].Views) {
 		view = len(e.Cols[col].Views) - 1
 	}
-	tv := e.Cols[col].Views[view]
-	e.ActivateView(tv, tv.CurLine(), tv.CurCol())
+	tv, _ := e.views[e.Cols[col].Views[view]]
+	e.ViewActivate(tv.Id(), tv.CurLine(), tv.CurCol())
 }
 
 func (e *Editor) CurColIndex() int {
@@ -281,7 +287,7 @@ func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	r := toCol.WidthRatio
 	nv := e.NewView("")
 	nv.HeightRatio = 1.0
-	c := e.NewCol(r*ratio, []*View{nv})
+	c := e.NewCol(r*ratio, []int64{nv.Id()})
 	toCol.WidthRatio = r - (r * ratio)
 	// Insert it after curcol
 	i := e.ColIndex(toCol) + 1
@@ -289,7 +295,7 @@ func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	copy(e.Cols[i+1:], e.Cols[i:])
 	e.Cols[i] = c
 
-	e.ActivateView(nv, 0, 0)
+	e.ViewActivate(nv.Id(), 0, 0)
 	e.Resize(e.term.Size())
 	return c
 }
@@ -300,9 +306,10 @@ func (e *Editor) AddViewSmart() *View {
 	var emptiestCol *Col
 	for _, c := range e.Cols {
 		// if we have room for a new column,favor that
-		if c.Views[0].x2-c.Views[0].x1 > 120 {
+		v, _ := e.views[c.Views[0]]
+		if v.x2-v.x1 > 120 {
 			nc := e.AddCol(c, 0.5)
-			nv = nc.Views[0]
+			nv = e.views[nc.Views[0]]
 			break
 		}
 		// otherwise favor emptiest, most to the right col
@@ -313,7 +320,8 @@ func (e *Editor) AddViewSmart() *View {
 	if nv == nil {
 		// will take some of emptiest col tallest view
 		var emptiestView *View
-		for _, v := range emptiestCol.Views {
+		for _, vid := range emptiestCol.Views {
+			v, _ := e.views[vid]
 			if emptiestView == nil || emptiestView.HeightRatio <= v.HeightRatio {
 				emptiestView = v
 			}
@@ -321,7 +329,7 @@ func (e *Editor) AddViewSmart() *View {
 		// TODO : consider buffer text length ?
 		nv = e.AddView(emptiestView, 0.5)
 	}
-	e.ActivateView(nv, 0, 0)
+	e.ViewActivate(nv.Id(), 0, 0)
 	e.Resize(e.term.Size())
 	return nv
 }
@@ -335,7 +343,7 @@ func (e *Editor) InsertViewSmart(view *View) {
 func (e *Editor) AddView(toView *View, ratio float64) *View {
 	nv := e.NewView("")
 	e.InsertView(nv, toView, ratio)
-	e.ActivateView(nv, 0, 0)
+	e.ViewActivate(nv.Id(), 0, 0)
 	return nv
 }
 
@@ -346,12 +354,12 @@ func (e *Editor) InsertView(view, toView *View, ratio float64) {
 	r := toView.HeightRatio
 	view.HeightRatio = r * ratio
 	toView.HeightRatio = r - (r * ratio)
-	col := e.ViewColumn(toView)
+	col := e.ViewColumn(toView.Id())
 	// Insert it at after toView
-	i := e.ViewIndex(col, toView) + 1
-	col.Views = append(col.Views, nil)
+	i := e.ViewIndex(col, toView.Id()) + 1
+	col.Views = append(col.Views, 0)
 	copy(col.Views[i+1:], col.Views[i:])
-	col.Views[i] = view
+	col.Views[i] = view.Id()
 	e.Resize(e.term.Size())
 }
 
@@ -361,10 +369,10 @@ func (e *Editor) ReplaceView(oldView, newView *View) {
 	newView.y1 = oldView.y1
 	newView.y2 = oldView.y2
 	newView.HeightRatio = oldView.HeightRatio
-	col := e.ViewColumn(oldView)
-	i := e.ViewIndex(col, oldView)
-	col.Views[i] = newView
-	e.TerminateView(oldView)
+	col := e.ViewColumn(oldView.Id())
+	i := e.ViewIndex(col, oldView.Id())
+	col.Views[i] = newView.Id()
+	e.TerminateView(oldView.Id())
 }
 
 func (e *Editor) DelColCheckByIndex(index int) {
@@ -386,8 +394,8 @@ func (e *Editor) DelCol(col *Col, terminateViews bool) {
 				e.Cols[i+1].WidthRatio += c.WidthRatio
 				e.CurCol = e.Cols[i+1]
 			}
-			v := e.CurCol.Views[0]
-			e.ActivateView(v, v.CurLine(), v.CurCol())
+			v := e.views[e.CurCol.Views[0]]
+			e.ViewActivate(v.Id(), v.CurLine(), v.CurCol())
 			e.Cols = append(e.Cols[:i], e.Cols[i+1:]...)
 			break
 		}
@@ -402,10 +410,13 @@ func (e *Editor) DelCol(col *Col, terminateViews bool) {
 	e.Resize(e.term.Size())
 }
 
-func (e *Editor) DelView(v core.Viewable, terminate bool) {
-	view := v.(*View)
-	c := e.ViewColumn(view)
-	if c == nil || (len(e.Cols) == 1 && len(c.Views) <= 1) {
+func (e *Editor) DelView(viewId int64, terminate bool) {
+	c := e.ViewColumn(viewId)
+	if c == nil {
+		e.TerminateView(viewId)
+		return
+	}
+	if len(e.Cols) == 1 && len(c.Views) <= 1 {
 		e.SetStatusErr("Only one view left !")
 		return
 	}
@@ -416,53 +427,62 @@ func (e *Editor) DelView(v core.Viewable, terminate bool) {
 	}
 	// otherwise remove curview and reassign space
 	var prev *View
-	for i, v := range c.Views {
-		if v == view {
+	for i, vid := range c.Views {
+		if vid == viewId {
+			v, _ := e.views[vid]
 			if prev != nil {
 				prev.HeightRatio += v.HeightRatio
-				e.curView = prev
+				e.curViewId = prev.Id()
 			} else {
-				c.Views[i+1].HeightRatio += v.HeightRatio
-				e.curView = c.Views[i+1]
+				e.views[c.Views[i+1]].HeightRatio += v.HeightRatio
+				e.curViewId = c.Views[i+1]
 			}
 			c.Views = append(c.Views[:i], c.Views[i+1:]...)
-			cv := e.curView
-			e.ActivateView(cv, cv.CurLine(), cv.CurCol())
+			cv, _ := e.views[e.curViewId]
+			e.ViewActivate(cv.Id(), cv.CurLine(), cv.CurCol())
 			if terminate {
-				e.TerminateView(v)
+				e.TerminateView(vid)
 			}
 			break
 		}
-		prev = c.Views[i]
+		prev, _ = e.views[c.Views[i]]
 	}
 	e.Resize(e.term.Size())
 }
 
-func (e *Editor) TerminateView(v *View) {
-	if v == nil {
+func (e *Editor) TerminateView(vid int64) {
+	v, found := e.views[vid]
+	if !found {
 		return
 	}
 	if v.backend != nil {
 		v.backend.Close()
 	}
-	actions.UndoClear(v.Id())
-	v = nil
+	actions.UndoClear(vid)
+	delete(e.views, vid)
 }
 
 // Delete (close) a view, but with dirty check
-func (e *Editor) DelViewCheck(v core.Viewable) {
-	view := v.(*View)
+func (e *Editor) DelViewCheck(viewId int64) {
+	view := e.ViewById(viewId).(*View)
+	if view == nil {
+		return
+	}
 	if !view.canClose() {
 		e.SetStatusErr("Unsaved changes. Save or request close again.")
 		return
 	}
-	e.DelView(v, true)
+	e.DelView(view.Id(), true)
 }
 
 // Delete (close) a col, but with dirty check
 func (e *Editor) DelColCheck(c *Col) {
 	ok := true
-	for _, v := range c.Views {
+	for _, vid := range c.Views {
+		v, found := e.views[vid]
+		if !found {
+			continue
+		}
 		ok = ok && v.canClose()
 	}
 	if !ok {
@@ -472,9 +492,13 @@ func (e *Editor) DelColCheck(c *Col) {
 	e.DelCol(c, true)
 }
 
-func (e *Editor) ActivateView(v core.Viewable, cursory, cursorx int) {
-	e.curView = v.(*View)
-	e.CurCol = e.ViewColumn(e.curView)
+func (e *Editor) ViewActivate(viewId int64, cursory, cursorx int) {
+	v := e.ViewById(viewId).(*View)
+	if v == nil {
+		return
+	}
+	e.curViewId = viewId
+	e.CurCol = e.ViewColumn(e.curViewId)
 	v.MoveCursor(cursory-v.CurLine(), cursorx-v.CurCol())
 }
 
@@ -483,46 +507,44 @@ func (e *Editor) SetCurView(id int64) error {
 	if v == nil {
 		return fmt.Errorf("No such view %d", id)
 	}
-	e.ActivateView(v, 0, 0)
+	e.ViewActivate(v.Id(), 0, 0)
 	return nil
 }
 
 func (e Editor) ViewById(id int64) core.Viewable {
-	for _, c := range e.Cols {
-		for _, v := range c.Views {
-			if v.Id() == id {
-				return v
-			}
-		}
+	v, found := e.views[id]
+	if !found {
+		log.Printf("View not found %v, \n", id)
 	}
-	return nil
+	return v
 }
 
 // ViewByLoc returns the view matching the given location
-// or nil if no match
-func (e *Editor) ViewByLoc(loc string) core.Viewable {
+// or -1 if no match
+func (e *Editor) ViewByLoc(loc string) int64 {
 	if len(loc) == 0 {
-		return nil
+		return -1
 	}
-	for _, c := range e.Cols {
-		for _, v := range c.Views {
-			if v.backend.SrcLoc() == loc {
-				return v
-			}
+	for _, v := range e.views {
+		if v.backend.SrcLoc() == loc {
+			return v.Id()
 		}
 	}
-	return nil
+	return -1
 }
 
 // SwapView swaps 2 views (UI wise)
-func (e *Editor) SwapViews(vv1, vv2 core.Viewable) {
-	v1 := vv1.(*View)
-	v2 := vv2.(*View)
-	c1 := e.ViewColumn(v1)
-	i1 := e.ViewIndex(c1, v1)
-	c2 := e.ViewColumn(v2)
-	i2 := e.ViewIndex(c2, v2)
-	c1.Views[i1], c2.Views[i2] = v2, v1
+func (e *Editor) SwapViews(vv1, vv2 int64) {
+	v1 := e.ViewById(vv1).(*View)
+	v2 := e.ViewById(vv2).(*View)
+	if v1 == nil || v2 == nil {
+		return
+	}
+	c1 := e.ViewColumn(v1.Id())
+	i1 := e.ViewIndex(c1, v1.Id())
+	c2 := e.ViewColumn(v2.Id())
+	i2 := e.ViewIndex(c2, v2.Id())
+	c1.Views[i1], c2.Views[i2] = vv2, vv1
 	v1.HeightRatio, v2.HeightRatio = v2.HeightRatio, v1.HeightRatio
 	v1.y1, v1.x1, v2.y1, v2.x1 = v2.y1, v2.x1, v1.y1, v1.x1
 	v1.y2, v1.x2, v2.y2, v2.x2 = v2.y2, v2.x2, v1.y2, v1.x2
