@@ -52,7 +52,7 @@ type Theme struct {
 }
 
 func ReadDefaultTheme() (*Theme, error) {
-	return ReadTheme(path.Join(Home, "standard", "themes", "default.toml"))
+	return ReadTheme(path.Join(Home, "default", "themes", "default.toml"))
 }
 
 func ReadTheme(loc string) (*Theme, error) {

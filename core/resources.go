@@ -24,7 +24,7 @@ func UpdateResources() {
 			asset, _ := Asset(nm)
 			os.MkdirAll(path.Dir(target), 0750)
 			var perm os.FileMode = 0640
-			if strings.HasPrefix(nm, "res/standard/actions/") {
+			if strings.HasPrefix(nm, "res/default/actions/") {
 				perm = 0750
 			}
 			err := ioutil.WriteFile(target, asset, perm)
@@ -36,7 +36,7 @@ func UpdateResources() {
 		loc := path.Join(Home, "config.toml")
 		// If no custom config file yet, create one
 		if _, err := os.Stat(loc); os.IsNotExist(err) {
-			err := CopyFile(path.Join(Home, "standard", "config.toml"), loc)
+			err := CopyFile(path.Join(Home, "default", "config.toml"), loc)
 			if err != nil {
 				panic(err)
 			}
@@ -50,7 +50,7 @@ func UpdateResources() {
 func FindResource(relPath string) (absPath string) {
 	absPath = path.Join(Home, relPath)
 	if _, err := os.Stat(absPath); os.IsNotExist(err) {
-		return path.Join(Home, "standard", relPath)
+		return path.Join(Home, "default", relPath)
 	}
 	return absPath
 }
