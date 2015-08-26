@@ -9,6 +9,7 @@ func init() {
 	Syntaxes = map[string]Syntax{}
 	initSyntax(&SyntaxGeneric) // Default
 	initSyntax(&SyntaxActionScript)
+	initSyntax(&SyntaxAnko)
 	initSyntax(&SyntaxAxon)
 	initSyntax(&SyntaxBat)
 	initSyntax(&SyntaxCpp)
