@@ -45,6 +45,7 @@ func (e *Editor) NewView(loc string) *View {
 		workDir:     d,
 		slice:       core.NewSlice(0, 0, 0, 0, [][]rune{}),
 	}
+	e.views[v.id] = v
 	v.backend, _ = backend.NewMemBackend(loc, v.Id())
 	return v
 }
@@ -52,9 +53,16 @@ func (e *Editor) NewView(loc string) *View {
 // NewFileView creates a view for a given file
 func (e Editor) NewFileView(loc string) *View {
 	v := e.NewView(loc)
-	e.Open(loc, v, "", true)
+	e.Open(loc, v.Id(), "", true)
 	return v
 }
+
+// NewFileView creates a new Terminal view
+/*func (e Editor) NewTerminalView() *View {
+	v := e.NewView(loc)
+	v.backend, _ = backend.NewMemBackend("", v.Id())
+	return v
+}*/
 
 func (e Editor) genViewId() int64 {
 	return time.Now().UnixNano()
@@ -71,7 +79,7 @@ func (v *View) Render() {
 	e.TermFB(t.Viewbar.Fg, t.Viewbar.Bg)
 	e.TermFill(t.Viewbar.Rune, v.y1, v.x1+1, v.y1, v.x2)
 	fg := t.ViewbarText
-	if v.Id() == e.CurView().Id() {
+	if v.Id() == e.CurViewId() {
 		fg = fg.WithAttr(core.Bold)
 	}
 	e.TermFB(fg, t.Viewbar.Bg)
