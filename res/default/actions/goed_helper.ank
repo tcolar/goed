@@ -1,0 +1,28 @@
+# Goed helper module for anko scripts.
+var exec = import("os/exec")
+
+module Goed {
+	# Goed view ID 
+	func view() {
+		return toInt(os.Getenv("GOED_VIEW"))
+	}
+	
+	# Goed instance ID
+	func instance() {
+		return toInt(os.Getenv("GOED_INSTANCE"))
+	}
+	
+	# Runs a command, exit(1) if fails
+	func run(args) {
+		cmd = exec.Command(args[0])
+		cmd.Args = args
+		println(args)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			println(err)
+			os.Exit(1)
+		}
+	}
+}

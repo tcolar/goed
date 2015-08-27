@@ -1,0 +1,22 @@
+#!anko
+
+load("goed_helper.ank")
+
+var os, flag, exec = import("os"), import("flag"), import("os/exec")
+
+# Parse args / flags
+ignoreCase = flag.Bool("i", false, "ignoreCase")
+flag.Parse()
+loc = flag.Args()[0]
+args = ["grep"]
+if ignoreCase == true {
+	args += ["-i"]
+}
+if len(loc) > 0 {
+	args += ["-r", loc]
+} else {
+	args += [loc]
+}
+
+# Run search
+Goed.run(toStringSlice(args))
