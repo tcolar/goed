@@ -197,3 +197,16 @@ func Cleanup() {
 	}
 	os.Remove(Socket)
 }
+
+func EnvWith(custom []string) []string {
+	env := os.Environ()
+	for i, e := range env {
+		key := strings.Split(e, "=")[0] + "="
+		for _, c := range custom {
+			if strings.HasPrefix(c, key) {
+				env[i] = c
+			}
+		}
+	}
+	return env
+}

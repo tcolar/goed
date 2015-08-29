@@ -8,9 +8,16 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/kr/pty"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
+
+// TODO : Handle VT100 codes
+// TODO : Handle color codes (or ignore if no colors)
+// TODO : Deal with CTRL+C / Ctrl+R events, pass them through ?
+// TODO : arrow events ?
+// TODO : custom "cd" command so it chnages view workdir too
 
 // BackendCmd is used to run a command using a specific backend
 // whose content will be the the output of the command.
@@ -18,7 +25,7 @@ type BackendCmd struct {
 	core.Backend
 	dir     string
 	runner  *exec.Cmd
-	inPipe  io.WriteCloser
+	pty     *os.File
 	title   *string
 	Starter CmdStarter
 }
@@ -35,6 +42,13 @@ func (c *BackendCmd) Reload() error {
 	return nil
 }
 
+func (b *BackendCmd) Insert(row, col int, text string) error {
+	if b.pty != nil {
+		b.pty.Write([]byte(text))
+	}
+	return nil
+}
+
 func (c *BackendCmd) Close() error {
 	c.stop()
 	return nil
@@ -45,7 +59,7 @@ func (c *BackendCmd) Running() bool {
 }
 
 func (c *BackendCmd) SendBytes(data []byte) {
-	c.inPipe.Write(data)
+	c.pty.Write(data)
 }
 
 func (c *BackendCmd) Start(viewId int64) {
@@ -56,11 +70,14 @@ func (c *BackendCmd) Start(viewId int64) {
 	actions.ViewRender(viewId)
 	actions.EdTermFlush()
 
+	c.runner.Env = core.EnvWith([]string{"TERM=vt100"})
+	//// TODO : aliases -> ie : s = "goed_action search"
+
 	err := c.Starter.Start(c)
 
 	if err != nil {
-		actions.ViewSetTitle(viewId, fmt.Sprintf("[FAILED] %s", *c.title))
 		actions.EdSetStatusErr(err.Error())
+		actions.ViewSetTitle(viewId, fmt.Sprintf("[FAILED] %s", *c.title))
 	} else {
 		actions.ViewSetTitle(viewId, *c.title)
 	}
@@ -69,12 +86,13 @@ func (c *BackendCmd) Start(viewId int64) {
 }
 
 func (c *BackendCmd) stop() {
-	if c.inPipe != nil {
-		c.inPipe.Close()
-	}
 	if c.runner != nil && c.runner.Process != nil {
 		c.runner.Process.Kill()
 		c.runner.Process = nil
+	}
+	if c.pty != nil {
+		c.pty.Close()
+		c.pty = nil
 	}
 }
 
@@ -97,13 +115,14 @@ func (s *MemCmdStarter) Start(c *BackendCmd) error {
 
 func (c *BackendCmd) stream() error {
 	w := backendAppender{backend: c.Backend, viewId: c.ViewId()}
-	c.runner.Stdout = w
-	c.runner.Stderr = w
-	c.inPipe, _ = c.runner.StdinPipe()
-	err := c.runner.Start()
+	var err error
+	c.pty, err = pty.Start(c.runner)
 	if err != nil {
 		return err
 	}
+
+	go io.Copy(w, c.pty)
+
 	err = c.runner.Wait()
 
 	actions.EdRender()
@@ -117,20 +136,149 @@ type backendAppender struct {
 }
 
 func (b backendAppender) Write(data []byte) (int, error) {
-	err := b.backend.Append(string(data))
+	size, err := b.vt100(data)
 	if err != nil {
 		return 0, err
 	}
+
 	actions.ViewTrim(b.viewId, core.Ed.Config().MaxCmdBufferLines)
 
 	actions.ViewCursorMvmt(b.viewId, core.CursorMvmtBottom)
 
 	now := time.Now().Unix()
 
-	// render every so often
-	if now > b.lastFlush+500 {
+	// render at most every so often
+	if now > b.lastFlush+100 {
 		b.lastFlush = now
 		actions.EdRender()
 	}
-	return len(data), nil
+	return size, nil
+}
+
+func (b backendAppender) vt100(data []byte) (int, error) {
+	/*	b.backend.Append("\n----\n")
+		b.backend.Append(fmt.Sprint(data))
+		b.backend.Append("\n")
+		b.backend.Append(string(data))
+		b.backend.Append("\n")*/
+
+	//skipped := 0
+	from := 0
+	for i := 0; i < len(data); i++ {
+		//before := i
+		if b.consumeVt100(data, from, &i) {
+			from = i
+			i--
+		}
+		//skipped += i - before
+	}
+	// flush leftover
+	err := b.flush(data[from:len(data)])
+	return len(data) /*- skipped*/, err
+}
+
+func (b backendAppender) consumeVt100(data []byte, from int, i *int) bool {
+	start := *i
+	// set title
+	if b.consume(data, i, 27) && b.consume(data, i, 93) &&
+		b.consume(data, i, '0') && b.consume(data, i, ';') {
+		b.consumeUntil(data, i, 7)
+		actions.ViewSetTitle(b.viewId, string(data[start+4:*i]))
+		return true
+	}
+	*i = start
+	// Start real VT100 codes
+	if !(b.consume(data, i, 27) && b.consume(data, i, 91)) { // ^[
+		return false
+	}
+	*i = start + 2
+	// Color attribute + fg color  + bg color
+	if b.consumeNumber(data, i) && b.consume(data, i, ';') &&
+		b.consumeNumber(data, i) && b.consume(data, i, ';') &&
+		b.consumeNumber(data, i) && b.consume(data, i, 'm') {
+		b.flush(data[from:start]) // flush what was before escape seq first.
+		return true
+	}
+	// Color attribute + fg color
+	*i = start + 2
+	if b.consumeNumber(data, i) && b.consume(data, i, ';') &&
+		b.consumeNumber(data, i) && b.consume(data, i, 'm') {
+		b.flush(data[from:start])
+		return true
+	}
+	*i = start + 2
+	if b.consumeNumber(data, i) && b.consume(data, i, 'm') {
+		b.flush(data[from:start])
+		return true
+	}
+	// Various Set comand, ignore for now
+	*i = start + 2
+	if b.consume(data, i, '?') && b.consumeNumber(data, i) && b.consume(data, i, 'h') {
+		b.flush(data[from:start])
+		return true
+	}
+	// Various Set comand, ignore for now
+	*i = start + 2
+	if b.consume(data, i, '?') && b.consumeNumber(data, i) && b.consume(data, i, 'l') {
+		b.flush(data[from:start])
+		return true
+	}
+	*i = start + 2
+	// Set alternate keypad mode
+	if b.consume(data, i, '=') {
+		b.flush(data[from:start])
+		return true
+	}
+	*i = start + 2
+	// Set numeric keypad mode
+	if b.consume(data, i, '>') {
+		b.flush(data[from:start])
+		return true
+	}
+	*i = start + 2
+	// clear to EOL
+	if b.consume(data, i, 'J') {
+		b.flush(data[from:start])
+		return true
+	}
+	*i = start + 2
+	// clear to EOF
+	if b.consume(data, i, 'K') {
+		b.flush(data[from:start])
+		return true
+	}
+	// no match
+	*i = start
+	return false
+}
+
+func (b backendAppender) consumeNumber(data []byte, i *int) bool {
+	found := false
+	for *i < len(data) && data[*i] >= '0' && data[*i] <= '9' {
+		*i++
+		found = true
+	}
+	return found
+}
+
+func (b backendAppender) consume(data []byte, i *int, c byte) bool {
+	if *i >= len(data) {
+		return false
+	}
+	if data[*i] == c {
+		*i++
+		return true
+	}
+	return false
+}
+
+func (b backendAppender) consumeUntil(data []byte, i *int, c byte) {
+	for *i < len(data) && data[*i] != c {
+		*i++
+	}
+	return
+}
+
+func (b backendAppender) flush(data []byte) error {
+	return b.backend.Append(string(data))
 }
