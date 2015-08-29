@@ -15,7 +15,7 @@ var SyntaxGo = syntax{
 	Keywords2: []string{
 		"break", "case", "chan", "continue", "default", "else",
 		"fallthrough", "for", "goto", "if", "nmap", "range",
-		"return", "select", "switch", "defer", "func",
+		"return", "select", "switch", "defer", "func", "map",
 	},
 	Symbols1: []string{ // ~ assignment
 		">>=", "<<=", "&^=", "++", "+=", "-=", "*=", "/=", "%=",
