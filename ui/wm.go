@@ -458,8 +458,15 @@ func (e *Editor) TerminateView(vid int64) {
 	if v.backend != nil {
 		v.backend.Close()
 	}
+	go func() {
+		// let actions flush first to prevent the view to be gone before
+		// actions targeted to it have a chance to finish.
+		// Saves from a bunch of nil checks down the line.
+		core.Bus.Flush()
+		panic("yeah !")
+		delete(e.views, vid)
+	}()
 	actions.UndoClear(vid)
-	delete(e.views, vid)
 }
 
 // Delete (close) a view, but with dirty check
