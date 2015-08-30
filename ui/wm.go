@@ -463,7 +463,6 @@ func (e *Editor) TerminateView(vid int64) {
 		// actions targeted to it have a chance to finish.
 		// Saves from a bunch of nil checks down the line.
 		core.Bus.Flush()
-		panic("yeah !")
 		delete(e.views, vid)
 	}()
 	actions.UndoClear(vid)
