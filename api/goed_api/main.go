@@ -27,6 +27,13 @@ var (
 	viewSrcLoc  = app.Command("view_src_loc", "Get the view's source document path.")
 	viewSrcLocI = viewSrcLoc.Arg("InstanceId", "InstanceId").Required().Int64()
 	viewSrcLocV = viewSrcLoc.Arg("ViewId", "ViewId").Required().Int64()
+	viewCwd     = app.Command("view_cwd", "Change view working directory.")
+	viewCwdI    = viewCwd.Arg("InstanceId", "InstanceId").Required().Int64()
+	viewCwdV    = viewCwd.Arg("ViewId", "ViewId").Required().Int64()
+	viewCwdLoc  = viewCwd.Arg("dir", "dir").Required().String()
+	open        = app.Command("open", "Open a file/directory in Goed (New view).")
+	openI       = open.Arg("InstanceId", "InstanceId").Required().Int64()
+	openLoc     = open.Arg("dir", "dir").Required().String()
 )
 
 func main() {
@@ -47,6 +54,10 @@ func Dispatch(action string) {
 		ViewSave()
 	case viewSrcLoc.FullCommand():
 		ViewSrcLoc()
+	case viewCwd.FullCommand():
+		ViewCwd()
+	case open.FullCommand():
+		Open()
 	default:
 		kingpin.Usage()
 	}
@@ -94,4 +105,20 @@ func ViewSrcLoc() {
 		os.Exit(1)
 	}
 	fmt.Println(loc)
+}
+
+func Open() {
+	err := client.Open(*openI, *openLoc)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func ViewCwd() {
+	err := client.ViewCwd(*viewCwdI, *viewCwdV, *viewCwdLoc)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }

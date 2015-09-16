@@ -42,6 +42,11 @@ func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
 	return nil
 }
 
+func (r *GoedRpc) Open(loc string, _ *struct{}) error {
+	actions.EdOpen(loc, -1, "", true)
+	return nil
+}
+
 func (r *GoedRpc) ViewReload(viewId int64, _ *struct{}) error {
 	actions.ViewReload(viewId)
 	actions.EdRender()
@@ -50,6 +55,11 @@ func (r *GoedRpc) ViewReload(viewId int64, _ *struct{}) error {
 
 func (r *GoedRpc) ViewSave(viewId int64, _ *struct{}) error {
 	actions.ViewSave(viewId)
+	return nil
+}
+
+func (r *GoedRpc) ViewCwd(args []interface{}, _ *struct{}) error {
+	actions.ViewSetWorkdir(args[0].(int64), args[1].(string))
 	return nil
 }
 

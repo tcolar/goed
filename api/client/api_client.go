@@ -24,6 +24,13 @@ func ViewReload(instance, viewId int64) (err error) {
 	return err
 }
 
+func ViewCwd(instance, viewId int64, loc string) (err error) {
+	c := getClient(instance)
+	defer c.Close()
+	err = c.Call("GoedRpc.ViewCwd", []interface{}{viewId, loc}, &struct{}{})
+	return err
+}
+
 func ViewSave(instance, viewId int64) (err error) {
 	c := getClient(instance)
 	defer c.Close()
@@ -36,6 +43,13 @@ func ViewSrcLoc(instance, viewId int64) (loc string, err error) {
 	defer c.Close()
 	err = c.Call("GoedRpc.ViewSrcLoc", viewId, &loc)
 	return loc, err
+}
+
+func Open(instance int64, loc string) error {
+	c := getClient(instance)
+	defer c.Close()
+	err := c.Call("GoedRpc.Open", loc, &struct{}{})
+	return err
 }
 
 func getClient(id int64) *rpc.Client {

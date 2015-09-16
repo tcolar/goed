@@ -25,7 +25,7 @@ func (a external) Run() error {
 	v := e.ViewById(e.CurViewId())
 	loc := core.FindResource(path.Join("actions", a.script))
 	if _, err := os.Stat(loc); os.IsNotExist(err) {
-		return fmt.Errorf("Action not found : %s", a.script)
+		loc = a.script // assume a system wide command
 	}
 	env := os.Environ()
 	env = append(env, fmt.Sprintf("GOED_INSTANCE=%d", core.InstanceId))
