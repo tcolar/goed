@@ -2,7 +2,6 @@ package ui
 
 import (
 	"bytes"
-	"fmt"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -69,7 +68,6 @@ func (v *View) Insert(line, col int, s string, undoable bool) {
 	}
 	v.Render()
 	e.TermFlush()
-	e.SetStatus(fmt.Sprintf("v %d %d(%d) - %d %d\n", offy, offx, c, line+offy-v.CurLine(), c+offx-v.CurCol()))
 	v.MoveCursor(line+offy-v.CurLine(), c+offx-v.CurCol())
 }
 

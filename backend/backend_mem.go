@@ -143,7 +143,7 @@ func (b *MemBackend) Insert(row, col int, text string) error {
 		if i == 0 && last == 0 {
 			line = append(line, ln...)           // grow line
 			copy(line[col+len(ln):], line[col:]) // create hole
-			copy(line[col:], ln)                 //file hole
+			copy(line[col:], ln)                 //fill hole
 		} else if i == 0 {
 			tail = make([]rune, len(line)-col)
 			copy(tail, line[col:])

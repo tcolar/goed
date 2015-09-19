@@ -1,5 +1,7 @@
 #!anko
 
+# Example anko script, currently unused
+
 load("goed_helper.ank")
 
 var os, flag, exec = import("os"), import("flag"), import("os/exec")
@@ -8,7 +10,7 @@ var os, flag, exec = import("os"), import("flag"), import("os/exec")
 ignoreCase = flag.Bool("i", false, "ignoreCase")
 flag.Parse()
 loc = flag.Args()[0]
-args = ["grep"]
+args = ["grep", "-n", "-l"]
 if ignoreCase == true {
 	args += ["-i"]
 }
