@@ -151,10 +151,12 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		case termbox.KeyCtrlC:
 			switch v.backend.(type) {
 			case *backend.BackendCmd:
-				// CTRL+C process
-				if v.backend.(*backend.BackendCmd).Running() {
-					actions.ViewCmdStop(vid)
-					return
+				if len(*v.Selections()) == 0 { // if selections, fallthrough to copy
+					// CTRL+C process
+					if v.backend.(*backend.BackendCmd).Running() {
+						actions.ViewCmdStop(vid)
+						return
+					}
 				}
 			}
 			actions.ViewCopy(vid)
@@ -168,6 +170,8 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 			actions.ViewReload(vid)
 		case termbox.KeyCtrlS:
 			actions.ViewSave(vid)
+		case termbox.KeyCtrlT:
+			execTerm([]string{core.Terminal})
 		case termbox.KeyCtrlV:
 			actions.ViewPaste(vid)
 			dirty = true
