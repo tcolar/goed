@@ -40,6 +40,7 @@ type Viewable interface {
 	// SetAutoScroll is used to make the view scroll contonuously in y,x increments
 	// keeps scrolling until x and y are set to 0.
 	SetAutoScroll(y, x int, isSelect bool)
+	SetViewType(t ViewType)
 	// Sets the view work directory, commands and "open" actions will be relative
 	// to this path.
 	SetWorkDir(dir string)

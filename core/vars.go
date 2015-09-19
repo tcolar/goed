@@ -27,6 +27,9 @@ var ConfFile string
 // LogFile holds the path of the log file currently in use.
 var LogFile *os.File
 
+// terminal as defined by $SHELL
+var Terminal string
+
 var Bus ActionDispatcher
 
 var ApiPort int
@@ -48,4 +51,11 @@ const (
 	CursorMvmtEnd
 	CursorMvmtTop
 	CursorMvmtBottom
+)
+
+type ViewType int
+
+const (
+	ViewTypeStandard ViewType = iota
+	ViewTypeInteractive
 )

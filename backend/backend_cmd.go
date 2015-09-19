@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -28,9 +29,13 @@ type BackendCmd struct {
 	pty     *os.File
 	title   *string
 	Starter CmdStarter
+	IsTerm  bool
 }
 
 func (c *BackendCmd) Reload() error {
+	if c.IsTerm {
+		return errors.New("Can't reload terminal, close and reopen.")
+	}
 	args, dir := c.runner.Args, c.runner.Dir
 	c.stop()
 	c.runner = exec.Command(args[0], args[1:]...)
@@ -70,8 +75,9 @@ func (c *BackendCmd) Start(viewId int64) {
 	actions.ViewRender(viewId)
 	actions.EdTermFlush()
 
-	c.runner.Env = core.EnvWith([]string{"TERM=vt100"})
-	//// TODO : aliases -> ie : s = "goed_action search"
+	c.runner.Env = core.EnvWith([]string{"TERM=vt100",
+		fmt.Sprintf("GOED_INSTANCE=%s", core.InstanceId),
+		fmt.Sprintf("GOED_VIEW=%s", viewId)})
 
 	err := c.Starter.Start(c)
 
@@ -156,25 +162,16 @@ func (b backendAppender) Write(data []byte) (int, error) {
 }
 
 func (b backendAppender) vt100(data []byte) (int, error) {
-	/*	b.backend.Append("\n----\n")
-		b.backend.Append(fmt.Sprint(data))
-		b.backend.Append("\n")
-		b.backend.Append(string(data))
-		b.backend.Append("\n")*/
-
-	//skipped := 0
 	from := 0
 	for i := 0; i < len(data); i++ {
-		//before := i
 		if b.consumeVt100(data, from, &i) {
 			from = i
 			i--
 		}
-		//skipped += i - before
 	}
 	// flush leftover
 	err := b.flush(data[from:len(data)])
-	return len(data) /*- skipped*/, err
+	return len(data), err
 }
 
 func (b backendAppender) consumeVt100(data []byte, from int, i *int) bool {

@@ -67,6 +67,9 @@ func StringToRunes(s string) [][]rune {
 	lines := bytes.Split(b, []byte("\n"))
 	runes := [][]rune{}
 	for i, l := range lines {
+		if len(l) > 0 && l[len(l)-1] == '\r' {
+			l = l[:len(l)-1]
+		}
 		if i != len(lines)-1 ||
 			(len(l) != 0 || strings.HasSuffix(s, "\n")) {
 			runes = append(runes, bytes.Runes(l))
@@ -114,6 +117,12 @@ func InitHome(id int64) {
 
 	// RCP instance socket
 	Socket = GoedSocket(id)
+
+	// Terminal app
+	Terminal = os.Getenv("SHELL")
+	if len(Terminal) == 0 {
+		Terminal = "/bin/bash"
+	}
 
 	// Custom log file
 	f := path.Join(Home, "logs", fmt.Sprintf("%d.log", id))

@@ -21,7 +21,8 @@ var (
 	test   = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
 	colors = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
 	config = kingpin.Flag("config", "Config file.").Default("config.toml").String()
-	locs   = kingpin.Arg("location", "location to open").Strings()
+
+	locs = kingpin.Arg("location", "location to open").Strings()
 )
 
 func main() {
