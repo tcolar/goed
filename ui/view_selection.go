@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"unicode"
 
 	"github.com/atotto/clipboard"
@@ -96,7 +97,7 @@ func (v *View) Paste() {
 	v.Insert(y, x, text, true)
 }
 
-var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':]+)(:\d+)?(:\d+)?`)
+var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':\x1B]+)(:\d+)?(:\d+)?`)
 
 // Try to select a "location" from the given position
 // a location is a path with possibly a line number and maybe a column number as well
@@ -227,7 +228,7 @@ func (v *View) OpenSelection(newView bool) {
 	line-- // we use 0 indexes in views
 	col--
 	isDir := false
-	loc, isDir = core.LookupLocation(v.WorkDir(), loc)
+	loc, isDir = core.LookupLocation(v.WorkDir(), strings.TrimSpace(loc))
 	vv := ed.ViewByLoc(loc)
 	if vv > 0 {
 		// Already open
