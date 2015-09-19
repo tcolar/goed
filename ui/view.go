@@ -19,7 +19,7 @@ type View struct {
 	dirty   bool
 	backend core.Backend
 	workDir string
-	// realtive position of cursor in view (0 index)
+	// relative position of cursor in view (0 index)
 	CursorX, CursorY int
 	// absolute view offset (scrolled down/right) (0 index)
 	offx, offy       int
@@ -32,6 +32,7 @@ type View struct {
 	autoScrollX      int
 	autoScrollY      int
 	autoScrollSelect bool
+	viewType         core.ViewType
 }
 
 func (e *Editor) NewView(loc string) *View {
@@ -56,13 +57,6 @@ func (e Editor) NewFileView(loc string) *View {
 	e.Open(loc, v.Id(), "", true)
 	return v
 }
-
-// NewFileView creates a new Terminal view
-/*func (e Editor) NewTerminalView() *View {
-	v := e.NewView(loc)
-	v.backend, _ = backend.NewMemBackend("", v.Id())
-	return v
-}*/
 
 func (e Editor) genViewId() int64 {
 	return time.Now().UnixNano()
@@ -444,6 +438,9 @@ func (v *View) Backend() core.Backend {
 }
 
 func (v *View) Dirty() bool {
+	if v.viewType == core.ViewTypeInteractive {
+		return false
+	}
 	return v.dirty
 }
 
@@ -482,6 +479,10 @@ func (v *View) Slice() *core.Slice {
 func (v *View) SetAutoScroll(y, x int, isSelect bool) {
 	v.autoScrollX, v.autoScrollY = x, y
 	v.autoScrollSelect = isSelect
+}
+
+func (v *View) SetViewType(t core.ViewType) {
+	v.viewType = t
 }
 
 func (v *View) CursorMvmt(mvmt core.CursorMvmt) {

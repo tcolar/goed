@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/tcolar/goed/actions"
-	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
 )
 
@@ -52,8 +50,6 @@ func (c *Cmdbar) RunCmd() {
 	args := parts[1:]
 	var err error
 	switch parts[0] {
-	case "t":
-		c.test()
 	case "o", "open":
 		err = c.open(args)
 	case ":", "line":
@@ -65,7 +61,7 @@ func (c *Cmdbar) RunCmd() {
 		query := string(c.Cmd[2:])
 		c.Search(query)
 	default:
-		c.exec(parts)
+		exec(parts)
 	}
 	if err == nil {
 		actions.CmdbarEnable(false)
@@ -109,39 +105,7 @@ func (c *Cmdbar) line(args []string) {
 }
 
 func (c *Cmdbar) Search(query string) {
-	c.exec([]string{"grep", "-rn", query})
-}
-
-func (c *Cmdbar) test() {
-	ed := core.Ed.(*Editor)
-	workDir := "."
-	if ed.CurView() != nil {
-		workDir = ed.CurView().WorkDir()
-	}
-	v := ed.AddViewSmart()
-	b, err := backend.NewMemBackendCmd([]string{"bash"}, workDir, v.Id(), nil)
-	if err != nil {
-		ed.SetStatusErr(err.Error())
-	}
-	v.backend = b
-	time.Sleep(2 * time.Second)
-	b.SendBytes([]byte("df\n"))
-	time.Sleep(2 * time.Second)
-	b.SendBytes([]byte("exit\n"))
-}
-
-func (c *Cmdbar) exec(args []string) {
-	ed := core.Ed.(*Editor)
-	workDir := "."
-	if ed.CurView() != nil {
-		workDir = ed.CurView().WorkDir()
-	}
-	v := ed.AddViewSmart()
-	b, err := backend.NewMemBackendCmd(args, workDir, v.Id(), nil)
-	if err != nil {
-		ed.SetStatusErr(err.Error())
-	}
-	v.backend = b
+	exec([]string{"grep", "-rn", query})
 }
 
 /*

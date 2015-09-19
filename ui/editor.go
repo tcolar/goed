@@ -134,6 +134,8 @@ func (e *Editor) Start(locs []string) {
 // Open opens a given location in the editor (in the given view)
 // or new view if viewId < 0
 func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, error) {
+	loc = strings.TrimSpace(loc)
+	rel = strings.TrimSpace(rel)
 	if len(rel) > 0 && !strings.HasPrefix(loc, string(os.PathSeparator)) {
 		loc = path.Join(rel, loc)
 	}
@@ -184,13 +186,13 @@ func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, 
 func (e *Editor) openDir(loc string, view core.Viewable) error {
 	args := []string{"ls", "-a1"}
 	title := filepath.Base(loc) + "/"
+	view.SetViewType(core.ViewTypeInteractive)
 	backend, err := backend.NewMemBackendCmd(args, loc, view.Id(), &title)
 	if err != nil {
 		return err
 	}
 	view.SetBackend(backend)
 	e.SetStatus(fmt.Sprintf("%v", view.WorkDir()))
-	view.SetDirty(false)
 	return nil
 }
 
@@ -199,13 +201,7 @@ func (e *Editor) openFile(loc string, view core.Viewable) error {
 	if !core.IsTextFile(loc) {
 		return fmt.Errorf("Binary file ? %s", loc)
 	}
-	var b core.Backend
-	var err error
-	if _, err := os.Stat(loc); os.IsNotExist(err) {
-		b, err = backend.NewMemBackend(loc, view.Id())
-	} else {
-		b, err = backend.NewFileBackend(loc, view.Id())
-	}
+	b, err := backend.NewFileBackend(loc, view.Id())
 	if err != nil {
 		return err
 	}
