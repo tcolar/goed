@@ -74,7 +74,11 @@ func (b *FileBackend) Reload() error {
 		// make sure there is no existing buffer content
 		os.Remove(fb)
 	}
-	if len(b.srcLoc) > 0 && fb != b.srcLoc {
+	newFile := false
+	if _, err := os.Stat(b.srcLoc); os.IsNotExist(err) {
+		newFile = true
+	}
+	if !newFile && len(b.srcLoc) > 0 && fb != b.srcLoc {
 		f, err := os.Open(b.srcLoc)
 		if err != nil {
 			return err
