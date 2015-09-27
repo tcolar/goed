@@ -300,6 +300,10 @@ func (v *View) MoveCursorRoll(y, x int) {
 	v.MoveCursor(y, x)
 }
 
+func (v *View) SyncSlice() {
+	v.slice = v.backend.Slice(v.offy, 0, v.offy+v.LastViewLine(), -1)
+}
+
 // MoveCursor : Move the cursor from it's current position by the y, x offsets (**in runes**)
 // This makes all the checks to make sure it's in a valid location
 // as well as scrolling the view as needed.
@@ -341,7 +345,8 @@ func (v *View) MoveCursor(y, x int) {
 	// No scrolling needed
 	if curCol+x >= v.offx && curCol+x <= v.offx+v.LastViewCol() &&
 		curLine+y >= v.offy && curLine+y <= v.offy+v.LastViewLine() {
-		v.setCursor(v.x1+2+v.CursorX, v.y1+2+v.CursorY)
+		v.NormalizeCursor()
+		v.setCursor(v.y1+2+v.CursorY, v.x1+2+v.CursorX)
 		return
 	}
 
@@ -366,7 +371,7 @@ func (v *View) MoveCursor(y, x int) {
 	tox := v.x1 + 2 + v.CursorX
 	toy := v.y1 + 2 + v.CursorY
 
-	v.setCursor(tox, toy)
+	v.setCursor(toy, tox)
 }
 
 func (v *View) NormalizeCursor() {
@@ -386,7 +391,7 @@ func (v *View) NormalizeCursor() {
 		v.CursorX = 0
 		return
 	}
-	if v.offx+v.CursorX > lc {
+	if v.offx+v.CursorX > lc+1 {
 		v.CursorX = lc - v.offx
 		return
 	}
@@ -523,8 +528,12 @@ func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
 	case core.CursorMvmtHome:
 		v.MoveCursor(0, -col)
 	case core.CursorMvmtTop:
-		v.MoveCursor(-v.CurLine(), 0)
+		v.MoveCursor(-v.CurLine(), -col)
 	case core.CursorMvmtBottom:
-		v.MoveCursor(v.LineCount()-v.CurLine(), 0)
+		c := 0
+		if v.LineCount() > 0 {
+			c = v.lineCols(v.slice, v.LineCount()-1) + 1 - col
+		}
+		v.MoveCursor(v.LineCount()-1-v.CurLine(), c)
 	}
 }

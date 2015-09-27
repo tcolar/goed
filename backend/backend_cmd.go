@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/kr/pty"
@@ -14,22 +16,20 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-// TODO : Handle VT100 codes
-// TODO : Handle color codes (or ignore if no colors)
-// TODO : Deal with CTRL+C / Ctrl+R events, pass them through ?
-// TODO : arrow events ?
-// TODO : custom "cd" command so it chnages view workdir too
-
 // BackendCmd is used to run a command using a specific backend
-// whose content will be the the output of the command.
+// whose content will be the the output of the command. (VT100 support)
+//
+// TODO : Deal with CTRL+C / Ctrl+R events, pass them through ?
+// TODO : arrow events
 type BackendCmd struct {
 	core.Backend
-	dir     string
-	runner  *exec.Cmd
-	pty     *os.File
-	title   *string
-	Starter CmdStarter
-	IsTerm  bool
+	dir       string
+	runner    *exec.Cmd
+	pty       *os.File
+	title     *string
+	Starter   CmdStarter
+	IsTerm    bool
+	scrollTop bool // wether to scroll ack to top once command done
 }
 
 func (c *BackendCmd) Reload() error {
@@ -88,6 +88,9 @@ func (c *BackendCmd) Start(viewId int64) {
 		actions.ViewSetTitle(viewId, *c.title)
 	}
 	actions.ViewSetWorkdir(viewId, workDir) // might have changed
+	if c.scrollTop {
+		actions.ViewCursorMvmt(viewId, core.CursorMvmtTop)
+	}
 	actions.EdRender()
 }
 
@@ -121,16 +124,20 @@ func (s *MemCmdStarter) Start(c *BackendCmd) error {
 
 func (c *BackendCmd) stream() error {
 	w := backendAppender{backend: c.Backend, viewId: c.ViewId()}
+	endc := make(chan struct{}, 1)
+	go w.refresher(endc)
 	var err error
 	c.pty, err = pty.Start(c.runner)
 	if err != nil {
 		return err
 	}
 
-	go io.Copy(w, c.pty)
+	go io.Copy(&w, c.pty)
 
 	err = c.runner.Wait()
+	close(endc)
 
+	time.Sleep(100 * time.Millisecond)
 	actions.EdRender()
 	return err
 }
@@ -138,144 +145,45 @@ func (c *BackendCmd) stream() error {
 type backendAppender struct {
 	backend   core.Backend
 	viewId    int64
-	lastFlush int64
+	line, col int
+	dirty     int32 // >0 if dirty
 }
 
-func (b backendAppender) Write(data []byte) (int, error) {
+// refresh the view if needed(dirty) but no more than every so often
+// this greatly enhances performance and responsivness
+func (b *backendAppender) refresher(endc chan struct{}) {
+	for {
+		select {
+		case <-endc:
+			actions.EdRender()
+			return
+		default:
+			if atomic.SwapInt32(&b.dirty, 0) > 0 {
+				actions.ViewTrim(b.viewId, core.Ed.Config().MaxCmdBufferLines)
+				actions.ViewSyncSlice(b.viewId)
+				actions.EdRender()
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+func (b *backendAppender) Write(data []byte) (int, error) {
 	size, err := b.vt100(data)
+	atomic.AddInt32(&b.dirty, 1)
 	if err != nil {
 		return 0, err
-	}
-
-	actions.ViewTrim(b.viewId, core.Ed.Config().MaxCmdBufferLines)
-
-	actions.ViewCursorMvmt(b.viewId, core.CursorMvmtBottom)
-
-	now := time.Now().Unix()
-
-	// render at most every so often
-	if now > b.lastFlush+100 {
-		b.lastFlush = now
-		actions.EdRender()
 	}
 	return size, nil
 }
 
-func (b backendAppender) vt100(data []byte) (int, error) {
-	from := 0
-	for i := 0; i < len(data); i++ {
-		if b.consumeVt100(data, from, &i) {
-			from = i
-			i--
-		}
-	}
-	// flush leftover
-	err := b.flush(data[from:len(data)])
-	return len(data), err
-}
-
-func (b backendAppender) consumeVt100(data []byte, from int, i *int) bool {
-	start := *i
-	// set title
-	if b.consume(data, i, 27) && b.consume(data, i, 93) &&
-		b.consume(data, i, '0') && b.consume(data, i, ';') {
-		b.consumeUntil(data, i, 7)
-		actions.ViewSetTitle(b.viewId, string(data[start+4:*i]))
-		return true
-	}
-	*i = start
-	// Start real VT100 codes
-	if !(b.consume(data, i, 27) && b.consume(data, i, 91)) { // ^[
-		return false
-	}
-	*i = start + 2
-	// Color attribute + fg color  + bg color
-	if b.consumeNumber(data, i) && b.consume(data, i, ';') &&
-		b.consumeNumber(data, i) && b.consume(data, i, ';') &&
-		b.consumeNumber(data, i) && b.consume(data, i, 'm') {
-		b.flush(data[from:start]) // flush what was before escape seq first.
-		return true
-	}
-	// Color attribute + fg color
-	*i = start + 2
-	if b.consumeNumber(data, i) && b.consume(data, i, ';') &&
-		b.consumeNumber(data, i) && b.consume(data, i, 'm') {
-		b.flush(data[from:start])
-		return true
-	}
-	*i = start + 2
-	if b.consumeNumber(data, i) && b.consume(data, i, 'm') {
-		b.flush(data[from:start])
-		return true
-	}
-	// Various Set comand, ignore for now
-	*i = start + 2
-	if b.consume(data, i, '?') && b.consumeNumber(data, i) && b.consume(data, i, 'h') {
-		b.flush(data[from:start])
-		return true
-	}
-	// Various Set comand, ignore for now
-	*i = start + 2
-	if b.consume(data, i, '?') && b.consumeNumber(data, i) && b.consume(data, i, 'l') {
-		b.flush(data[from:start])
-		return true
-	}
-	*i = start + 2
-	// Set alternate keypad mode
-	if b.consume(data, i, '=') {
-		b.flush(data[from:start])
-		return true
-	}
-	*i = start + 2
-	// Set numeric keypad mode
-	if b.consume(data, i, '>') {
-		b.flush(data[from:start])
-		return true
-	}
-	*i = start + 2
-	// clear to EOL
-	if b.consume(data, i, 'J') {
-		b.flush(data[from:start])
-		return true
-	}
-	*i = start + 2
-	// clear to EOF
-	if b.consume(data, i, 'K') {
-		b.flush(data[from:start])
-		return true
-	}
-	// no match
-	*i = start
-	return false
-}
-
-func (b backendAppender) consumeNumber(data []byte, i *int) bool {
-	found := false
-	for *i < len(data) && data[*i] >= '0' && data[*i] <= '9' {
-		*i++
-		found = true
-	}
-	return found
-}
-
-func (b backendAppender) consume(data []byte, i *int, c byte) bool {
-	if *i >= len(data) {
-		return false
-	}
-	if data[*i] == c {
-		*i++
-		return true
-	}
-	return false
-}
-
-func (b backendAppender) consumeUntil(data []byte, i *int, c byte) {
-	for *i < len(data) && data[*i] != c {
-		*i++
-	}
-	return
-}
-
-func (b backendAppender) flush(data []byte) error {
-	return b.backend.Append(string(data))
+func (b *backendAppender) flush(data []byte) error {
+	b.line, b.col = b.backend.(*MemBackend).Overwrite(b.line, b.col, string(data))
+	log.Printf("Flushed %v, now @ (%d,%d) | %+q", data, b.line, b.col, string(data))
+	// sync up the view cursor with term cursor
+	actions.ViewSyncSlice(b.viewId)
+	l, c := actions.ViewCurPos(b.viewId)
+	actions.ViewMoveCursor(b.viewId, b.line-l, b.col-c)
+	actions.ViewRender(b.viewId)
+	return nil
 }

@@ -176,7 +176,13 @@ func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, 
 		return -1, err
 	}
 	if nv {
-		e.InsertView(view.(*View), e.CurView().(*View), 0.2)
+		if stat.IsDir() {
+			ci := len(e.Cols[0].Views) - 1
+			v := e.views[e.Cols[0].Views[ci]]
+			e.InsertView(view.(*View), v, 0.5)
+		} else {
+			e.InsertView(view.(*View), e.CurView().(*View), 0.5)
+		}
 	}
 	view.SetWorkDir(filepath.Dir(loc))
 	return view.Id(), nil
@@ -186,8 +192,7 @@ func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, 
 func (e *Editor) openDir(loc string, view core.Viewable) error {
 	args := []string{"ls", "-a1"}
 	title := filepath.Base(loc) + "/"
-	view.SetViewType(core.ViewTypeInteractive)
-	backend, err := backend.NewMemBackendCmd(args, loc, view.Id(), &title)
+	backend, err := backend.NewMemBackendCmd(args, loc, view.Id(), &title, true)
 	if err != nil {
 		return err
 	}
@@ -250,7 +255,7 @@ func (e Editor) CurViewId() int64 {
 }
 
 func (e Editor) SetCursor(y, x int) {
-	e.term.SetCursor(y, x)
+	e.term.SetCursor(x, y)
 }
 
 func (e Editor) CmdOn() bool {

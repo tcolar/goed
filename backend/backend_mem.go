@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"sync"
@@ -262,4 +263,53 @@ func (b *MemBackend) Wipe() {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.text = [][]rune{[]rune{}}
+}
+
+func (b *MemBackend) Overwrite(row, col int, text string) (atRow, atCol int) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	log.Printf("Overwrite @ %d,%d %+q\n", row, col, string(text))
+	runes := core.StringToRunes(text)
+	for z, ln := range runes { // each line
+		if z > 0 {
+			col = 0
+		}
+		for _, ch := range ln {
+			// VT100 TODO: configurable term width
+			if col >= 80 { // wrap lines wider than terminal width
+				col = 0
+				row++
+			}
+			for len(b.text) <= row+len(runes) { // make sure we have enough rows
+				b.text = append(b.text, []rune{})
+			}
+			for len(b.text[row+z]) <= col { // make sure enough cols
+				b.text[row+z] = append(b.text[row+z], ' ')
+			}
+			b.text[row+z][col] = ch // write the char
+			col++
+		}
+	}
+	return row, col
+}
+
+func (b *MemBackend) ClearLn(row, col int) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if row >= len(b.text) || col >= len(b.text[row]) {
+		return
+	}
+	b.text[row] = b.text[row][:col]
+}
+
+func (b *MemBackend) ClearScreen(row, col int) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if row >= len(b.text) {
+		return
+	}
+	b.text = b.text[:row+1]
+	if col < len(b.text[row]) {
+		b.text[row] = b.text[row][:col]
+	}
 }

@@ -112,6 +112,10 @@ func ViewSetWorkdir(viewId int64, workDir string) {
 	d(viewSetWorkdir{viewId: viewId, workDir: workDir})
 }
 
+func ViewSyncSlice(viewId int64) {
+	d(viewSyncSlice{viewId: viewId})
+}
+
 func ViewTrim(viewId int64, limit int) {
 	d(viewTrim{viewId: viewId, limit: limit})
 }
@@ -481,6 +485,19 @@ func (a viewStretchSelection) Run() error {
 		v.CurLine(),
 		v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()),
 	)
+	return nil
+}
+
+type viewSyncSlice struct {
+	viewId int64
+}
+
+func (a viewSyncSlice) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		return nil
+	}
+	v.SyncSlice()
 	return nil
 }
 

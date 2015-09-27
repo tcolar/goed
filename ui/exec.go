@@ -8,15 +8,17 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-func exec(args []string) int64 {
+func exec(args []string, interactive bool) int64 {
 	workDir := "."
 	ed := core.Ed.(*Editor)
 	if ed.CurView() != nil {
 		workDir = ed.CurView().WorkDir()
 	}
 	v := ed.AddViewSmart()
-	v.SetViewType(core.ViewTypeInteractive)
-	b, err := backend.NewMemBackendCmd(args, workDir, v.Id(), nil)
+	if interactive {
+		v.SetViewType(core.ViewTypeInteractive)
+	}
+	b, err := backend.NewMemBackendCmd(args, workDir, v.Id(), nil, false)
 	if err != nil {
 		ed.SetStatusErr(err.Error())
 	}
@@ -25,7 +27,7 @@ func exec(args []string) int64 {
 }
 
 func execTerm(args []string) int64 {
-	vid := exec(args)
+	vid := exec(args, true)
 	v := core.Ed.ViewById(vid).(*View)
 	b := v.backend.(*backend.BackendCmd)
 	b.IsTerm = true

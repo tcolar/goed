@@ -84,6 +84,7 @@ type Renderer interface {
 	Render()
 	SetBounds(y1, x1, y2, x2 int)
 	Event(e *Editor, ev *termbox.Event)
+	MouseEvent(e *Editor, ev *termbox.Event)
 }
 
 // TODO: optimize, for example might only need to resize a single column
