@@ -17,7 +17,7 @@ func BufferFile(id int64) string {
 
 // NewMemBackendCmd creates a Comand runner backed by an In-memory based backend
 // if title == nil then will show the command name
-func NewMemBackendCmd(args []string, dir string, viewId int64, title *string) (*BackendCmd, error) {
+func NewMemBackendCmd(args []string, dir string, viewId int64, title *string, scrollTop bool) (*BackendCmd, error) {
 	b, err := NewMemBackend("", viewId)
 	if err != nil {
 		return nil, err
@@ -26,7 +26,10 @@ func NewMemBackendCmd(args []string, dir string, viewId int64, title *string) (*
 	if err != nil {
 		return nil, err
 	}
+	c.scrollTop = scrollTop
 	c.Backend = b
+	c.Backend.Wipe()
+
 	c.Starter = &MemCmdStarter{}
 	go c.Start(viewId)
 	return c, nil
