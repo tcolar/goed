@@ -21,7 +21,7 @@ function goed_cd() {
 	goed_api view_cwd $GOED_INSTANCE $GOED_VIEW "`pwd`"
 } 
 
-export EDITOR="goed_open" # When withiin goed, $EDITOR is goed
+export EDITOR="goed_open" # When within goed, $EDITOR is goed
 
 alias cd="goed_cd"
 
