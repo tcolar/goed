@@ -36,17 +36,27 @@ func (e *Editor) EventLoop() {
 	e.term.SetInputMode(termbox.InputMouse)
 	for {
 		ev := termbox.PollEvent()
+		if ev.Key == termbox.KeyCtrlQ {
+			if !actions.EdQuitCheck() {
+				actions.EdSetStatusErr("Unsaved changes. Save or request close again.")
+			} else {
+				return // that's all falks, quit
+			}
+		}
 		switch ev.Type {
 		case termbox.EventResize:
 			actions.EdResize(ev.Height, ev.Width)
+			// TODO: for terminal view, tell terminal about new size
 		case termbox.EventKey:
+			// Special case for terminal/command views, pass most keystrokes through
+			v := e.CurView().(*View)
+			if v != nil && v.viewType == core.ViewTypeInteractive {
+				v.TermEvent(e, &ev)
+				break
+			}
+
 			switch ev.Key {
-			case termbox.KeyCtrlQ:
-				if !actions.EdQuitCheck() {
-					actions.EdSetStatusErr("Unsaved changes. Save or request close again.")
-				} else {
-					return // that's all falks, quit
-				}
+			// "Global" keys
 			case termbox.KeyEsc:
 				actions.CmdbarToggle()
 			default:
@@ -59,7 +69,7 @@ func (e *Editor) EventLoop() {
 		case termbox.EventMouse:
 			w := e.WidgetAt(ev.MouseY, ev.MouseX)
 			if w != nil {
-				w.Event(e, &ev)
+				w.MouseEvent(e, &ev)
 			}
 		}
 		actions.EdRender()
@@ -70,36 +80,35 @@ func (e *Editor) EventLoop() {
 
 // Event handler for Cmdbar
 func (c *Cmdbar) Event(e *Editor, ev *termbox.Event) {
-	switch ev.Type {
-	case termbox.EventKey:
-		switch ev.Key {
-		case termbox.KeyBackspace, termbox.KeyBackspace2:
-			if len(c.Cmd) > 0 {
-				c.Cmd = c.Cmd[:len(c.Cmd)-1]
-			}
-		case termbox.KeyEnter:
-			c.RunCmd()
-		default:
-			if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
-				c.Cmd = append(c.Cmd, ev.Ch)
-			}
+	switch ev.Key {
+	case termbox.KeyBackspace, termbox.KeyBackspace2:
+		if len(c.Cmd) > 0 {
+			c.Cmd = c.Cmd[:len(c.Cmd)-1]
 		}
+	case termbox.KeyEnter:
+		c.RunCmd()
+	default:
+		if ev.Ch != 0 && ev.Mod == 0 { // otherwise special key combo
+			c.Cmd = append(c.Cmd, ev.Ch)
+		}
+	}
+}
 
-	case termbox.EventMouse:
-		switch ev.Key {
-		case termbox.MouseLeft:
-			if isMouseUp(ev) && !e.cmdOn {
-				actions.CmdbarToggle()
-			}
+func (s *Cmdbar) MouseEvent(e *Editor, ev *termbox.Event) {
+	switch ev.Key {
+	case termbox.MouseLeft:
+		if isMouseUp(ev) && !e.cmdOn {
+			actions.CmdbarToggle()
 		}
 	}
 }
 
 // ##################### StatusBar ########################################
 
-// Event handler for Statusbar
 func (s *Statusbar) Event(e *Editor, ev *termbox.Event) {
-	// Anything ??
+}
+
+func (s *Statusbar) MouseEvent(e *Editor, ev *termbox.Event) {
 }
 
 // ##################### View       ########################################
@@ -110,250 +119,310 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	es := false //expand selection
 	vid := v.Id()
 	actions.ViewAutoScroll(vid, 0, 0, false)
-	switch ev.Type {
-	case termbox.EventKey:
-		ln, col := actions.ViewCurPos(vid)
-		e.evtState.InDrag = false
+	ln, col := actions.ViewCurPos(vid)
+	e.evtState.InDrag = false
 
-		// alt combos
-		if ev.Mod == termbox.ModAlt {
-			switch ev.Ch {
-			case 'o':
-				actions.ViewOpenSelection(vid, false)
-				return
-			}
-			return
+	if v.viewCommonEvent(e, ev) {
+		return
+	}
+
+	switch ev.Key {
+	// Ctrl combos
+	case termbox.KeyCtrlA:
+		actions.ViewSelectAll(vid)
+		return
+	case termbox.KeyCtrlC:
+		actions.ViewCopy(vid)
+	//case termbox.KeyCtrlF:
+	//	actions.External("search.ank")
+	case termbox.KeyCtrlO:
+		actions.ViewOpenSelection(vid, true)
+	case termbox.KeyCtrlQ:
+		return
+	case termbox.KeyCtrlR:
+		actions.ViewReload(vid)
+	case termbox.KeyCtrlS:
+		actions.ViewSave(vid)
+	case termbox.KeyCtrlT:
+		execTerm([]string{core.Terminal})
+	case termbox.KeyCtrlV:
+		actions.ViewPaste(vid)
+		dirty = true
+	case termbox.KeyCtrlW:
+		actions.EdDelViewCheck(e.curViewId)
+		return
+	case termbox.KeyCtrlX:
+		actions.ViewCut(vid)
+		dirty = true
+	case termbox.KeyCtrlY:
+		actions.ViewRedo(vid)
+	case termbox.KeyCtrlZ:
+		actions.ViewUndo(vid)
+	// "Regular" keys
+	case termbox.KeyArrowRight:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtRight)
+		es = true
+	case termbox.KeyArrowLeft:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtLeft)
+		es = true
+	case termbox.KeyArrowUp:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtUp)
+		es = true
+	case termbox.KeyArrowDown:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtDown)
+		es = true
+	case termbox.KeyPgdn:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtPgDown)
+		es = true
+	case termbox.KeyPgup:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtPgUp)
+		es = true
+	case termbox.KeyEnd:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtEnd)
+		es = true
+	case termbox.KeyHome:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtHome)
+		es = true
+	case termbox.KeyTab:
+		actions.ViewInsertCur(vid, "\t")
+		dirty = true
+		es = true
+	case termbox.KeyEnter:
+		actions.ViewInsertNewLine(vid)
+		dirty = true
+	case termbox.KeyDelete:
+		actions.ViewDeleteCur(vid)
+		dirty = true
+	case termbox.KeyBackspace, termbox.KeyBackspace2:
+		actions.ViewBackspace(vid)
+		dirty = true
+	default:
+		// insert the key
+		if ev.Ch != 0 && ev.Mod == 0 && ev.Meta == 0 { // otherwise some special key combo
+			actions.ViewInsertCur(vid, string(ev.Ch))
+			dirty = true
 		}
-
-		// Combos not supported directly by termbox
-		if ev.Meta == termbox.Ctrl {
-			switch ev.Key {
-			case termbox.KeyArrowDown:
-				actions.EdViewNavigate(core.CursorMvmtDown)
-				return
-			case termbox.KeyArrowUp:
-				actions.EdViewNavigate(core.CursorMvmtUp)
-				return
-			case termbox.KeyArrowLeft:
-				actions.EdViewNavigate(core.CursorMvmtLeft)
-				return
-			case termbox.KeyArrowRight:
-				actions.EdViewNavigate(core.CursorMvmtRight)
-				return
-			}
-		}
-
-		switch ev.Key {
-		// Ctrl combos
-		case termbox.KeyCtrlA:
-			actions.ViewSelectAll(vid)
-			return
-		case termbox.KeyCtrlC:
-			switch v.backend.(type) {
-			case *backend.BackendCmd:
-				if len(*v.Selections()) == 0 { // if selections, fallthrough to copy
-					// CTRL+C process
-					if v.backend.(*backend.BackendCmd).Running() {
-						actions.ViewCmdStop(vid)
-						return
-					}
-				}
-			}
-			actions.ViewCopy(vid)
-		//case termbox.KeyCtrlF:
-		//	actions.External("search.ank")
-		case termbox.KeyCtrlO:
-			actions.ViewOpenSelection(vid, true)
-		case termbox.KeyCtrlQ:
-			return
-		case termbox.KeyCtrlR:
-			actions.ViewReload(vid)
-		case termbox.KeyCtrlS:
-			actions.ViewSave(vid)
-		case termbox.KeyCtrlT:
-			execTerm([]string{core.Terminal})
-		case termbox.KeyCtrlV:
-			actions.ViewPaste(vid)
-			dirty = true
-		case termbox.KeyCtrlW:
-			actions.EdDelViewCheck(e.curViewId)
-			return
-		case termbox.KeyCtrlX:
-			actions.ViewCut(vid)
-			dirty = true
-		case termbox.KeyCtrlY:
-			actions.ViewRedo(vid)
-		case termbox.KeyCtrlZ:
-			actions.ViewUndo(vid)
-		// "Regular" keys
-		case termbox.KeyArrowRight:
-			actions.ViewCursorMvmt(vid, core.CursorMvmtRight)
-			es = true
-		case termbox.KeyArrowLeft:
-			actions.ViewCursorMvmt(vid, core.CursorMvmtLeft)
-			es = true
-		case termbox.KeyArrowUp:
-			actions.ViewCursorMvmt(vid, core.CursorMvmtUp)
-			es = true
-		case termbox.KeyArrowDown:
-			actions.ViewCursorMvmt(vid, core.CursorMvmtDown)
-			es = true
-		case termbox.KeyPgdn:
-			actions.ViewCursorMvmt(vid, core.CursorMvmtPgDown)
-			es = true
-		case termbox.KeyPgup:
-			actions.ViewCursorMvmt(vid, core.CursorMvmtPgUp)
-			es = true
-		case termbox.KeyEnd:
-			actions.ViewCursorMvmt(vid, core.CursorMvmtEnd)
-			es = true
-		case termbox.KeyHome:
-			actions.ViewCursorMvmt(vid, core.CursorMvmtHome)
-			es = true
-		case termbox.KeyTab:
-			actions.ViewInsertCur(vid, "\t")
-			dirty = true
-			es = true
-		case termbox.KeyEnter:
-			actions.ViewInsertNewLine(vid)
-			dirty = true
-		case termbox.KeyDelete:
-			actions.ViewDeleteCur(vid)
-			dirty = true
-		case termbox.KeyBackspace, termbox.KeyBackspace2:
-			actions.ViewBackspace(vid)
-			dirty = true
-		default:
-			// insert the key
-			if ev.Ch != 0 && ev.Mod == 0 && ev.Meta == 0 { // otherwise some special key combo
-				actions.ViewInsertCur(vid, string(ev.Ch))
-				dirty = true
-			}
-		}
-		// extend keyboard selection
-		if es && ev.Meta == termbox.Shift {
-			actions.ViewStretchSelection(vid, ln, col)
-		} else {
-			actions.ViewClearSelections(vid)
-		}
-	case termbox.EventMouse:
-		col := ev.MouseX - v.x1 + v.offx - 2
-		ln := ev.MouseY - v.y1 + v.offy - 2
-		if isMouseUp(ev) && ev.MouseX == e.evtState.LastClickX &&
-			ev.MouseY == e.evtState.LastClickY &&
-			time.Now().Unix()-e.evtState.LastLeftClick <= 2 {
-			ev.Key = MouseLeftDbl
-			e.evtState.LastClickX = -1
-		}
-		switch ev.Key {
-		case MouseLeftDbl:
-			if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
-				actions.EdSwapViews(e.CurViewId(), vid)
-				actions.EdActivateView(vid, v.CurLine(), v.CurCol())
-				e.evtState.MovingView = false
-				actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
-				return
-			}
-			if selection := v.ExpandSelectionWord(ln, col); selection != nil {
-				v.selections = []core.Selection{
-					*selection,
-				}
-			}
-			return
-		case termbox.MouseScrollUp:
-			actions.ViewMoveCursor(vid, -1, 0)
-			return
-		case termbox.MouseScrollDown:
-			actions.ViewMoveCursor(vid, 1, 0)
-			return
-		case termbox.MouseRight:
-			if isMouseUp(ev) {
-				e.evtState.InDrag = false
-				e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
-				e.evtState.LastRightClick = time.Now().Unix()
-				actions.ViewClearSelections(vid)
-				actions.ViewMoveCursor(vid, ev.MouseY-v.y1-2-v.CursorY, ev.MouseX-v.x1-2-v.CursorX)
-				actions.ViewOpenSelection(vid, true)
-			}
-			return
-		case termbox.MouseLeft:
-			if e.evtState.MovingView && isMouseUp(ev) {
-				e.evtState.MovingView = false
-				actions.EdViewMove(vid, e.evtState.LastClickY, e.evtState.LastClickX, ev.MouseY, ev.MouseX)
-				actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
-				return
-			}
-			if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
-				actions.EdDelViewCheck(vid)
-				return
-			}
-			if ev.MouseX == v.x1 && ev.MouseY == v.y1 && isMouseUp(ev) {
-				// handle
-				e.evtState.MovingView = true
-				e.evtState.LastClickX = ev.MouseX
-				e.evtState.LastClickY = ev.MouseY
-				e.evtState.LastLeftClick = time.Now().Unix()
-				actions.EdSetStatusErr("Starting move, click new position or dbl click to swap")
-				return
-			}
-			if ev.MouseX <= v.x1 {
-				return // scrollbar TBD
-			}
-			if ev.DragOn {
-				if !e.evtState.InDrag {
-					e.evtState.InDrag = true
-					actions.ViewClearSelections(vid)
-					actions.EdActivateView(vid, e.evtState.DragLn, e.evtState.DragCol)
-				}
-				// continued drag
-				x1 := e.evtState.DragCol
-				y1 := e.evtState.DragLn
-				x2 := col
-				y2 := ln
-
-				actions.ViewClearSelections(vid)
-				actions.ViewAddSelection(
-					vid,
-					y1,
-					v.LineRunesTo(v.slice, y1, x1),
-					y2,
-					v.LineRunesTo(v.slice, y2, x2))
-
-				// Handling scrolling while dragging
-				if ln < v.offy { // scroll up
-					actions.ViewAutoScroll(vid, -v.LineCount()/10, 0, true)
-				} else if ln >= v.offy+(v.y2-v.y1)-2 { // scroll down
-					actions.ViewAutoScroll(vid, v.LineCount()/10, 0, true)
-				} else if col < v.offx { //scroll left
-					actions.ViewAutoScroll(vid, 0, -5, true)
-				} else if col >= v.offx+(v.x2-v.x1)-3 { // scroll right
-					actions.ViewAutoScroll(vid, 0, 5, true)
-				}
-				return
-			}
-
-			if isMouseUp(ev) { // click
-				if selected, _ := v.Selected(ln, col); selected {
-					e.evtState.InDrag = false
-					// otherwise it could be the mouseUp at the end of a drag.
-				}
-				if !e.evtState.InDrag {
-					actions.ViewClearSelections(vid)
-					actions.EdActivateView(vid, ln, col)
-					e.evtState.LastLeftClick = time.Now().Unix()
-					e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
-					actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
-				}
-			}
-			e.evtState.InDrag = false
-			actions.CmdbarEnable(false)
-			e.evtState.DragLn = ln
-			e.evtState.DragCol = col
-		} // end switch
+	}
+	// extend keyboard selection
+	if es && ev.Meta == termbox.Shift {
+		actions.ViewStretchSelection(vid, ln, col)
+	} else {
+		actions.ViewClearSelections(vid)
 	}
 
 	if dirty {
 		actions.ViewSetDirty(vid, true)
+	}
+}
+
+func (v *View) viewCommonEvent(e *Editor, ev *termbox.Event) bool {
+	vid := v.Id()
+	// alt combos
+	if ev.Mod == termbox.ModAlt {
+		switch ev.Ch {
+		case 'o':
+			actions.ViewOpenSelection(vid, false)
+			return true
+		}
+		return true
+	}
+
+	// Combos not supported directly by termbox
+	if ev.Meta == termbox.Ctrl {
+		switch ev.Key {
+		case termbox.KeyArrowDown:
+			actions.EdViewNavigate(core.CursorMvmtDown)
+			return true
+		case termbox.KeyArrowUp:
+			actions.EdViewNavigate(core.CursorMvmtUp)
+			return true
+		case termbox.KeyArrowLeft:
+			actions.EdViewNavigate(core.CursorMvmtLeft)
+			return true
+		case termbox.KeyArrowRight:
+			actions.EdViewNavigate(core.CursorMvmtRight)
+			return true
+		}
+	}
+	return false
+}
+
+// Events for terminal/command views
+func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
+	vid := v.Id()
+	actions.ViewAutoScroll(vid, 0, 0, false)
+	e.evtState.InDrag = false
+	bc := v.backend.(*backend.BackendCmd)
+	es := false
+	ln, col := actions.ViewCurPos(vid)
+
+	if v.viewCommonEvent(e, ev) {
+		return
+	}
+	// Handle termbox special keys to VT100
+	switch ev.Key {
+	case 0: // "normal" character
+		actions.ViewInsertCur(vid, string(ev.Ch))
+	case termbox.KeyDelete:
+		bc.SendBytes([]byte{27, '[', 'P'})
+	case termbox.KeyArrowUp:
+		bc.SendBytes([]byte{27, '[', 'A'})
+	case termbox.KeyArrowDown:
+		bc.SendBytes([]byte{27, '[', 'B'})
+	case termbox.KeyArrowRight:
+		bc.SendBytes([]byte{27, '[', 'C'})
+	case termbox.KeyArrowLeft:
+		bc.SendBytes([]byte{27, '[', 'D'})
+	case termbox.KeyCtrlC:
+		if len(v.selections) > 0 {
+			actions.ViewCopy(vid)
+		} else {
+			bc.SendBytes([]byte{byte(ev.Key)})
+		}
+	case termbox.KeyCtrlO:
+		actions.ViewOpenSelection(vid, true)
+	case termbox.KeyCtrlT:
+		execTerm([]string{core.Terminal})
+	case termbox.KeyCtrlV:
+		actions.ViewPaste(vid)
+	case termbox.KeyPgdn:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtPgDown)
+		es = true
+	case termbox.KeyPgup:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtPgUp)
+		es = true
+	/*case termbox.KeyEnd:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtEnd)
+		es = true
+	case termbox.KeyHome:
+		actions.ViewCursorMvmt(vid, core.CursorMvmtHome)
+		es = true*/
+	default: // some other special character? pass through for now
+		bc.SendBytes([]byte{byte(ev.Key)})
+	}
+
+	// extend keyboard selection
+	if es && ev.Meta == termbox.Shift {
+		actions.ViewStretchSelection(vid, ln, col)
+	} else {
+		actions.ViewClearSelections(vid)
+	}
+}
+
+func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
+	vid := v.Id()
+	col := ev.MouseX - v.x1 + v.offx - 2
+	ln := ev.MouseY - v.y1 + v.offy - 2
+	if isMouseUp(ev) && ev.MouseX == e.evtState.LastClickX &&
+		ev.MouseY == e.evtState.LastClickY &&
+		time.Now().Unix()-e.evtState.LastLeftClick <= 2 {
+		ev.Key = MouseLeftDbl
+		e.evtState.LastClickX = -1
+	}
+	switch ev.Key {
+	case MouseLeftDbl:
+		if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
+			actions.EdSwapViews(e.CurViewId(), vid)
+			actions.EdActivateView(vid, v.CurLine(), v.CurCol())
+			e.evtState.MovingView = false
+			actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
+			return
+		}
+		if selection := v.ExpandSelectionWord(ln, col); selection != nil {
+			v.selections = []core.Selection{
+				*selection,
+			}
+		}
+		return
+	case termbox.MouseScrollUp:
+		actions.ViewMoveCursor(vid, -1, 0)
+		return
+	case termbox.MouseScrollDown:
+		actions.ViewMoveCursor(vid, 1, 0)
+		return
+	case termbox.MouseRight:
+		if isMouseUp(ev) {
+			e.evtState.InDrag = false
+			e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
+			e.evtState.LastRightClick = time.Now().Unix()
+			actions.ViewClearSelections(vid)
+			actions.ViewMoveCursor(vid, ev.MouseY-v.y1-2-v.CursorY, ev.MouseX-v.x1-2-v.CursorX)
+			actions.ViewOpenSelection(vid, true)
+		}
+		return
+	case termbox.MouseLeft:
+		if e.evtState.MovingView && isMouseUp(ev) {
+			e.evtState.MovingView = false
+			actions.EdViewMove(vid, e.evtState.LastClickY, e.evtState.LastClickX, ev.MouseY, ev.MouseX)
+			actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
+			return
+		}
+		if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
+			actions.EdDelViewCheck(vid)
+			return
+		}
+		if ev.MouseX == v.x1 && ev.MouseY == v.y1 && isMouseUp(ev) {
+			// handle
+			e.evtState.MovingView = true
+			e.evtState.LastClickX = ev.MouseX
+			e.evtState.LastClickY = ev.MouseY
+			e.evtState.LastLeftClick = time.Now().Unix()
+			actions.EdSetStatusErr("Starting move, click new position or dbl click to swap")
+			return
+		}
+		if ev.MouseX <= v.x1 {
+			return // scrollbar TBD
+		}
+		if ev.DragOn {
+			if !e.evtState.InDrag {
+				e.evtState.InDrag = true
+				actions.ViewClearSelections(vid)
+				actions.EdActivateView(vid, e.evtState.DragLn, e.evtState.DragCol)
+			}
+			// continued drag
+			x1 := e.evtState.DragCol
+			y1 := e.evtState.DragLn
+			x2 := col
+			y2 := ln
+
+			actions.ViewClearSelections(vid)
+			actions.ViewAddSelection(
+				vid,
+				y1,
+				v.LineRunesTo(v.slice, y1, x1),
+				y2,
+				v.LineRunesTo(v.slice, y2, x2))
+
+			// Handling scrolling while dragging
+			if ln < v.offy { // scroll up
+				actions.ViewAutoScroll(vid, -v.LineCount()/10, 0, true)
+			} else if ln >= v.offy+(v.y2-v.y1)-2 { // scroll down
+				actions.ViewAutoScroll(vid, v.LineCount()/10, 0, true)
+			} else if col < v.offx { //scroll left
+				actions.ViewAutoScroll(vid, 0, -5, true)
+			} else if col >= v.offx+(v.x2-v.x1)-3 { // scroll right
+				actions.ViewAutoScroll(vid, 0, 5, true)
+			}
+			return
+		}
+
+		if isMouseUp(ev) { // click
+			if selected, _ := v.Selected(ln, col); selected {
+				e.evtState.InDrag = false
+				// otherwise it could be the mouseUp at the end of a drag.
+			}
+			if !e.evtState.InDrag {
+				actions.ViewClearSelections(vid)
+				actions.EdActivateView(vid, ln, col)
+				e.evtState.LastLeftClick = time.Now().Unix()
+				e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
+				actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
+			}
+		}
+		e.evtState.InDrag = false
+		actions.CmdbarEnable(false)
+		e.evtState.DragLn = ln
+		e.evtState.DragCol = col
 	}
 }
 
