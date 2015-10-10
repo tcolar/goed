@@ -61,7 +61,7 @@ func (c *Cmdbar) RunCmd() {
 		query := string(c.Cmd[2:])
 		c.Search(query)
 	default:
-		exec(parts)
+		exec(parts, false)
 	}
 	if err == nil {
 		actions.CmdbarEnable(false)
@@ -105,7 +105,7 @@ func (c *Cmdbar) line(args []string) {
 }
 
 func (c *Cmdbar) Search(query string) {
-	exec([]string{"grep", "-rn", query})
+	exec([]string{"grep", "-rn", query}, false)
 }
 
 /*

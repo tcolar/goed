@@ -242,7 +242,9 @@ func (v *View) OpenSelection(newView bool) {
 	}
 	if newView {
 		if isDir {
-			ed.InsertView(v2, v, 0.5)
+			// open in first column (directories)
+			vi := ed.views[ed.Cols[0].Views[len(ed.Cols[0].Views)-1]]
+			ed.InsertView(v2, vi, 0.5)
 		} else {
 			ed.InsertViewSmart(v2)
 		}
