@@ -264,7 +264,8 @@ func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
 	case 0: // "normal" character
 		actions.ViewInsertCur(vid, string(ev.Ch))
 	case termbox.KeyDelete:
-		bc.SendBytes([]byte{27, '[', 'P'})
+		bc.SendBytes([]byte{27, '[', 'C'}) // move right
+		bc.SendBytes([]byte{127})          // delete (~ backspace)
 	case termbox.KeyArrowUp:
 		bc.SendBytes([]byte{27, '[', 'A'})
 	case termbox.KeyArrowDown:
@@ -291,14 +292,19 @@ func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
 	case termbox.KeyPgup:
 		actions.ViewCursorMvmt(vid, core.CursorMvmtPgUp)
 		es = true
-	/*case termbox.KeyEnd:
-		actions.ViewCursorMvmt(vid, core.CursorMvmtEnd)
+	case termbox.KeyEnd:
+		bc.SendBytes([]byte{byte(termbox.KeyCtrlE)})
 		es = true
 	case termbox.KeyHome:
-		actions.ViewCursorMvmt(vid, core.CursorMvmtHome)
-		es = true*/
+		bc.SendBytes([]byte{byte(termbox.KeyCtrlA)})
+		es = true
 	default: // some other special character? pass through for now
-		bc.SendBytes([]byte{byte(ev.Key)})
+		b := []byte{}
+		if ev.Key > 256 {
+			b = append(b, byte(ev.Key/256))
+		}
+		b = append(b, byte(ev.Key%256))
+		bc.SendBytes(b)
 	}
 
 	// extend keyboard selection
