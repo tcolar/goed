@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -464,6 +465,7 @@ func (e *Editor) TerminateView(vid int64) {
 		// actions targeted to it have a chance to finish.
 		// Saves from a bunch of nil checks down the line.
 		core.Bus.Flush()
+		time.Sleep(1 * time.Second)
 		delete(e.views, vid)
 	}()
 	actions.UndoClear(vid)
