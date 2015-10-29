@@ -18,7 +18,7 @@ Early screenshot (6/2/2015):
 ### Installation
 Prerequities: 
 - Have Go(Golang) installed
-- Setup a good terminal font and size (ie: Consolas, Monaco or Monospace, size 10 or so.)
+- Setup a good monospace terminal font and size (ie: Deja Vu Sans Mono or Monaco, size 10 or so.)
 
 ```
 export PATH=$PATH:$GOPATH/bin
