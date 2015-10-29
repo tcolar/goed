@@ -155,7 +155,6 @@ func (v *View) LineCount() int {
 
 // Line return the line at the given index
 func (v *View) Line(s *core.Slice, lnIndex int) []rune {
-	// backend is 1-based indexed
 	index := lnIndex - s.R1
 	if index < 0 || index >= len(*s.Text()) {
 		return []rune{}

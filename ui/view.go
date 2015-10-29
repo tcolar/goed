@@ -308,8 +308,6 @@ func (v *View) SyncSlice() {
 // This makes all the checks to make sure it's in a valid location
 // as well as scrolling the view as needed.
 func (v *View) MoveCursor(y, x int) {
-	slice := v.slice
-
 	curCol := v.CurCol()
 	curLine := v.CurLine()
 
@@ -320,11 +318,15 @@ func (v *View) MoveCursor(y, x int) {
 		y = -curLine
 	} else if curLine+y > lastLine {
 		y = lastLine - curLine
-		x = v.lineCols(slice, curLine+y) - curCol
 	}
 	if curCol+x < 0 {
 		x = -curCol
 	}
+
+	// sync up slice with any vertical scrolling
+	v.slice = v.backend.Slice(v.CurLine()+y, 0, v.CurLine()+y+v.LastViewLine(), -1)
+	slice := v.slice
+
 	ln := v.lineCols(slice, curLine+y)
 	if curCol+x > ln {
 		x = ln - curCol // put at EOL
@@ -342,15 +344,6 @@ func (v *View) MoveCursor(y, x int) {
 		x -= v.CursorX - from
 	}
 
-	// No scrolling needed
-	if curCol+x >= v.offx && curCol+x <= v.offx+v.LastViewCol() &&
-		curLine+y >= v.offy && curLine+y <= v.offy+v.LastViewLine() {
-		v.NormalizeCursor()
-		v.setCursor(v.y1+2+v.CursorY, v.x1+2+v.CursorX)
-		return
-	}
-
-	// scrolling needed
 	if curCol+x < v.offx {
 		v.offx = curCol + x
 		v.CursorX = 0

@@ -135,16 +135,12 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		actions.ViewCopy(vid)
 	//case termbox.KeyCtrlF:
 	//	actions.External("search.ank")
-	case termbox.KeyCtrlO:
-		actions.ViewOpenSelection(vid, true)
 	case termbox.KeyCtrlQ:
 		return
 	case termbox.KeyCtrlR:
 		actions.ViewReload(vid)
 	case termbox.KeyCtrlS:
 		actions.ViewSave(vid)
-	case termbox.KeyCtrlT:
-		execTerm([]string{core.Terminal})
 	case termbox.KeyCtrlV:
 		actions.ViewPaste(vid)
 		dirty = true
@@ -244,6 +240,14 @@ func (v *View) viewCommonEvent(e *Editor, ev *termbox.Event) bool {
 			return true
 		}
 	}
+	switch ev.Key {
+	case termbox.KeyCtrlO:
+		actions.ViewOpenSelection(vid, true)
+		return true
+	case termbox.KeyCtrlT:
+		execTerm([]string{core.Terminal})
+		return true
+	}
 	return false
 }
 
@@ -263,29 +267,26 @@ func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
 	switch ev.Key {
 	case 0: // "normal" character
 		actions.ViewInsertCur(vid, string(ev.Ch))
-	case termbox.KeyDelete:
-		bc.SendBytes([]byte{27, '[', 'C'}) // move right
-		bc.SendBytes([]byte{127})          // delete (~ backspace)
-	case termbox.KeyArrowUp:
-		bc.SendBytes([]byte{27, '[', 'A'})
-	case termbox.KeyArrowDown:
-		bc.SendBytes([]byte{27, '[', 'B'})
-	case termbox.KeyArrowRight:
-		bc.SendBytes([]byte{27, '[', 'C'})
-	case termbox.KeyArrowLeft:
-		bc.SendBytes([]byte{27, '[', 'D'})
 	case termbox.KeyCtrlC:
 		if len(v.selections) > 0 {
 			actions.ViewCopy(vid)
 		} else {
 			bc.SendBytes([]byte{byte(ev.Key)})
 		}
-	case termbox.KeyCtrlO:
-		actions.ViewOpenSelection(vid, true)
-	case termbox.KeyCtrlT:
-		execTerm([]string{core.Terminal})
 	case termbox.KeyCtrlV:
 		actions.ViewPaste(vid)
+	// "special"/navigation keys
+	case termbox.KeyDelete:
+		bc.SendBytes([]byte{27, 'O', 'C'}) // move right
+		bc.SendBytes([]byte{127})          // delete (~ backspace)
+	case termbox.KeyArrowUp:
+		bc.SendBytes([]byte{27, 'O', 'A'})
+	case termbox.KeyArrowDown:
+		bc.SendBytes([]byte{27, 'O', 'B'})
+	case termbox.KeyArrowRight:
+		bc.SendBytes([]byte{27, 'O', 'C'})
+	case termbox.KeyArrowLeft:
+		bc.SendBytes([]byte{27, 'O', 'D'})
 	case termbox.KeyPgdn:
 		actions.ViewCursorMvmt(vid, core.CursorMvmtPgDown)
 		es = true
@@ -298,6 +299,31 @@ func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
 	case termbox.KeyHome:
 		bc.SendBytes([]byte{byte(termbox.KeyCtrlA)})
 		es = true
+	// function keys
+	case termbox.KeyF1:
+		bc.SendBytes([]byte{27, 'O', 'P'})
+	case termbox.KeyF2:
+		bc.SendBytes([]byte{27, 'O', 'Q'})
+	case termbox.KeyF3:
+		bc.SendBytes([]byte{27, 'O', 'R'})
+	case termbox.KeyF4:
+		bc.SendBytes([]byte{27, 'O', 'S'})
+	case termbox.KeyF5:
+		bc.SendBytes([]byte{27, '[', '1', '5', '~'})
+	case termbox.KeyF6:
+		bc.SendBytes([]byte{27, '[', '1', '7', '~'})
+	case termbox.KeyF7:
+		bc.SendBytes([]byte{27, '[', '1', '8', '~'})
+	case termbox.KeyF8:
+		bc.SendBytes([]byte{27, '[', '1', '9', '~'})
+	case termbox.KeyF9:
+		bc.SendBytes([]byte{27, '[', '2', '0', '~'})
+	case termbox.KeyF10:
+		bc.SendBytes([]byte{27, '[', '2', '1', '~'})
+	case termbox.KeyF11:
+		bc.SendBytes([]byte{27, '[', '2', '3', '~'})
+	case termbox.KeyF12:
+		bc.SendBytes([]byte{27, '[', '2', '4', '~'})
 	default: // some other special character? pass through for now
 		b := []byte{}
 		if ev.Key > 256 {

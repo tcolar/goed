@@ -272,7 +272,7 @@ func (b *MemBackend) Overwrite(row, col int, text string) (atRow, atCol int) {
 	runes := core.StringToRunes(text)
 	for z, ln := range runes { // each line
 		if z > 0 {
-			col = 0
+			row++
 		}
 		for _, ch := range ln {
 			// VT100 TODO: configurable term width
@@ -280,13 +280,13 @@ func (b *MemBackend) Overwrite(row, col int, text string) (atRow, atCol int) {
 				col = 0
 				row++
 			}
-			for len(b.text) <= row+len(runes) { // make sure we have enough rows
+			for len(b.text) <= row { // make sure we have enough rows
 				b.text = append(b.text, []rune{})
 			}
-			for len(b.text[row+z]) <= col { // make sure enough cols
-				b.text[row+z] = append(b.text[row+z], ' ')
+			for len(b.text[row]) <= col { // make sure enough cols
+				b.text[row] = append(b.text[row], ' ')
 			}
-			b.text[row+z][col] = ch // write the char
+			b.text[row][col] = ch // write the char
 			col++
 		}
 	}

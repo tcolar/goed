@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -160,7 +159,8 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 		default:
 			if atomic.SwapInt32(&b.dirty, 0) > 0 {
 				actions.ViewTrim(b.viewId, core.Ed.Config().MaxCmdBufferLines)
-				actions.ViewSyncSlice(b.viewId)
+				l, c := actions.ViewCurPos(b.viewId)
+				actions.ViewMoveCursor(b.viewId, b.line-l, b.col-c)
 				actions.EdRender()
 			}
 		}
@@ -179,11 +179,5 @@ func (b *backendAppender) Write(data []byte) (int, error) {
 
 func (b *backendAppender) flush(data []byte) error {
 	b.line, b.col = b.backend.(*MemBackend).Overwrite(b.line, b.col, string(data))
-	log.Printf("Flushed %v, now @ (%d,%d) | %+q", data, b.line, b.col, string(data))
-	// sync up the view cursor with term cursor
-	actions.ViewSyncSlice(b.viewId)
-	l, c := actions.ViewCurPos(b.viewId)
-	actions.ViewMoveCursor(b.viewId, b.line-l, b.col-c)
-	actions.ViewRender(b.viewId)
 	return nil
 }
