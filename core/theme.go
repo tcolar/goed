@@ -64,10 +64,7 @@ func ReadTheme(loc string) (*Theme, error) {
 }
 
 // The format of a style as stored in a file is 4 bytes, HexaDecimal as follows:
-// Byte 1 : 256 color palette index
-// Byte 2 : 16 color palette index
-// Byte 3 : 2 color (monochrome) palette index
-// Byte 4 : Attribute such as (0: plain, 1:Bold, 3 : Underlined)
+// color, attr
 type Style struct {
 	uint16
 }

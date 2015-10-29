@@ -57,7 +57,7 @@ func (h *Highlights) Update(text [][]rune, file string) {
 	}
 }
 
-// StyleAt returnsthe highlight at a given location,
+// StyleAt returns the highlight at a given location,
 // Expects forward sweep from start to finish !
 func (h *Highlights) StyleAt(ln, col int) StyleId {
 	if ln >= len(h.Lines) {
