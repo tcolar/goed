@@ -15,6 +15,7 @@ func exec(args []string, interactive bool) int64 {
 		workDir = ed.CurView().WorkDir()
 	}
 	v := ed.AddViewSmart()
+	v.highlighter = &TermHighlighter{}
 	if interactive {
 		v.SetViewType(core.ViewTypeInteractive)
 	}

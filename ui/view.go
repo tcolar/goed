@@ -7,7 +7,6 @@ import (
 
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
-	"github.com/tcolar/goed/syntax"
 )
 
 const tabSize = 4
@@ -28,11 +27,11 @@ type View struct {
 	title            string
 	lastCloseTs      time.Time   // Timestamp of previous view close request
 	slice            *core.Slice // curSlice
-	highlights       syntax.Highlights
 	autoScrollX      int
 	autoScrollY      int
 	autoScrollSelect bool
 	viewType         core.ViewType
+	highlighter      core.Highlighter
 }
 
 func (e *Editor) NewView(loc string) *View {
@@ -45,6 +44,7 @@ func (e *Editor) NewView(loc string) *View {
 		HeightRatio: 0.5,
 		workDir:     d,
 		slice:       core.NewSlice(0, 0, 0, 0, [][]rune{}),
+		highlighter: &CodeHighlighter{},
 	}
 	e.views[v.id] = v
 	v.backend, _ = backend.NewMemBackend(loc, v.Id())
@@ -149,7 +149,7 @@ func (v *View) renderText() {
 	// Note: using full lines
 	v.slice = v.backend.Slice(v.offy, 0, v.offy+v.LastViewLine(), -1)
 	if e.Config().SyntaxHighlighting {
-		v.updateHighlights()
+		v.highlighter.UpdateHighlights(v)
 	}
 	for lnc, l := range *v.slice.Text() {
 		x := v.x1 + 2
@@ -197,7 +197,7 @@ func (v *View) renderText() {
 				e.TermFB(fg, bg)
 			} else {
 				if e.Config().SyntaxHighlighting && !inSelection {
-					v.applyHighlight(lnc, start+colc)
+					v.highlighter.ApplyHighlight(v, v.offy, lnc, start+colc)
 				}
 				e.TermChar(y, x, c)
 			}
@@ -221,47 +221,6 @@ func (v *View) renderText() {
 		e.TermChar(y, v.x1+1, t.MoreTextDown.Rune)
 		e.TermFB(fg, t.Bg)
 	}
-}
-
-func (v *View) updateHighlights() {
-	file := v.backend.SrcLoc()
-	if len(file) > 0 {
-		v.highlights.Update(*v.slice.Text(), file)
-	}
-}
-
-func (v *View) applyHighlight(ln, col int) {
-	style := v.highlights.StyleAt(ln, col)
-	e := core.Ed
-	t := e.Theme()
-	var s core.Style
-	switch style {
-	case syntax.StyleComment:
-		s = t.Comment
-	case syntax.StyleString:
-		s = t.String
-	case syntax.StyleKw1:
-		s = t.Keyword1
-	case syntax.StyleKw2:
-		s = t.Keyword2
-	case syntax.StyleKw3:
-		s = t.Keyword3
-	case syntax.StyleSep1:
-		s = t.Separator1
-	case syntax.StyleSep2:
-		s = t.Separator2
-	case syntax.StyleSep3:
-		s = t.Separator3
-	case syntax.StyleSymb1:
-		s = t.Symbol1
-	case syntax.StyleSymb2:
-		s = t.Symbol2
-	case syntax.StyleSymb3:
-		s = t.Symbol3
-	default:
-		s = t.Fg
-	}
-	e.TermFB(s, t.Bg)
 }
 
 // LastViewLines returns the last Line of this view (~ number of visible lines)

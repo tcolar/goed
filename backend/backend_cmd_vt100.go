@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/tcolar/goed/actions"
+	"github.com/tcolar/goed/core"
 )
 
 // TODO : Handle VT100 codes
@@ -25,6 +26,7 @@ func (b *backendAppender) vt100(data []byte) (int, error) {
 }
 
 func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
+	t := core.Ed.Theme()
 
 	start := *i
 	// bell
@@ -109,7 +111,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// cursor up (A)
 	if b.consume(data, i, 'A') || (b.consumeNb(data, i) && b.consume(data, i, 'A')) {
 		b.flush(data[from:start])
-		nb := b.readNb(data, start+2, 1)
+		nb, _ := b.readNb(data, start+2, 1)
 		b.line -= nb
 		if b.line < 0 {
 			b.line = 0
@@ -120,7 +122,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// cursor down (B)
 	if b.consume(data, i, 'B') || (b.consumeNb(data, i) && b.consume(data, i, 'B')) {
 		b.flush(data[from:start])
-		nb := b.readNb(data, start+2, 1)
+		nb, _ := b.readNb(data, start+2, 1)
 		b.line += nb
 		return true
 	}
@@ -128,7 +130,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// cursor right (C)
 	if b.consume(data, i, 'C') || (b.consumeNb(data, i) && b.consume(data, i, 'C')) {
 		b.flush(data[from:start])
-		nb := b.readNb(data, start+2, 1)
+		nb, _ := b.readNb(data, start+2, 1)
 		b.col += nb
 		return true
 	}
@@ -136,7 +138,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// cursor left (D)
 	if b.consume(data, i, 'D') || (b.consumeNb(data, i) && b.consume(data, i, 'D')) {
 		b.flush(data[from:start])
-		nb := b.readNb(data, start+2, 1)
+		nb, _ := b.readNb(data, start+2, 1)
 		b.col -= nb
 		if b.col < 0 {
 			b.col = 0
@@ -147,7 +149,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// cursor next line (E)
 	if b.consume(data, i, 'E') || (b.consumeNb(data, i) && b.consume(data, i, 'E')) {
 		b.flush(data[from:start])
-		nb := b.readNb(data, start+2, 1)
+		nb, _ := b.readNb(data, start+2, 1)
 		b.line += nb
 		b.col = 0
 		return true
@@ -156,7 +158,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// cursor prev line (F)
 	if b.consume(data, i, 'F') || (b.consumeNb(data, i) && b.consume(data, i, 'F')) {
 		b.flush(data[from:start])
-		nb := b.readNb(data, start+2, 1)
+		nb, _ := b.readNb(data, start+2, 1)
 		b.line -= nb
 		if b.line < 0 {
 			b.line = 0
@@ -168,7 +170,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// set cursor (H)
 	if b.consume(data, i, 'H') || (b.consumeNbTuple(data, i) && b.consume(data, i, 'H')) {
 		b.flush(data[from:start])
-		row, col := b.readNbTuple(data, start+2, 1, 1)
+		row, col, _ := b.readNbTuple(data, start+2, 1, 1)
 		b.line, b.col = row-1, col-1
 		if b.line < 0 {
 			b.line = 0
@@ -182,7 +184,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// clear screen (J)
 	if b.consume(data, i, 'J') || (b.consumeNb(data, i) && b.consume(data, i, 'J')) {
 		b.flush(data[from:start])
-		ps := b.readNb(data, start+2, 0)
+		ps, _ := b.readNb(data, start+2, 0)
 		switch ps {
 		case 0: // 0
 			b.backend.(*MemBackend).ClearScreen(b.line, b.col)
@@ -197,7 +199,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// clear line (K)
 	if b.consume(data, i, 'K') {
 		b.flush(data[from:start])
-		ps := b.readNb(data, start+2, 0)
+		ps, _ := b.readNb(data, start+2, 0)
 		switch ps {
 		case 0: // 0
 			b.backend.(*MemBackend).ClearLn(b.line, b.col)
@@ -213,27 +215,31 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// Color attribute + fg color  + bg color
 	if b.consumeNbTriple(data, i) && b.consume(data, i, 'm') {
 		b.flush(data[from:start]) // flush what was before escape seq first.
-		log.Printf("TODO Vt100 color: %v", data[start+2:*i])
+		x, y, z := b.readNbTriple(data, start+2, 0, 0, 0)
+		b.applyColors(x, y, z)
 		return true
 	}
 	*i = start + 2
 	// Color attribute + fg color
 	if b.consumeNbTuple(data, i) && b.consume(data, i, 'm') {
 		b.flush(data[from:start])
-		log.Printf("TODO Vt100 color: %v", data[start+2:*i])
+		x, y, _ := b.readNbTuple(data, start+2, 0, 0)
+		b.applyColors(x, y)
 		return true
 	}
 	*i = start + 2
 	// color attr alone
 	if b.consumeNb(data, i) && b.consume(data, i, 'm') {
 		b.flush(data[from:start])
-		log.Printf("TODO Vt100 color: %v", data[start+2:*i])
+		x, _ := b.readNb(data, start+2, 0)
+		b.applyColors(x)
 		return true
 	}
 	*i = start + 2
 	// reset char/color attributes
 	if b.consume(data, i, 'm') {
 		b.flush(data[from:start])
+		b.curFg, b.curBg = t.Fg, t.Bg
 		log.Printf("TODO Vt100 reset colors")
 		return true
 	}
@@ -289,6 +295,34 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	return false
 }
 
+// apply VT100 color attributes
+// http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Functions-using-CSI-_-ordered-by-the-final-character_s_
+func (b *backendAppender) applyColors(colors ...int) {
+	t := core.Ed.Theme()
+	for _, color := range colors {
+		log.Printf("Set color %d \n", color)
+		switch {
+		case color == 0: // normal
+			b.curFg = t.Fg
+			b.curBg = t.Bg
+		case color == 1: // bold
+			b.curFg = b.curFg.WithAttr(core.Bold)
+		case color == 39: // reset fg
+			b.curFg = t.Fg
+		case color == 49: // reset bg
+			b.curBg = t.Bg
+		case color >= 30 && color <= 37: // set fg
+			b.curFg = core.NewStyle(uint16(color - 30 + 8))
+		case color >= 40 && color <= 47: // set bg
+			b.curBg = core.NewStyle(uint16(color - 40 + 8))
+		case color >= 90 && color <= 97:
+			b.curFg = core.NewStyle(uint16(color - 90 + 8))
+		case color >= 100 && color <= 107:
+			b.curBg = core.NewStyle(uint16(color - 100 + 8))
+		}
+	}
+}
+
 func (b *backendAppender) consumeNb(data []byte, i *int) bool {
 	found := false
 	for *i < len(data) && data[*i] >= '0' && data[*i] <= '9' {
@@ -326,31 +360,28 @@ func (b *backendAppender) consumeUntil(data []byte, i *int, c byte) {
 	return
 }
 
-func (b *backendAppender) readNb(data []byte, i int, defVal int) int {
-	if data[i] <= '0' || data[i] >= '9' {
-		return defVal
+func (b *backendAppender) readNb(data []byte, i int, defVal int) (nb, readTo int) {
+	if i >= len(data) || data[i] < '0' || data[i] > '9' {
+		return defVal, i
 	}
 	n := 0
 	for data[i] >= '0' && data[i] <= '9' {
 		n = 10*n + int(data[i]-'0')
 		i++
 	}
-	return n
+	return n, i
 }
 
-func (b *backendAppender) readNbTuple(data []byte, i int, defVal1, defVal2 int) (int, int) {
-	if data[i] <= '0' || data[i] >= '9' {
-		return defVal1, defVal2
-	}
-	n1, n2 := 0, 0
-	for data[i] >= '0' && data[i] <= '9' {
-		n1 = 10*n1 + int(data[i]-'0')
-		i++
-	}
-	i++ // ';'
-	for data[i] >= '0' && data[i] <= '9' {
-		n2 = 10*n2 + int(data[i]-'0')
-		i++
-	}
-	return n1, n2
+func (b *backendAppender) readNbTuple(data []byte, i int, defVal1, defVal2 int) (nb1, nb2, readTo int) {
+	n1, readTo := b.readNb(data, i, defVal1)
+	readTo++ //;
+	n2, readTo := b.readNb(data, readTo, defVal2)
+	return n1, n2, readTo
+}
+
+func (b *backendAppender) readNbTriple(data []byte, i int, defVal1, defVal2, defVal3 int) (int, int, int) {
+	n1, n2, readTo := b.readNbTuple(data, i, defVal1, defVal2)
+	readTo++ // ;
+	n3, readTo := b.readNb(data, readTo, defVal3)
+	return n1, n2, n3
 }

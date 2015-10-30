@@ -34,6 +34,9 @@ type Backend interface {
 	// Reloads the text (from SrcLoc to BufferLoc)
 	Reload() error
 
+	// return the color style at a specific location (mem backends)
+	ColorAt(ln, col int) (fg, bg Style)
+
 	//Sync() error         // sync from source ?
 	//IsStale() bool       // whether the source as changed under us (fsnotify)
 	//IsBufferStale() bool // whether the buffer has changed under us

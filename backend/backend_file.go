@@ -62,6 +62,10 @@ func (f *FileBackend) Close() error {
 	return nil
 }
 
+func (f *FileBackend) ColorAt(ln, col int) (fg, bg core.Style) {
+	return core.Ed.Theme().Fg, core.Ed.Theme().Bg
+}
+
 func (b *FileBackend) Reload() error {
 	b.lock.Lock()
 	defer b.lock.Unlock()

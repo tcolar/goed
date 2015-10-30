@@ -28,7 +28,7 @@ type BackendCmd struct {
 	title     *string
 	Starter   CmdStarter
 	IsTerm    bool
-	scrollTop bool // wether to scroll ack to top once command done
+	scrollTop bool // whether to scroll ack to top once command done
 }
 
 func (c *BackendCmd) Reload() error {
@@ -122,7 +122,8 @@ func (s *MemCmdStarter) Start(c *BackendCmd) error {
 }
 
 func (c *BackendCmd) stream() error {
-	w := backendAppender{backend: c.Backend, viewId: c.ViewId()}
+	t := core.Ed.Theme()
+	w := backendAppender{backend: c.Backend, viewId: c.ViewId(), curFg: t.Fg, curBg: t.Bg}
 	endc := make(chan struct{}, 1)
 	go w.refresher(endc)
 	var err error
@@ -142,10 +143,11 @@ func (c *BackendCmd) stream() error {
 }
 
 type backendAppender struct {
-	backend   core.Backend
-	viewId    int64
-	line, col int
-	dirty     int32 // >0 if dirty
+	backend      core.Backend
+	viewId       int64
+	line, col    int
+	dirty        int32      // >0 if dirty
+	curFg, curBg core.Style // current terminal color attributes
 }
 
 // refresh the view if needed(dirty) but no more than every so often
@@ -178,6 +180,7 @@ func (b *backendAppender) Write(data []byte) (int, error) {
 }
 
 func (b *backendAppender) flush(data []byte) error {
-	b.line, b.col = b.backend.(*MemBackend).Overwrite(b.line, b.col, string(data))
+	m := b.backend.(*MemBackend)
+	b.line, b.col = m.Overwrite(b.line, b.col, string(data), b.curFg, b.curBg)
 	return nil
 }

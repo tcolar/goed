@@ -15,6 +15,7 @@ import (
 // MemBackend is a Backend implementation backed by an in memory bufer.
 type MemBackend struct {
 	text   [][]rune
+	colors [][]color
 	file   string
 	viewId int64
 	lock   sync.Mutex
@@ -24,11 +25,23 @@ type MemBackend struct {
 func NewMemBackend(loc string, viewId int64) (*MemBackend, error) {
 	m := &MemBackend{
 		text:   [][]rune{[]rune{}},
+		colors: [][]color{[]color{}},
 		file:   loc,
 		viewId: viewId,
 	}
 	err := m.Reload()
 	return m, err
+}
+
+func (m *MemBackend) ColorAt(ln, col int) (fg, bg core.Style) {
+	t := core.Ed.Theme()
+	if ln >= len(m.colors) {
+		return t.Fg, t.Bg
+	}
+	if col >= len(m.colors[ln]) {
+		return t.Fg, t.Bg
+	}
+	return m.colors[ln][col].fg, m.colors[ln][col].bg
 }
 
 func (m *MemBackend) Reload() error {
@@ -252,7 +265,8 @@ func (b *MemBackend) LineCount() int {
 }
 
 func (b *MemBackend) Close() error {
-	return nil // Noop
+	b.Wipe()
+	return nil
 }
 
 func (b *MemBackend) ViewId() int64 {
@@ -263,12 +277,13 @@ func (b *MemBackend) Wipe() {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.text = [][]rune{[]rune{}}
+	b.colors = [][]color{[]color{}}
 }
 
-func (b *MemBackend) Overwrite(row, col int, text string) (atRow, atCol int) {
+func (b *MemBackend) Overwrite(row, col int, text string, fg, bg core.Style) (atRow, atCol int) {
+	log.Printf("Overwrite @ %d,%d %+q\n", row, col, string(text))
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	log.Printf("Overwrite @ %d,%d %+q\n", row, col, string(text))
 	runes := core.StringToRunes(text)
 	for z, ln := range runes { // each line
 		if z > 0 {
@@ -282,11 +297,14 @@ func (b *MemBackend) Overwrite(row, col int, text string) (atRow, atCol int) {
 			}
 			for len(b.text) <= row { // make sure we have enough rows
 				b.text = append(b.text, []rune{})
+				b.colors = append(b.colors, []color{})
 			}
 			for len(b.text[row]) <= col { // make sure enough cols
 				b.text[row] = append(b.text[row], ' ')
+				b.colors[row] = append(b.colors[row], color{fg, bg})
 			}
 			b.text[row][col] = ch // write the char
+			b.colors[row][col] = color{fg, bg}
 			col++
 		}
 	}
@@ -300,6 +318,7 @@ func (b *MemBackend) ClearLn(row, col int) {
 		return
 	}
 	b.text[row] = b.text[row][:col]
+	b.colors[row] = b.colors[row][:col]
 }
 
 func (b *MemBackend) ClearScreen(row, col int) {
@@ -311,5 +330,10 @@ func (b *MemBackend) ClearScreen(row, col int) {
 	b.text = b.text[:row+1]
 	if col < len(b.text[row]) {
 		b.text[row] = b.text[row][:col]
+		b.colors[row] = b.colors[row][:col]
 	}
+}
+
+type color struct {
+	fg, bg core.Style
 }
