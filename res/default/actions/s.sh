@@ -13,4 +13,4 @@ if [ "$#" -gt 1 ]; then
 	path="$2"
 fi
 
-grep -rni "$1" $path 
+grep -rni --color "$1" $path 
