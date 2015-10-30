@@ -190,7 +190,8 @@ func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, 
 
 // OpenDir opens a directory listing
 func (e *Editor) openDir(loc string, view core.Viewable) error {
-	args := []string{"ls", "-a1"}
+	view.(*View).highlighter = &TermHighlighter{}
+	args := append([]string{"ls"}, core.OsLsArgs...)
 	title := filepath.Base(loc) + "/"
 	backend, err := backend.NewMemBackendCmd(args, loc, view.Id(), &title, true)
 	if err != nil {
