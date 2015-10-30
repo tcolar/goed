@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/davecheney/profile"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/core"
@@ -17,17 +18,18 @@ import (
 )
 
 var (
-	app    = kingpin.New("goed", "A code editor")
-	test   = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
-	colors = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
-	config = kingpin.Flag("config", "Config file.").Default("config.toml").String()
+	app     = kingpin.New("goed", "A code editor")
+	test    = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
+	colors  = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
+	config  = kingpin.Flag("config", "Config file.").Default("config.toml").String()
+	cpuprof = kingpin.Flag("cpuprof", "Cpu profile").Default("false").Bool()
+	memprof = kingpin.Flag("memprof", "Mem profile").Default("false").Bool()
 
 	locs = kingpin.Arg("location", "location to open").Strings()
 )
 
 func main() {
 
-	//defer profile.Start(profile.CPUProfile).Stop()
 	kingpin.Version(core.Version)
 
 	kingpin.Parse()
@@ -40,6 +42,13 @@ func main() {
 	}
 	if *colors != 256 && *colors != 16 {
 		*colors = 2
+	}
+	if *cpuprof == true || *memprof == true {
+		cfg := profile.Config{
+			CPUProfile: *cpuprof,
+			MemProfile: *memprof,
+		}
+		defer profile.Start(&cfg).Stop()
 	}
 
 	id := time.Now().UnixNano()
