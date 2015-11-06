@@ -45,10 +45,10 @@ func ViewSrcLoc(instance, viewId int64) (loc string, err error) {
 	return loc, err
 }
 
-func Open(instance int64, loc string) error {
+func Open(instance int64, cwd, loc string) error {
 	c := getClient(instance)
 	defer c.Close()
-	err := c.Call("GoedRpc.Open", loc, &struct{}{})
+	err := c.Call("GoedRpc.Open", []interface{}{cwd, loc}, &struct{}{})
 	return err
 }
 

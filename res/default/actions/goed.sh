@@ -7,12 +7,8 @@ export GOED_VIEW=$2
 export PATH=~/.goed/actions/:~/.goed/default/actions/:$PATH
 
 function goed_open() {
-# open a file in goed (make relative first)
-	path="$1" 
-	if [ -d "$(dirname "$1")" ]; then
-		path="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-	fi
-	goed_api open $GOED_INSTANCE $path
+# open a file in goed
+	goed_api open $GOED_INSTANCE "`pwd`" "$1"
 }
 
 function goed_cd() {

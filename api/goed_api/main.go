@@ -33,7 +33,8 @@ var (
 	viewCwdLoc  = viewCwd.Arg("dir", "dir").Required().String()
 	open        = app.Command("open", "Open a file/directory in Goed (New view).")
 	openI       = open.Arg("InstanceId", "InstanceId").Required().Int64()
-	openLoc     = open.Arg("dir", "dir").Required().String()
+	openCwd     = open.Arg("cwd", "cwd").Required().String()
+	openLoc     = open.Arg("loc", "loc").Required().String()
 )
 
 func main() {
@@ -108,7 +109,7 @@ func ViewSrcLoc() {
 }
 
 func Open() {
-	err := client.Open(*openI, *openLoc)
+	err := client.Open(*openI, *openCwd, *openLoc)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)

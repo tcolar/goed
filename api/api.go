@@ -42,8 +42,8 @@ func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
 	return nil
 }
 
-func (r *GoedRpc) Open(loc string, _ *struct{}) error {
-	actions.EdOpen(loc, -1, "", true)
+func (r *GoedRpc) Open(args []interface{}, _ *struct{}) error {
+	actions.EdOpen(args[1].(string), -1, args[0].(string), true)
 	return nil
 }
 
