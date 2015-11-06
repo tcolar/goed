@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/tcolar/goed/actions"
@@ -468,6 +469,9 @@ func (e *Editor) TerminateView(vid int64) {
 		time.Sleep(3 * time.Second)
 		v.backend = nil
 		delete(e.views, vid)
+		// This probably way overkill, but without nugging the GC it tends to not
+		// be very agressive and leave the memory allocated quite a while.
+		runtime.GC()
 	}()
 	actions.UndoClear(vid)
 }
