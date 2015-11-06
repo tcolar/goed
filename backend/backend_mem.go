@@ -3,7 +3,6 @@ package backend
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"sync"
@@ -15,7 +14,7 @@ import (
 // MemBackend is a Backend implementation backed by an in memory bufer.
 type MemBackend struct {
 	text   [][]rune
-	colors [][]color
+	colors [][]*color
 	file   string
 	viewId int64
 	lock   sync.Mutex
@@ -25,7 +24,7 @@ type MemBackend struct {
 func NewMemBackend(loc string, viewId int64) (*MemBackend, error) {
 	m := &MemBackend{
 		text:   [][]rune{[]rune{}},
-		colors: [][]color{[]color{}},
+		colors: [][]*color{[]*color{}},
 		file:   loc,
 		viewId: viewId,
 	}
@@ -39,6 +38,9 @@ func (m *MemBackend) ColorAt(ln, col int) (fg, bg core.Style) {
 		return t.Fg, t.Bg
 	}
 	if col >= len(m.colors[ln]) {
+		return t.Fg, t.Bg
+	}
+	if m.colors[ln][col] == nil {
 		return t.Fg, t.Bg
 	}
 	return m.colors[ln][col].fg, m.colors[ln][col].bg
@@ -174,6 +176,7 @@ func (b *MemBackend) Insert(row, col int, text string) error {
 }
 
 func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
+	h := core.Ed.Config().SyntaxHighlighting
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if row1 < 0 {
@@ -207,18 +210,23 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 		col2 = len(b.text[row2]) - 1
 	}
 	b.text[row1] = append(b.text[row1][:col1], b.text[row2][col2+1:]...)
+	if h {
+		b.colors[row1] = append(b.colors[row1][:col1], b.colors[row2][col2+1:]...)
+	}
 	drop := row2 - row1
 	if drop > 0 {
 		copy(b.text[row1+1:], b.text[row1+1+drop:])
 		b.text = b.text[:len(b.text)-drop]
+		if h {
+			copy(b.colors[row1+1:], b.colors[row1+1+drop:])
+			b.colors = b.colors[:len(b.colors)-drop]
+		}
 	}
 
 	return nil
 }
 
-func (b *MemBackend) Slice(row, col, row2, col2 int) *core.Slice {
-	b.lock.Lock()
-	defer b.lock.Unlock()
+func (b *MemBackend) sliceNoLock(row, col, row2, col2 int) *core.Slice {
 	slice := core.NewSlice(row, col, row2, col2, [][]rune{})
 	text := slice.Text()
 	if row2 != -1 && row > row2 {
@@ -251,6 +259,12 @@ func (b *MemBackend) Slice(row, col, row2, col2 int) *core.Slice {
 	return slice
 }
 
+func (b *MemBackend) Slice(row, col, row2, col2 int) *core.Slice {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	return b.sliceNoLock(row, col, row2, col2)
+}
+
 func (b *MemBackend) LineCount() int {
 	b.lock.Lock()
 	defer b.lock.Unlock()
@@ -277,61 +291,7 @@ func (b *MemBackend) Wipe() {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.text = [][]rune{[]rune{}}
-	b.colors = [][]color{[]color{}}
-}
-
-func (b *MemBackend) Overwrite(row, col int, text string, fg, bg core.Style) (atRow, atCol int) {
-	log.Printf("Overwrite @ %d,%d %+q\n", row, col, string(text))
-	b.lock.Lock()
-	defer b.lock.Unlock()
-	runes := core.StringToRunes(text)
-	for z, ln := range runes { // each line
-		if z > 0 {
-			row++
-		}
-		for _, ch := range ln {
-			// VT100 TODO: configurable term width
-			if col >= 80 { // wrap lines wider than terminal width
-				col = 0
-				row++
-			}
-			for len(b.text) <= row { // make sure we have enough rows
-				b.text = append(b.text, []rune{})
-				b.colors = append(b.colors, []color{})
-			}
-			for len(b.text[row]) <= col { // make sure enough cols
-				b.text[row] = append(b.text[row], ' ')
-				b.colors[row] = append(b.colors[row], color{fg, bg})
-			}
-			b.text[row][col] = ch // write the char
-			b.colors[row][col] = color{fg, bg}
-			col++
-		}
-	}
-	return row, col
-}
-
-func (b *MemBackend) ClearLn(row, col int) {
-	b.lock.Lock()
-	defer b.lock.Unlock()
-	if row >= len(b.text) || col >= len(b.text[row]) {
-		return
-	}
-	b.text[row] = b.text[row][:col]
-	b.colors[row] = b.colors[row][:col]
-}
-
-func (b *MemBackend) ClearScreen(row, col int) {
-	b.lock.Lock()
-	defer b.lock.Unlock()
-	if row >= len(b.text) {
-		return
-	}
-	b.text = b.text[:row+1]
-	if col < len(b.text[row]) {
-		b.text[row] = b.text[row][:col]
-		b.colors[row] = b.colors[row][:col]
-	}
+	b.colors = [][]*color{[]*color{}}
 }
 
 type color struct {

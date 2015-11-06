@@ -20,6 +20,7 @@ func exec(args []string, interactive bool) int64 {
 		v.SetViewType(core.ViewTypeInteractive)
 	}
 	b, err := backend.NewMemBackendCmd(args, workDir, v.Id(), nil, false)
+	b.MaxRows = core.Ed.Config().MaxCmdBufferLines
 	if err != nil {
 		ed.SetStatusErr(err.Error())
 	}
@@ -31,7 +32,6 @@ func execTerm(args []string) int64 {
 	vid := exec(args, true)
 	v := core.Ed.ViewById(vid).(*View)
 	b := v.backend.(*backend.BackendCmd)
-	b.IsTerm = true
 	time.Sleep(500 * time.Millisecond)
 	cmd := fmt.Sprintf("source ~/.goed/default/actions/goed.sh %d %d\n", core.InstanceId, v.Id())
 	b.SendBytes([]byte(cmd))

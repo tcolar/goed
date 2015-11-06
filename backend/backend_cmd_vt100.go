@@ -187,9 +187,9 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 		ps, _ := b.readNb(data, start+2, 0)
 		switch ps {
 		case 0: // 0
-			b.backend.(*MemBackend).ClearScreen(b.line, b.col)
+			b.backend.clearScreen(b.line, b.col)
 		case 2:
-			b.backend.Wipe()
+			b.backend.clearScreen(0, 0)
 		default: // 1 is above, 3 is "saved lines"
 			log.Printf("TODO Unsupported clear mode (J) %d", ps)
 		}
@@ -202,7 +202,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 		ps, _ := b.readNb(data, start+2, 0)
 		switch ps {
 		case 0: // 0
-			b.backend.(*MemBackend).ClearLn(b.line, b.col)
+			b.backend.clearLn(b.line, b.col)
 		default: // 1 is left, 2 is whole line
 			log.Printf("TODO Unsupported clear line mode (K) %d", ps)
 		}
@@ -240,7 +240,6 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	if b.consume(data, i, 'm') {
 		b.flush(data[from:start])
 		b.curFg, b.curBg = t.Fg, t.Bg
-		log.Printf("TODO Vt100 reset colors")
 		return true
 	}
 	*i = start + 2
@@ -300,7 +299,6 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 func (b *backendAppender) applyColors(colors ...int) {
 	t := core.Ed.Theme()
 	for _, color := range colors {
-		log.Printf("Set color %d \n", color)
 		switch {
 		case color == 0: // normal
 			b.curFg = t.Fg

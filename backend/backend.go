@@ -27,8 +27,8 @@ func NewMemBackendCmd(args []string, dir string, viewId int64, title *string, sc
 		return nil, err
 	}
 	c.scrollTop = scrollTop
-	c.Backend = b
-	c.Backend.Wipe()
+	c.MemBackend = b
+	c.MemBackend.Wipe()
 
 	c.Starter = &MemCmdStarter{}
 	go c.Start(viewId)

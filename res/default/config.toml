@@ -1,4 +1,4 @@
 # Default config
 SyntaxHighlighting=true
 Theme="default.toml"
-MaxCmdBufferLines=10000
+MaxCmdBufferLines=3000
