@@ -442,12 +442,12 @@ func (e *Editor) DelView(viewId int64, terminate bool) {
 			c.Views = append(c.Views[:i], c.Views[i+1:]...)
 			cv, _ := e.views[e.curViewId]
 			e.ViewActivate(cv.Id(), cv.CurLine(), cv.CurCol())
-			if terminate {
-				e.TerminateView(vid)
-			}
 			break
 		}
 		prev, _ = e.views[c.Views[i]]
+	}
+	if terminate {
+		e.TerminateView(viewId)
 	}
 	e.Resize(e.term.Size())
 }
@@ -465,7 +465,8 @@ func (e *Editor) TerminateView(vid int64) {
 		// actions targeted to it have a chance to finish.
 		// Saves from a bunch of nil checks down the line.
 		core.Bus.Flush()
-		time.Sleep(1 * time.Second)
+		time.Sleep(3 * time.Second)
+		v.backend = nil
 		delete(e.views, vid)
 	}()
 	actions.UndoClear(vid)
