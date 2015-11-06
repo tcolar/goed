@@ -5,11 +5,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"runtime/debug"
+	"runtime/pprof"
 	"time"
 
-	"github.com/davecheney/profile"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/core"
@@ -43,12 +44,25 @@ func main() {
 	if *colors != 256 && *colors != 16 {
 		*colors = 2
 	}
-	if *cpuprof == true || *memprof == true {
-		cfg := profile.Config{
-			CPUProfile: *cpuprof,
-			MemProfile: *memprof,
+	if *cpuprof == true {
+		f, err := os.Create("prof.cprof")
+		if err != nil {
+			log.Fatal(err)
 		}
-		defer profile.Start(&cfg).Stop()
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+	if *memprof == true {
+		f, err := os.Create("prof.mprof")
+		if err != nil {
+			log.Fatal(err)
+		}
+		go func() {
+			time.Sleep(1 * time.Minute)
+			pprof.WriteHeapProfile(f)
+			f.Close()
+			os.Exit(0)
+		}()
 	}
 
 	id := time.Now().UnixNano()
