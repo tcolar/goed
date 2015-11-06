@@ -116,10 +116,6 @@ func ViewSyncSlice(viewId int64) {
 	d(viewSyncSlice{viewId: viewId})
 }
 
-func ViewTrim(viewId int64, limit int) {
-	d(viewTrim{viewId: viewId, limit: limit})
-}
-
 func ViewUndo(viewId int64) {
 	d(viewUndo{viewId: viewId})
 }
@@ -504,17 +500,6 @@ func (a viewSyncSlice) Run() error {
 type viewTrim struct {
 	viewId int64
 	limit  int
-}
-
-func (a viewTrim) Run() error {
-	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
-	}
-	if v.LineCount() > a.limit {
-		v.Backend().Remove(1, 1, v.LineCount()-a.limit+1, 0)
-	}
-	return nil
 }
 
 type viewUndo struct {
