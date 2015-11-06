@@ -49,7 +49,9 @@ func (a external) Run() error {
 		return fmt.Errorf("%s failed", a.script)
 	}
 	errv := e.ViewByLoc(fp)
-	e.DelView(errv, true)
+	if errv > 0 {
+		e.DelView(errv, true)
+	}
 	return nil
 }
 
