@@ -4,7 +4,7 @@ package core
 
 import "os"
 
-const Version = "0.0.2"
+const Version = "0.0.3"
 const ApiVersion = "v1"
 
 var Trace = false
