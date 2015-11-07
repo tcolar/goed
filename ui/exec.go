@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"fmt"
+	"os"
 	"time"
 
 	"github.com/tcolar/goed/backend"
@@ -33,7 +33,11 @@ func execTerm(args []string) int64 {
 	v := core.Ed.ViewById(vid).(*View)
 	b := v.backend.(*backend.BackendCmd)
 	time.Sleep(500 * time.Millisecond)
-	cmd := fmt.Sprintf("source ~/.goed/default/actions/goed.sh %d %d\n", core.InstanceId, v.Id())
+	ext := ".sh"
+	if os.Getenv("SHELL") == "rc" {
+		ext = ".rc"
+	}
+	cmd := ". $HOME/.goed/default/actions/goed" + ext + "\n"
 	b.SendBytes([]byte(cmd))
 	return vid
 }

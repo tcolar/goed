@@ -102,8 +102,8 @@ func (c *BackendCmd) Start(viewId int64) {
 	actions.EdTermFlush()
 
 	c.runner.Env = core.EnvWith([]string{"TERM=vt100",
-		fmt.Sprintf("GOED_INSTANCE=%s", core.InstanceId),
-		fmt.Sprintf("GOED_VIEW=%s", viewId)})
+		fmt.Sprintf("GOED_INSTANCE=%d", core.InstanceId),
+		fmt.Sprintf("GOED_VIEW=%d", viewId)})
 
 	err := c.Starter.Start(c)
 

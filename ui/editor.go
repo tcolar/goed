@@ -176,7 +176,7 @@ func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, 
 		return -1, err
 	}
 	if nv {
-		if stat.IsDir() {
+		if stat == nil || stat.IsDir() {
 			ci := len(e.Cols[0].Views) - 1
 			v := e.views[e.Cols[0].Views[ci]]
 			e.InsertView(view.(*View), v, 0.5)
