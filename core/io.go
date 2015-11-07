@@ -219,3 +219,11 @@ func EnvWith(custom []string) []string {
 	}
 	return env
 }
+
+func RunesLen(runes []rune) int {
+	l := 0
+	for _, r := range runes {
+		l += utf8.RuneLen(r)
+	}
+	return l
+}

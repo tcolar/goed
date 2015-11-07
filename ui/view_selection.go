@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/atotto/clipboard"
 	"github.com/tcolar/goed/core"
@@ -104,8 +105,9 @@ var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':\x1B]+)(:\
 func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
 	l := v.Line(v.slice, line)
 	ln := string(l)
-	slice := core.NewSlice(0, 0, 0, len(l), [][]rune{l})
-	c := v.LineRunesTo(slice, 0, col)
+	// Note: Indexes taken and returned by FindAllStringIndex are in BYTES, not runes
+	// not very inutitive to say the least
+	c := core.RunesLen(l[:col])
 	matches := locationRegexp.FindAllStringIndex(ln, -1)
 	var best []int
 	// Find the "narrowest" match around the cursor
@@ -119,7 +121,10 @@ func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
 	if best == nil {
 		return nil
 	}
-	return core.NewSelection(line, best[0], line, best[1]-1)
+	// convert byte indexes back to rune count
+	r1 := utf8.RuneCountInString(ln[:best[0]])
+	r2 := utf8.RuneCountInString(ln[:best[1]])
+	return core.NewSelection(line, r1, line, r2)
 }
 
 // Try to select the longest "word" from current position.

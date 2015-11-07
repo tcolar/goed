@@ -1,10 +1,7 @@
 # Goed bash init
 
-export GOED_INSTANCE=$1
-export GOED_VIEW=$2
-
 # Search goed custom/builtin tools first 
-export PATH=~/.goed/actions/:~/.goed/default/actions/:$PATH
+export PATH=$HOME/.goed/actions/:$HOME/.goed/default/actions/:$PATH
 
 function goed_open() {
 # open a file in goed
@@ -24,3 +21,4 @@ alias cd="goed_cd"
 alias o="goed_open" # open a file/dir
 alias s="s.sh" # search text (=~ grep) 
 alias f="f.sh" # search files (=~ find)
+
