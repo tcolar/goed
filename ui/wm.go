@@ -236,6 +236,17 @@ func (e *Editor) ViewIndex(col *Col, vid int64) int {
 	return -1
 }
 
+// Narrowest column
+func (e *Editor) ColNarrowest() *Col {
+	x := 0
+	for i, c := range e.Cols {
+		if c.WidthRatio < e.Cols[x].WidthRatio {
+			x = i
+		}
+	}
+	return e.Cols[x]
+}
+
 // ColIndex returns the index of a column in the editor
 func (e *Editor) ColIndex(col *Col) int {
 	for i, c := range e.Cols {
@@ -285,7 +296,6 @@ func (e *Editor) CurColIndex() int {
 	return e.ColIndex(e.CurCol)
 }
 
-// AddCol adds a new column, space is "taken" from toCol
 func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	r := toCol.WidthRatio
 	nv := e.NewView("")

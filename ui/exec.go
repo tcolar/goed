@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -37,7 +38,8 @@ func execTerm(args []string) int64 {
 	if os.Getenv("SHELL") == "rc" {
 		ext = ".rc"
 	}
-	cmd := ". $HOME/.goed/default/actions/goed" + ext + "\n"
+	cmd := ". $HOME/.goed/default/actions/goed" +
+		fmt.Sprintf("%s %d %d\n", ext, core.InstanceId, core.Ed.CurViewId())
 	b.SendBytes([]byte(cmd))
 	return vid
 }
