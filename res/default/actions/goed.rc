@@ -1,5 +1,8 @@
 # Goed rc init
 
+GOED_INSTANCE=$1
+GOED_VIEW=$2
+
 # Search goed custom/builtin tools first 
 PATH=$HOME/.goed/actions/:$HOME/.goed/default/actions/:$PATH
 
@@ -16,6 +19,6 @@ fn cd {
 
 EDITOR=goed_open # When within goed, $EDITOR is goed
 
-fn o {goed_open $*} # open a file/dir
+fn o {$EDITOR $*} # open a file/dir
 fn s {s.sh $*} # search text (=~ grep) 
 fn f {f.sh $*} # search files (=~ find)

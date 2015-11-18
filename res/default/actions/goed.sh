@@ -1,5 +1,8 @@
 # Goed bash init
 
+export GOED_INSTANCE=$1
+export GOED_VIEW=$2
+
 # Search goed custom/builtin tools first 
 export PATH=$HOME/.goed/actions/:$HOME/.goed/default/actions/:$PATH
 
