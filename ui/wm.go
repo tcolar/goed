@@ -314,42 +314,140 @@ func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 }
 
 // TODO: Not all that smart yet
-func (e *Editor) AddViewSmart() *View {
-	var nv *View
-	var emptiestCol *Col
-	for _, c := range e.Cols {
-		// if we have room for a new column,favor that
-		v, _ := e.views[c.Views[0]]
-		if v.x2-v.x1 > 120 {
-			nc := e.AddCol(c, 0.5)
-			nv = e.views[nc.Views[0]]
-			break
+func (e *Editor) AddViewSmart(v *View) *View {
+	col := e.tryNewCol(v)
+	if col != nil {
+		// new full column
+		v = e.views[col.Views[0]]
+	} else {
+		// if we did not have space to create a new column
+		// will find the one with the most empty space, or least views
+		col = e.emptiestCol()
+		v = e.addToCol(col, v)
+	}
+
+	e.ViewActivate(v.Id(), 0, 0)
+	e.Resize(e.term.Size())
+	return v
+}
+
+func (e *Editor) addToCol(c *Col, nv *View) *View {
+	a := make([]bool, len(c.Views))
+	h, _ := e.term.Size()
+	var used float64
+	tbd := len(c.Views) + 1 // +1 for nv to be added
+	p := h / tbd
+	// squeeze empty space
+	for i, vid := range c.Views {
+		v, _ := e.views[vid]
+		if v.LineCount() < p { // view can be shrunk
+			a[i] = true
+			v.HeightRatio = float64(v.LineCount()+5) / float64(h)
+			used += v.HeightRatio
+			tbd--
 		}
-		// otherwise favor emptiest, most to the right col
-		if emptiestCol == nil || len(c.Views) <= len(emptiestCol.Views) {
-			emptiestCol = c
+	}
+	ratio := (1.0 - used) / float64(tbd)
+	for i, vid := range c.Views {
+		if a[i] {
+			continue
 		}
+		v, _ := e.views[vid]
+		v.HeightRatio = ratio
+		used += ratio
 	}
 	if nv == nil {
-		// will take some of emptiest col tallest view
-		var emptiestView *View
-		for _, vid := range emptiestCol.Views {
-			v, _ := e.views[vid]
-			if emptiestView == nil || emptiestView.HeightRatio <= v.HeightRatio {
-				emptiestView = v
-			}
-		}
-		// TODO : consider buffer text length ?
-		nv = e.AddView(emptiestView, 0.5)
+		nv = e.NewView("")
 	}
-	e.ViewActivate(nv.Id(), 0, 0)
-	e.Resize(e.term.Size())
+	nv.HeightRatio = 1.0 - used
+	c.Views = append(c.Views, nv.Id())
 	return nv
 }
 
+func (e *Editor) emptiestCol() *Col {
+	var mf, mfv int
+	var lc, lcv int
+	dirs := e.ColNarrowest() // assume dir listings column
+
+	for i, c := range e.Cols {
+		if c == dirs {
+			continue
+		}
+		f := e.colFreeSpace(c)
+		if f > mfv {
+			mfv = f
+			mf = i
+		}
+		if lcv == 0 || len(c.Views) <= lcv {
+			lcv = len(c.Views)
+			lc = i
+		}
+		log.Printf("i: %d mf:%d mfv:%d lc:%d, lcv:%d\n", i, mf, mfv, lc, lcv)
+	}
+	// if we have a column with at least x free lines, return that
+	if mfv > 10 {
+		return e.Cols[mf]
+	}
+	// else column with least views and right most
+	return e.Cols[lc]
+}
+
+func (e *Editor) colFreeSpace(c *Col) int {
+	h, _ := e.term.Size()
+	h -= 4
+	for _, vid := range c.Views {
+		v, _ := e.views[vid]
+		h -= v.LineCount()
+	}
+	if h < 0 {
+		h = 0
+	}
+	return h
+}
+
+// Do we have room for a new column ?
+// if so, create it and add the view to it, compress the other columns
+func (e *Editor) tryNewCol(v *View) *Col {
+	dirs := e.ColNarrowest() // assume dir listings column
+	w := 0
+	for _, c := range e.Cols {
+		if c == dirs {
+			w += 23
+		} else {
+			w += 83
+		}
+	}
+	_, tw := e.term.Size()
+	// if so, create it and compact the other columns
+	if tw-w < 80 {
+		return nil
+	}
+	r := 0.0
+	for _, c := range e.Cols {
+		if c == dirs {
+			c.WidthRatio = 23.0 / float64(tw)
+		} else {
+			c.WidthRatio = 83.0 / float64(tw)
+		}
+		r += c.WidthRatio
+	}
+	if v == nil {
+		v = e.NewView("")
+	}
+	v.HeightRatio = 1.0
+	nc := e.NewCol(1.0-r, []int64{v.Id()})
+	e.Cols = append(e.Cols, nc)
+	return nc
+}
+
+func (e *Editor) AddDirViewSmart(view *View) {
+	e.addToCol(e.ColNarrowest(), view)
+	e.ViewActivate(view.Id(), 0, 0)
+	e.Resize(e.term.Size())
+}
+
 func (e *Editor) InsertViewSmart(view *View) {
-	nv := e.AddViewSmart()
-	e.ReplaceView(nv, view)
+	e.AddViewSmart(view)
 }
 
 // AddCol adds a new view in the current column, space is "taken" from toView
