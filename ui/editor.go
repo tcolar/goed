@@ -177,12 +177,9 @@ func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, 
 	}
 	if nv {
 		if stat == nil || stat.IsDir() {
-			c := e.ColNarrowest()
-			ci := len(c.Views) - 1
-			v := e.views[c.Views[ci]]
-			e.InsertView(view.(*View), v, 0.5)
+			e.AddDirViewSmart(view.(*View))
 		} else {
-			e.InsertView(view.(*View), e.CurView().(*View), 0.5)
+			e.InsertViewSmart(view.(*View))
 		}
 	}
 	view.SetWorkDir(filepath.Dir(loc))
