@@ -100,7 +100,7 @@ func (e *Editor) Resize(height, width int) {
 		hr := 0.0
 		w := int(float64(width) * c.WidthRatio)
 		if i == len(e.Cols)-1 {
-			w = width - wc // las column gets rest of width
+			w = width - wc // last column gets rest of width
 			c.WidthRatio = 1.0 - wr
 		}
 		for j, vi := range c.Views {
@@ -115,6 +115,16 @@ func (e *Editor) Resize(height, width int) {
 			if j == len(c.Views)-1 {
 				h = height - hc - 1 // last view gets rest of height
 				v.HeightRatio = 1.0 - hr
+			}
+			y1, _, y2, _ := v.Bounds()
+			if y1 != hc || y2 != hc+h-1 { // height changed
+				if v.CursorY > h-4 {
+					// When the view is shrank, scroll if needed to keep
+					// the current line visible.
+					off := v.CursorY - h + 4
+					v.offy += off
+					v.CursorY -= off
+				}
 			}
 			v.SetBounds(hc, wc, hc+h-1, wc+w-1)
 			hc += h
@@ -313,7 +323,6 @@ func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	return c
 }
 
-// TODO: Not all that smart yet
 func (e *Editor) AddViewSmart(v *View) *View {
 	col := e.tryNewCol(v)
 	if col != nil {
@@ -355,6 +364,7 @@ func (e *Editor) addToCol(c *Col, nv *View) *View {
 		v, _ := e.views[vid]
 		v.HeightRatio = ratio
 		used += ratio
+		//		v.offy += 50
 	}
 	if nv == nil {
 		nv = e.NewView("")
@@ -382,7 +392,6 @@ func (e *Editor) emptiestCol() *Col {
 			lcv = len(c.Views)
 			lc = i
 		}
-		log.Printf("i: %d mf:%d mfv:%d lc:%d, lcv:%d\n", i, mf, mfv, lc, lcv)
 	}
 	// if we have a column with at least x free lines, return that
 	if mfv > 10 {
