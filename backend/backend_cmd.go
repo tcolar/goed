@@ -172,7 +172,6 @@ func (b *BackendCmd) Overwrite(row, col int, text string, fg, bg core.Style) (at
 	defer b.MemBackend.lock.Unlock()
 
 	runes := core.StringToRunes(text)
-	//	log.Printf("Overwrite at %d:%d %s.", row, col, text)
 	for z, ln := range runes { // each line
 		if z > 0 {
 			row++
@@ -243,7 +242,6 @@ func (b *BackendCmd) Slice(row, col, row2, col2 int) *core.Slice {
 		return slice
 	}
 
-	//	log.Printf("r:%d, r2:%d, ln:%d", r, r2, len(b.text))
 	if r2 >= r {
 		// no wrap-around
 		*text = append(*text, *b.MemBackend.sliceNoLock(r, col, r2, col2).Text()...)
