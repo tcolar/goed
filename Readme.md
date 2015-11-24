@@ -15,7 +15,7 @@ be more configurable and not require the mouse quite as much, but still leverage
 Early screenshot (6/2/2015): 
 ![Screenshot](https://raw.github.com/tcolar/goed/master/screenshot.png)
 
-Of course typically I have a much large window and resolution such as [this screenshot](screenshot_hd.png).
+Of course typically I have a much large window and resolution such as [this screenshot](https://raw.githubusercontent.com/tcolar/goed/master/screenshot_hd.png).
 
 ### Installation
 Prerequities: 
