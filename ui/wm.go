@@ -47,7 +47,7 @@ func (e *Editor) WidgetAt(y, x int) Renderer {
 	return nil
 }
 
-func (e Editor) Render() {
+func (e *Editor) Render() {
 	e.TermFB(e.theme.Fg, e.theme.Bg)
 	e.term.Clear(e.Bg.Uint16(), e.Bg.Uint16())
 
@@ -335,7 +335,7 @@ func (e *Editor) AddViewSmart(v *View) *View {
 		v = e.addToCol(col, v)
 	}
 
-	e.ViewActivate(v.Id(), 0, 0)
+	//	e.ViewActivate(v.Id(), 0, 0)
 	e.Resize(e.term.Size())
 	return v
 }
@@ -364,7 +364,6 @@ func (e *Editor) addToCol(c *Col, nv *View) *View {
 		v, _ := e.views[vid]
 		v.HeightRatio = ratio
 		used += ratio
-		//		v.offy += 50
 	}
 	if nv == nil {
 		nv = e.NewView("")
@@ -642,7 +641,7 @@ func (e *Editor) SetCurView(id int64) error {
 	return nil
 }
 
-func (e Editor) ViewById(id int64) core.Viewable {
+func (e *Editor) ViewById(id int64) core.Viewable {
 	v, found := e.views[id]
 	if !found {
 		log.Printf("View not found %v, \n", id)

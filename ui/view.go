@@ -52,13 +52,13 @@ func (e *Editor) NewView(loc string) *View {
 }
 
 // NewFileView creates a view for a given file
-func (e Editor) NewFileView(loc string) *View {
+func (e *Editor) NewFileView(loc string) *View {
 	v := e.NewView(loc)
 	e.Open(loc, v.Id(), "", true)
 	return v
 }
 
-func (e Editor) genViewId() int64 {
+func (e *Editor) genViewId() int64 {
 	return time.Now().UnixNano()
 }
 

@@ -133,7 +133,7 @@ func (e *Editor) Start(locs []string) {
 
 // Open opens a given location in the editor (in the given view)
 // or new view if viewId < 0
-func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, error) {
+func (e *Editor) Open(loc string, viewId int64, rel string, create bool) (int64, error) {
 	loc = strings.TrimSpace(loc)
 	rel = strings.TrimSpace(rel)
 	if len(rel) > 0 && !strings.HasPrefix(loc, string(os.PathSeparator)) {
@@ -182,6 +182,7 @@ func (e Editor) Open(loc string, viewId int64, rel string, create bool) (int64, 
 			e.InsertViewSmart(view.(*View))
 		}
 	}
+	view.Reset()
 	view.SetWorkDir(filepath.Dir(loc))
 	return view.Id(), nil
 }
@@ -215,7 +216,7 @@ func (e *Editor) openFile(loc string, view core.Viewable) error {
 	return nil
 }
 
-func (e Editor) SetStatusErr(s string) {
+func (e *Editor) SetStatusErr(s string) {
 	if e.Statusbar == nil {
 		return
 	}
@@ -223,7 +224,7 @@ func (e Editor) SetStatusErr(s string) {
 	e.Statusbar.isErr = true
 	e.Statusbar.Render()
 }
-func (e Editor) SetStatus(s string) {
+func (e *Editor) SetStatus(s string) {
 	if e.Statusbar == nil {
 		return
 	}
@@ -233,31 +234,31 @@ func (e Editor) SetStatus(s string) {
 	e.Statusbar.Render()
 }
 
-func (e Editor) Config() core.Config {
+func (e *Editor) Config() core.Config {
 	return *e.config
 }
 
-func (e Editor) Theme() *core.Theme {
+func (e *Editor) Theme() *core.Theme {
 	return e.theme
 }
 
-func (e Editor) CurView() core.Viewable {
+func (e *Editor) CurView() core.Viewable {
 	v, found := e.views[e.curViewId]
 	if !found {
-		return nil
+		return e.Cols[0].Views[0]
 	}
 	return v
 }
 
-func (e Editor) CurViewId() int64 {
+func (e *Editor) CurViewId() int64 {
 	return e.curViewId
 }
 
-func (e Editor) SetCursor(y, x int) {
+func (e *Editor) SetCursor(y, x int) {
 	e.term.SetCursor(x, y)
 }
 
-func (e Editor) CmdOn() bool {
+func (e *Editor) CmdOn() bool {
 	return e.cmdOn
 }
 

@@ -245,7 +245,8 @@ func (v *View) viewCommonEvent(e *Editor, ev *termbox.Event) bool {
 		actions.ViewOpenSelection(vid, true)
 		return true
 	case termbox.KeyCtrlT:
-		execTerm([]string{core.Terminal})
+		v := execTerm([]string{core.Terminal})
+		actions.EdActivateView(v, 0, 0)
 		return true
 	}
 	return false
@@ -354,10 +355,15 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 	switch ev.Key {
 	case MouseLeftDbl:
 		if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
+			// view swap
 			actions.EdSwapViews(e.CurViewId(), vid)
 			actions.EdActivateView(vid, v.CurLine(), v.CurCol())
 			e.evtState.MovingView = false
 			actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
+			return
+		}
+		if ev.MouseY == v.y1 && ev.MouseX > v.x1 {
+			// TODO : collapse / expand view
 			return
 		}
 		if selection := v.ExpandSelectionWord(ln, col); selection != nil {
@@ -383,16 +389,19 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 		}
 		return
 	case termbox.MouseLeft:
+		// end view move
 		if e.evtState.MovingView && isMouseUp(ev) {
 			e.evtState.MovingView = false
 			actions.EdViewMove(vid, e.evtState.LastClickY, e.evtState.LastClickX, ev.MouseY, ev.MouseX)
 			actions.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
 			return
 		}
+		// 'X' button (close view)
 		if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
 			actions.EdDelViewCheck(vid)
 			return
 		}
+		// start view move
 		if ev.MouseX == v.x1 && ev.MouseY == v.y1 && isMouseUp(ev) {
 			// handle
 			e.evtState.MovingView = true
