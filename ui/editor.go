@@ -245,7 +245,7 @@ func (e *Editor) Theme() *core.Theme {
 func (e *Editor) CurView() core.Viewable {
 	v, found := e.views[e.curViewId]
 	if !found {
-		return e.Cols[0].Views[0]
+		return e.views[e.Cols[0].Views[0]]
 	}
 	return v
 }

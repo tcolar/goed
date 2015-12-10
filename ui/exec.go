@@ -39,7 +39,7 @@ func execTerm(args []string) int64 {
 		ext = ".rc"
 	}
 	cmd := ". $HOME/.goed/default/actions/goed" +
-		fmt.Sprintf("%s %d %d\n", ext, core.InstanceId, core.Ed.CurViewId())
+		fmt.Sprintf("%s %d %d\n", ext, core.InstanceId, v.Id())
 	b.SendBytes([]byte(cmd))
 	return vid
 }
