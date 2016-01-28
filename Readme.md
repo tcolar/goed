@@ -58,9 +58,8 @@ OSX (barely tested so far) :
 Eventually the plan is to make all the Keyboard and mouse events configurable, 
 but for now here they are:
 
--------------------------------------------------------------------------------
 | Action                                  | Linux             | Mac (iTerm2)  |
--------------------------------------------------------------------------------
+| --------------------------------------- | ----------------- | ------------- |
 | Close view / window                     | LeftClick on 'x'  | same          |
 |                                         | or CTRL+W         | same          |
 | Copy line/selection text           (1)  | CTRL+C            | same          |
@@ -84,7 +83,7 @@ but for now here they are:
 | Text selection                     (3)  | Mouse drag        | same          |
 |                                         | or SHIFT+<move>   | same          |
 | Toogle command bar                      | ESC               | same          |
--------------------------------------------------------------------------------
+
 
   - (1) : In terminal mode, copies if there is a selection, otherwise pass CTRL+C
   - (2) : You click the top left corner of a view (checkmark icon) to initiate the move, then click again where you want to drop it.
