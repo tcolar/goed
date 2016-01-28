@@ -14,8 +14,10 @@ func EdDelViewCheck(viewId int64) {
 	d(edDelViewCheck{viewId: viewId})
 }
 
-func EdOpen(loc string, viewId int64, rel string, create bool) {
-	d(edOpen{loc: loc, viewId: viewId, rel: rel, create: create})
+func EdOpen(loc string, viewId int64, rel string, create bool) int64 {
+	vid := make(chan (int64), 1)
+	d(edOpen{loc: loc, viewId: viewId, rel: rel, create: create, vid: vid})
+	return <-vid
 }
 
 // Retuns whether the editor can be quit.
@@ -91,10 +93,12 @@ type edOpen struct {
 	loc, rel string
 	viewId   int64
 	create   bool
+	vid      chan int64 // returned new viewid if viewId==-1
 }
 
 func (a edOpen) Run() error {
-	_, err := core.Ed.Open(a.loc, a.viewId, a.rel, a.create)
+	vid, err := core.Ed.Open(a.loc, a.viewId, a.rel, a.create)
+	a.vid <-vid
 	return err
 }
 

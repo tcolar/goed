@@ -49,6 +49,7 @@ type Viewable interface {
 	Slice() *Slice
 	StretchSelection(prevl, prevc, ln, c int)
 	SyncSlice()
+	Terminated() bool // view is nil or marked for termination
 	Title() string
 	WorkDir() string
 }

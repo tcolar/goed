@@ -8,7 +8,7 @@ import (
 
 	"github.com/tcolar/goed/api/client"
 	"github.com/tcolar/goed/core"
-	"gopkg.in/alecthomas/kingpin.v1"
+	kingpin "gopkg.in/alecthomas/kingpin.v1"
 )
 
 var (
@@ -35,6 +35,10 @@ var (
 	openI       = open.Arg("InstanceId", "InstanceId").Required().Int64()
 	openCwd     = open.Arg("cwd", "cwd").Required().String()
 	openLoc     = open.Arg("loc", "loc").Required().String()
+	edit        = app.Command("edit", "Edit a file in Goed and wait until saved.")
+	editI       = edit.Arg("InstanceId", "InstanceId").Required().Int64()
+	editCwd     = edit.Arg("cwd", "cwd").Required().String()
+	editLoc     = edit.Arg("loc", "loc").Required().String()
 )
 
 func main() {
@@ -59,6 +63,8 @@ func Dispatch(action string) {
 		ViewCwd()
 	case open.FullCommand():
 		Open()
+	case edit.FullCommand():
+		Edit()
 	default:
 		kingpin.Usage()
 	}
@@ -118,6 +124,14 @@ func Open() {
 
 func ViewCwd() {
 	err := client.ViewCwd(*viewCwdI, *viewCwdV, *viewCwdLoc)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func Edit() {
+	err := client.Edit(*editI, *editCwd, *editLoc)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)

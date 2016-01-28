@@ -32,6 +32,7 @@ type View struct {
 	autoScrollSelect bool
 	viewType         core.ViewType
 	highlighter      core.Highlighter
+	terminated       bool
 }
 
 func (e *Editor) NewView(loc string) *View {
@@ -426,6 +427,9 @@ func (v *View) Selections() *[]core.Selection {
 }
 
 func (v *View) Id() int64 {
+	if v == nil {
+		return -1
+	}
 	return v.id
 }
 
@@ -488,4 +492,11 @@ func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
 		}
 		v.MoveCursor(v.LineCount()-1-v.CurLine(), c)
 	}
+}
+
+func (v *View) Terminated() bool {
+	if v == nil {
+		return true
+	}
+	return v.terminated
 }

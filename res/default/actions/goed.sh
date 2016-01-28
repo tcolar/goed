@@ -12,11 +12,13 @@ function goed_cd() {
 	goed_api view_cwd $GOED_INSTANCE $GOED_VIEW "`pwd`"
 } 
 
-export EDITOR="goed_api open $GOED_INSTANCE `pwd`" # When within goed, $EDITOR is goed
+#gapi=`which goed_api`
+#echo $gapi
+export EDITOR="goed_api edit $GOED_INSTANCE `pwd`" # open a file/dir
 
 alias cd="goed_cd"
 
-alias o=$EDITOR # open a file/dir
+alias o="goed_api open $GOED_INSTANCE `pwd`" # open a file/dir
 alias s="s.sh" # search text (=~ grep) 
 alias f="f.sh" # search files (=~ find)
 

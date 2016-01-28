@@ -52,6 +52,13 @@ func Open(instance int64, cwd, loc string) error {
 	return err
 }
 
+func Edit(instance int64, cwd, loc string) error {
+	c := getClient(instance)
+	defer c.Close()
+	err := c.Call("GoedRpc.Edit", []interface{}{cwd, loc}, &struct{}{})
+	return err
+}
+
 func getClient(id int64) *rpc.Client {
 	sock := core.GoedSocket(id)
 	c, err := rpc.DialHTTP("unix", sock)

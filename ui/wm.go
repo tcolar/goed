@@ -574,6 +574,7 @@ func (e *Editor) TerminateView(vid int64) {
 	if !found {
 		return
 	}
+	v.terminated = true
 	if v.backend != nil {
 		v.backend.Close()
 	}

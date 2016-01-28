@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"time"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -45,6 +46,19 @@ func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
 func (r *GoedRpc) Open(args []interface{}, _ *struct{}) error {
 	actions.EdOpen(args[1].(string), -1, args[0].(string), true)
 	return nil
+}
+
+func (r *GoedRpc) Edit(args []interface{}, _ *struct{}) error {
+	vid := actions.EdOpen(args[1].(string), -1, args[0].(string), true)
+	actions.EdRender()
+	// Wait til file closed
+	for {
+		v := core.Ed.ViewById(vid)
+		if v.Terminated() {
+			return nil
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
 }
 
 func (r *GoedRpc) ViewReload(viewId int64, _ *struct{}) error {
