@@ -81,7 +81,7 @@ but for now here they are:
 | Swap views                         (4)  | Dbl LC top left   | same          |
 | Undo                                    | CTRL+Z            | same          |
 | Text selection                     (3)  | Mouse drag        | same          |
-|                                         | or SHIFT+<move>   | same          |
+|                                         | or SHIFT+move     | same          |
 | Toogle command bar                      | ESC               | same          |
 
 
