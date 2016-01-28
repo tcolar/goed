@@ -123,6 +123,18 @@ Currently it supports a few things:
   - `: <linenumber>` : Goes to the secified line.
   - `/ <pattern>` : Search pattern (grep)
   Anything else will just be executed (via shell) in a new view.
+
+### Configuration
+The config file can be edited at ~/.goed/config.toml (The original is under ~/.goed/default/) 
+
+You may create custom themes under ~/.goed/themes/ (originals under ~/.goed/default/themes/)
+
+You may create/override actions under ~/.goed/actions/ .
+
+### Reporting issues
+Report in github, try not to create duplicates.
+
+If possible try to provide the most recent log found in ~/.goed/log/
   
 ### Contributing
 - Reporting issues is welcome.
