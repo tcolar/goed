@@ -102,9 +102,9 @@ Note that while in a terminal a limited number of global shortcuts are enabled.
 ### Terminal actions
 
 The Terminal provides a few builtin shortcuts, such as:
-  - '''o <path>''' : To open a given path/location in goed (or just right click it)
-  - '''s [-i] <pattern> [path]''' : Search text (grep -rn[i] <pattern> [path])
-  - '''f <pattern> [path]''' : Find files (find <path> -name *pattern*) 
+  - `o <path>` : To open a given path/location in goed (or just right click it)
+  - `s [-i] <pattern> [path]` : Search text (grep -rn[i] <pattern> [path])
+  - `f <pattern> [path]` : Find files (find <path> -name *pattern*) 
   
 See [res/default/actions](res/default/actions) for more info.
 
@@ -119,9 +119,9 @@ Note: The command bar will likely go away in favor of terminal actions or be rep
 by something more useful such as sam like commands.
 
 Currently it supports a few things:
-  - '''o <path>''' : Opens a file or directory.
-  - ''': <linenumber>''' : Goes to the secified line.
-  - '''/ <pattern>''' : Search pattern (grep)
+  - `o <path>` : Opens a file or directory.
+  - `: <linenumber>` : Goes to the secified line.
+  - `/ <pattern>` : Search pattern (grep)
   Anything else will just be executed (via shell) in a new view.
   
 ### Contributing
