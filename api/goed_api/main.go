@@ -21,6 +21,12 @@ var (
 	viewReload  = app.Command("view_reload", "Reload a view's buffer from the source.")
 	viewReloadI = viewReload.Arg("InstanceId", "InstanceId").Required().Int64()
 	viewReloadV = viewReload.Arg("ViewId", "ViewId").Required().Int64()
+	viewCols    = app.Command("view_cols", "Size of the view in columns.")
+	viewColsI   = viewCols.Arg("InstanceId", "InstanceId").Required().Int64()
+	viewColsV   = viewCols.Arg("ViewId", "ViewId").Required().Int64()
+	viewRows    = app.Command("view_rows", "Size of the views in rows.")
+	viewRowsI   = viewRows.Arg("InstanceId", "InstanceId").Required().Int64()
+	viewRowsV   = viewRows.Arg("ViewId", "ViewId").Required().Int64()
 	viewSave    = app.Command("view_save", "Save the view buffer to the source.")
 	viewSaveI   = viewSave.Arg("InstanceId", "InstanceId").Required().Int64()
 	viewSaveV   = viewSave.Arg("ViewId", "ViewId").Required().Int64()
@@ -55,6 +61,10 @@ func Dispatch(action string) {
 		ApiVersion()
 	case viewReload.FullCommand():
 		ViewReload()
+	case viewRows.FullCommand():
+		ViewRows()
+	case viewCols.FullCommand():
+		ViewCols()
 	case viewSave.FullCommand():
 		ViewSave()
 	case viewSrcLoc.FullCommand():
@@ -112,6 +122,24 @@ func ViewSrcLoc() {
 		os.Exit(1)
 	}
 	fmt.Println(loc)
+}
+
+func ViewRows() {
+	rows, err := client.ViewRows(*viewRowsI, *viewRowsV)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	fmt.Println(rows)
+}
+
+func ViewCols() {
+	cols, err := client.ViewCols(*viewColsI, *viewColsV)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	fmt.Println(cols)
 }
 
 func Open() {

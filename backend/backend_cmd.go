@@ -25,6 +25,7 @@ type BackendCmd struct {
 	title     *string
 	Starter   CmdStarter
 	scrollTop bool // whether to scroll back to top once command completed
+	cols      int  //
 	MaxRows   int  // ring buffer size
 	head      int
 }
@@ -185,8 +186,7 @@ func (b *BackendCmd) Overwrite(row, col int, text string, fg, bg core.Style) (at
 			}
 		}
 		for _, ch := range ln {
-			// VT100 TODO: configurable term width
-			if col >= 80 { // wrap lines wider than terminal width
+			if col >= b.cols { // wrap lines wider than terminal width
 				col = 0
 				row++
 				if b.MaxRows > 0 {
@@ -363,6 +363,11 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 			return
 		default:
 			if atomic.SwapInt32(&b.dirty, 0) > 0 {
+				// In case of view size change, adjust tty setting and wrap value.
+				// TODO : No easy way to do that if the terminal is currently
+				// in an interactive program
+				//if v != nil && (rows != v.LastViewLine() || cols != v.LastViewCol()) {
+				// refresh view
 				l, c := actions.ViewCurPos(b.viewId)
 				actions.ViewMoveCursor(b.viewId, b.line-l, b.col-c)
 				actions.EdRender()

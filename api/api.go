@@ -85,3 +85,21 @@ func (r *GoedRpc) ViewSrcLoc(viewId int64, srcLoc *string) error {
 	*srcLoc = v.Backend().SrcLoc()
 	return nil
 }
+
+func (r *GoedRpc) ViewRows(viewId int64, rows *int) error {
+	v := core.Ed.ViewById(viewId)
+	if v == nil {
+		return fmt.Errorf("No such view : %d", viewId)
+	}
+	*rows = v.LastViewLine()
+	return nil
+}
+
+func (r *GoedRpc) ViewCols(viewId int64, cols *int) error {
+	v := core.Ed.ViewById(viewId)
+	if v == nil {
+		return fmt.Errorf("No such view : %d", viewId)
+	}
+	*cols = v.LastViewCol()
+	return nil
+}

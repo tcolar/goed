@@ -18,6 +18,8 @@ type Viewable interface {
 	Insert(row, col int, text string, undoable bool)
 	InsertCur(text string)
 	InsertNewLineCur()
+	LastViewCol() int
+	LastViewLine() int
 	LineCount() int
 	// LineRunesTo returns the number of raw runes to the given line column
 	LineRunesTo(s *Slice, line, col int) int

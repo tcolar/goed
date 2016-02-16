@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"log"
 	"path"
 	"path/filepath"
 	"time"
@@ -404,6 +405,7 @@ func (v *View) Dirty() bool {
 
 func (v *View) SetWorkDir(dir string) {
 	v.workDir = dir
+	log.Printf("View %d : workdir: %s", v.id, v.workDir)
 }
 
 func (v *View) WorkDir() string {

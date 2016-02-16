@@ -26,5 +26,6 @@ fn cd {
 EDITOR=goed_edit # When within goed, $EDITOR is goed
 
 fn o {goed_open $*} # open a file/dir
-fn s {s.sh $*} # search text (=~ grep) 
-fn f {f.sh $*} # search files (=~ find)
+fn s {search_text.sh $*}
+fn f {find_files.sh $*} 
+fn sz {vt100_size.sh} 

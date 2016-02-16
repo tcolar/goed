@@ -34,6 +34,7 @@ type Editor struct {
 
 func NewEditor() *Editor {
 	return &Editor{
+		//term: NewGuiTerm(25, 50),
 		term:   core.NewTermBox(),
 		config: core.LoadConfig(core.ConfFile),
 		views:  map[int64]*View{},

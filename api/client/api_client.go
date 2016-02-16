@@ -45,6 +45,20 @@ func ViewSrcLoc(instance, viewId int64) (loc string, err error) {
 	return loc, err
 }
 
+func ViewRows(instance, viewId int64) (rows int, err error) {
+	c := getClient(instance)
+	defer c.Close()
+	err = c.Call("GoedRpc.ViewRows", viewId, &rows)
+	return rows, err
+}
+
+func ViewCols(instance, viewId int64) (cols int, err error) {
+	c := getClient(instance)
+	defer c.Close()
+	err = c.Call("GoedRpc.ViewCols", viewId, &cols)
+	return cols, err
+}
+
 func Open(instance int64, cwd, loc string) error {
 	c := getClient(instance)
 	defer c.Close()

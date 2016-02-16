@@ -19,6 +19,7 @@ export EDITOR="goed_api edit $GOED_INSTANCE `pwd`" # open a file/dir
 alias cd="goed_cd"
 
 alias o="goed_api open $GOED_INSTANCE `pwd`" # open a file/dir
-alias s="s.sh" # search text (=~ grep) 
-alias f="f.sh" # search files (=~ find)
+alias s="search_text.sh"
+alias f="find_files.sh"
+alias sz="vt100_size.sh"
 
