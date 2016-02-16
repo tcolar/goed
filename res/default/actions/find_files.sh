@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Shortcut to search files by name
+# Search files by name pattern (find)
 
 if [ "$#" -lt 1 ]; then
     echo "Syntax: f <file_name_substring> [path]"

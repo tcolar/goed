@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Shortcut to grep files / dirs
+# Search text pattern in files / dirs (grep)
 
 if [ "$#" -lt 1 ]; then
     echo "Syntax: s <patern> [path]"

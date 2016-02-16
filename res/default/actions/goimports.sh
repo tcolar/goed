@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex #fail early
+set -e #fail early
 
 # Run goimports on a go source file,
 # falls back to gofmt if goimports not available.
