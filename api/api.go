@@ -49,12 +49,15 @@ func (r *GoedRpc) Open(args []interface{}, _ *struct{}) error {
 }
 
 func (r *GoedRpc) Edit(args []interface{}, _ *struct{}) error {
+	curView := actions.EdCurView()
 	vid := actions.EdOpen(args[1].(string), -1, args[0].(string), true)
+	actions.EdActivateView(vid, 0, 0)
 	actions.EdRender()
 	// Wait til file closed
 	for {
 		v := core.Ed.ViewById(vid)
 		if v.Terminated() {
+			actions.EdActivateView(curView, 0, 0)
 			return nil
 		}
 		time.Sleep(250 * time.Millisecond)
@@ -101,5 +104,10 @@ func (r *GoedRpc) ViewCols(viewId int64, cols *int) error {
 		return fmt.Errorf("No such view : %d", viewId)
 	}
 	*cols = v.LastViewCol()
+	return nil
+}
+
+func (r *GoedRpc) ViewVtCols(args []interface{}, _ *struct{}) error {
+	actions.ViewSetVtCols(args[0].(int64), args[1].(int))
 	return nil
 }
