@@ -125,10 +125,11 @@ func (c *BackendCmd) stop() {
 		c.runner.Process.Kill()
 		c.runner.Process = nil
 	}
-	if c.pty != nil {
+	// Somehow this hangs on OsX
+	/*if c.pty != nil {
 		c.pty.Close()
 		c.pty = nil
-	}
+	}*/
 }
 
 func (b *BackendCmd) Wipe() {
@@ -338,8 +339,7 @@ func (c *BackendCmd) stream() error {
 
 	err = c.runner.Wait()
 	close(endc)
-
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 	actions.EdRender()
 	return err
 }
