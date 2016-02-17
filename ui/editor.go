@@ -177,7 +177,7 @@ func (e *Editor) Open(loc string, viewId int64, rel string, create bool) (int64,
 		return -1, err
 	}
 	if nv {
-		if stat == nil || stat.IsDir() {
+		if stat != nil && stat.IsDir() {
 			e.AddDirViewSmart(view.(*View))
 		} else {
 			e.InsertViewSmart(view.(*View))
