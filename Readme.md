@@ -102,6 +102,7 @@ Note that while in a terminal a limited number of global shortcuts are enabled.
 ### Terminal actions
 
 The Terminal provides a few builtin shortcuts, such as:
+  - `sz` : Set the shell tty rows/cols to match the current goed view size.
   - `o <path>` : To open a given path/location in goed (or just right click it)
   - `s [-i] <pattern> [path]` : Search text (grep -rn[i] <pattern> [path])
   - `f <pattern> [path]` : Find files (find <path> -name *pattern*) 
