@@ -104,6 +104,10 @@ func ViewSetTitle(viewId int64, title string) {
 	d(viewSetTitle{viewId: viewId, title: title})
 }
 
+func ViewSetVtCols(viewId int64, cols int) {
+	d(viewSetVtCols{viewId: viewId, cols: cols})
+}
+
 func ViewStretchSelection(viewId int64, prevLn, prevCol int) {
 	d(viewStretchSelection{viewId: viewId, prevLn: prevLn, prevCol: prevCol})
 }
@@ -209,7 +213,7 @@ func (a viewCopy) Run() error {
 }
 
 type viewCurPos struct {
-	answer chan (int)
+	answer chan int
 	viewId int64
 }
 
@@ -461,6 +465,19 @@ func (a viewSetWorkdir) Run() error {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetWorkDir(a.workDir)
+	}
+	return nil
+}
+
+type viewSetVtCols struct {
+	viewId int64
+	cols   int
+}
+
+func (a viewSetVtCols) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.SetVtCols(a.cols)
 	}
 	return nil
 }

@@ -9,6 +9,8 @@ inst=$GOED_INSTANCE
 rows=`goed_api view_rows $inst $view`
 cols=`goed_api view_cols $inst $view`
 
-set -x
+goed_api view_vt_cols $inst $view $cols
 stty rows $rows
 stty cols $cols
+
+echo "Set VT size to $rows rows, $cols cols"

@@ -40,7 +40,6 @@ func newBackendCmd(args []string, dir string, viewId int64, title *string) (*Bac
 		dir:    dir,
 		runner: exec.Command(args[0], args[1:]...),
 		title:  title,
-		cols:   80,
 	}
 	c.runner.Dir = dir
 	if c.title == nil {

@@ -496,6 +496,10 @@ func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
 	}
 }
 
+func (v *View) SetVtCols(cols int) {
+	v.backend.SetVtCols(cols)
+}
+
 func (v *View) Terminated() bool {
 	if v == nil {
 		return true

@@ -18,6 +18,7 @@ type MemBackend struct {
 	file   string
 	viewId int64
 	lock   sync.Mutex
+	vtCols int
 }
 
 // NewmemBackend creates a new in memory backend by reading a file.
@@ -27,9 +28,14 @@ func NewMemBackend(loc string, viewId int64) (*MemBackend, error) {
 		colors: [][]*color{[]*color{}},
 		file:   loc,
 		viewId: viewId,
+		vtCols: 80,
 	}
 	err := m.Reload()
 	return m, err
+}
+
+func (m *MemBackend) SetVtCols(cols int) {
+	m.vtCols = cols
 }
 
 func (m *MemBackend) ColorAt(ln, col int) (fg, bg core.Style) {

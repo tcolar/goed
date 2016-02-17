@@ -25,7 +25,6 @@ type BackendCmd struct {
 	title     *string
 	Starter   CmdStarter
 	scrollTop bool // whether to scroll back to top once command completed
-	cols      int  //
 	MaxRows   int  // ring buffer size
 	head      int
 }
@@ -186,7 +185,7 @@ func (b *BackendCmd) Overwrite(row, col int, text string, fg, bg core.Style) (at
 			}
 		}
 		for _, ch := range ln {
-			if col >= b.cols { // wrap lines wider than terminal width
+			if col >= b.MemBackend.vtCols { // wrap lines wider than terminal width
 				col = 0
 				row++
 				if b.MaxRows > 0 {

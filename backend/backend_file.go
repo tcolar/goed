@@ -511,3 +511,6 @@ func (f *FileBackend) shiftFileBits(shift int64) error {
 	f.length += shift
 	return nil
 }
+
+func (m *FileBackend) SetVtCols(cols int) { // N/A
+}

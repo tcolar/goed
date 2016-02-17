@@ -22,7 +22,6 @@ fn cd {
 	goed_api view_cwd $GOED_INSTANCE $GOED_VIEW `{pwd}
 } 
 
-# TODO: does not seem to work right if invoked by a tool, ie: git
 EDITOR=goed_edit # When within goed, $EDITOR is goed
 
 fn o {goed_open $*} # open a file/dir

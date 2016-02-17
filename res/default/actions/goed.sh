@@ -12,8 +12,6 @@ function goed_cd() {
 	goed_api view_cwd $GOED_INSTANCE $GOED_VIEW "`pwd`"
 } 
 
-#gapi=`which goed_api`
-#echo $gapi
 export EDITOR="goed_api edit $GOED_INSTANCE `pwd`" # open a file/dir
 
 alias cd="goed_cd"

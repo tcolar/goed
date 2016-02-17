@@ -6,6 +6,12 @@ func EdActivateView(viewId int64, y, x int) {
 	d(edActivateView{viewId: viewId, y: y, x: x})
 }
 
+func EdCurView() int64 {
+	vid := make(chan (int64), 1)
+	d(edCurView{viewId: vid})
+	return <-vid
+}
+
 func EdDelColCheck(colIndex int) {
 	d(edDelColCheck{colIndex: colIndex})
 }
@@ -71,6 +77,15 @@ func (a edActivateView) Run() error {
 	return nil
 }
 
+type edCurView struct {
+	viewId chan int64
+}
+
+func (a edCurView) Run() error {
+	a.viewId <- core.Ed.CurViewId()
+	return nil
+}
+
 type edDelColCheck struct {
 	colIndex int
 }
@@ -98,7 +113,7 @@ type edOpen struct {
 
 func (a edOpen) Run() error {
 	vid, err := core.Ed.Open(a.loc, a.viewId, a.rel, a.create)
-	a.vid <-vid
+	a.vid <- vid
 	return err
 }
 

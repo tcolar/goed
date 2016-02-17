@@ -47,6 +47,7 @@ type Viewable interface {
 	// to this path.
 	SetWorkDir(dir string)
 	SetTitle(title string)
+	SetVtCols(cols int)
 	// Slice returns a view's text subset (matrix)
 	Slice() *Slice
 	StretchSelection(prevl, prevc, ln, c int)
