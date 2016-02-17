@@ -14,6 +14,8 @@ import (
 var (
 	app = kingpin.New("goed_api", "API service for goed Editor")
 
+	version = app.Command("version", "goed_api version.")
+
 	instances   = app.Command("instances", "Returns the known goed instance ID'S, space separated, latest first.")
 	instances1  = instances.Flag("1", "Returns only the most recent instance ID.").Default("false").Bool()
 	apiVersion  = app.Command("api_version", "Returns the API version.")
@@ -37,6 +39,10 @@ var (
 	viewCwdI    = viewCwd.Arg("InstanceId", "InstanceId").Required().Int64()
 	viewCwdV    = viewCwd.Arg("ViewId", "ViewId").Required().Int64()
 	viewCwdLoc  = viewCwd.Arg("dir", "dir").Required().String()
+	viewVtCols  = app.Command("view_vt_cols", "Set vt100 wrap column.")
+	viewVtColsI = viewVtCols.Arg("InstanceId", "InstanceId").Required().Int64()
+	viewVtColsV = viewVtCols.Arg("ViewId", "ViewId").Required().Int64()
+	viewVtColsC = viewVtCols.Arg("Cols", "Cols").Required().Int()
 	open        = app.Command("open", "Open a file/directory in Goed (New view).")
 	openI       = open.Arg("InstanceId", "InstanceId").Required().Int64()
 	openCwd     = open.Arg("cwd", "cwd").Required().String()
@@ -55,6 +61,8 @@ func main() {
 
 func Dispatch(action string) {
 	switch action {
+	case version.FullCommand():
+		fmt.Println(core.Version)
 	case instances.FullCommand():
 		Instances()
 	case apiVersion.FullCommand():
@@ -71,6 +79,8 @@ func Dispatch(action string) {
 		ViewSrcLoc()
 	case viewCwd.FullCommand():
 		ViewCwd()
+	case viewVtCols.FullCommand():
+		ViewVtCols()
 	case open.FullCommand():
 		Open()
 	case edit.FullCommand():
@@ -140,6 +150,14 @@ func ViewCols() {
 		os.Exit(1)
 	}
 	fmt.Println(cols)
+}
+
+func ViewVtCols() {
+	err := client.ViewVtCols(*viewVtColsI, *viewVtColsV, *viewVtColsC)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }
 
 func Open() {
