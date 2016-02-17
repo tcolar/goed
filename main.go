@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"runtime/debug"
 	"runtime/pprof"
+	"strings"
 	"time"
 
 	"github.com/tcolar/goed/actions"
@@ -74,6 +75,8 @@ func main() {
 	core.Ed = ui.NewEditor()
 	apiServer := api.Api{}
 
+	startupChecks()
+
 	defer func() {
 		if fail := recover(); fail != nil {
 			// writing panic to file because shell will be garbled
@@ -95,4 +98,18 @@ func main() {
 	go core.Bus.Start()
 
 	core.Ed.Start(*locs)
+}
+
+func startupChecks() {
+	out, err := exec.Command("goed_api", "version").CombinedOutput()
+	if err != nil {
+		fmt.Printf("Could not find/run goed_api : %s", out)
+		os.Exit(1)
+	}
+	v := strings.Trim(string(out), "\n\t\r ")
+	if v != core.Version {
+		fmt.Printf("goed_api is not at the expected version. (got %s, want %s)",
+			v, core.Version)
+		os.Exit(1)
+	}
 }
