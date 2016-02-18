@@ -69,7 +69,7 @@ but for now here they are:
 | Open Terminal view                      | CTRL+T            | same          |
 | Open path (in New view)                 | RightClick        | same          |
 |                                         | or CTRL+O         | same          |
-| Open path (in current view)             | ALT+O             | **TBD**       |
+| Open path (in current view)             | ALT+O             | N/A - TBD     |
 | Paste text                              | CTRL+V            | same          |
 | Quit Goed                               | CTRL+Q            | same          |
 | Redo                                    | CTRL+Y            | same          | 
@@ -81,7 +81,7 @@ but for now here they are:
 | Swap views                         (4)  | Dbl LC top left   | same          |
 | Undo                                    | CTRL+Z            | same          |
 | Text selection                     (3)  | Mouse drag        | same          |
-|                                         | or SHIFT+move     | same          |
+|                                         | or SHIFT+move     | N/A           |
 | Toogle command bar                      | ESC               | same          |
 
 
