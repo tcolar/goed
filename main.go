@@ -21,6 +21,7 @@ import (
 
 var (
 	app     = kingpin.New("goed", "A code editor")
+	gui     = kingpin.Flag("g", "Star in GUI mode..").Default("false").Bool()
 	test    = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
 	colors  = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
 	config  = kingpin.Flag("config", "Config file.").Default("config.toml").String()
@@ -72,7 +73,7 @@ func main() {
 	core.Bus = actions.NewActionBus()
 	core.InitHome(id)
 	core.ConfFile = *config
-	core.Ed = ui.NewEditor()
+	core.Ed = ui.NewEditor(*gui)
 	apiServer := api.Api{}
 
 	startupChecks()

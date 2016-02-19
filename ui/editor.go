@@ -32,10 +32,15 @@ type Editor struct {
 	views      map[int64]*View
 }
 
-func NewEditor() *Editor {
+func NewEditor(gui bool) *Editor {
+	var term core.Term
+	if gui {
+		term = NewGuiTerm(50, 160)
+	} else {
+		term = core.NewTermBox()
+	}
 	return &Editor{
-		//term: NewGuiTerm(25, 50),
-		term:   core.NewTermBox(),
+		term:   term,
 		config: core.LoadConfig(core.ConfFile),
 		views:  map[int64]*View{},
 	}
