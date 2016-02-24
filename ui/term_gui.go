@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
@@ -27,6 +28,7 @@ var fontSize = 12
 type GuiTerm struct {
 	w, h         int
 	text         [][]char
+	textLock     sync.Mutex
 	win          wde.Window
 	font         *truetype.Font
 	charW, charH int // size of characters
@@ -106,7 +108,6 @@ func (t *GuiTerm) Close() {
 }
 
 func (t *GuiTerm) Clear(fg, bg uint16) {
-	fmt.Println("clear")
 	c := image.NewUniform(palette[bg&255])
 	x, y := t.win.Size()
 	draw.Draw(t.win.Screen(), image.Rect(0, 0, x, y), c, image.ZP, draw.Src)
@@ -121,7 +122,9 @@ func (t *GuiTerm) SetCursor(y, x int) {
 }
 
 func (t *GuiTerm) Char(y, x int, c rune, fg, bg core.Style) {
-	if y < len(t.text) && x < len(t.text[y]) {
+	t.textLock.Lock()
+	defer t.textLock.Unlock()
+	if x >= 0 && y >= 0 && y < len(t.text) && x < len(t.text[y]) {
 		t.text[y][x] = char{
 			rune: c,
 			fg:   fg,
@@ -137,6 +140,8 @@ func (t *GuiTerm) Size() (h, w int) {
 
 // for testing
 func (t *GuiTerm) CharAt(y, x int) rune {
+	t.textLock.Lock()
+	defer t.textLock.Unlock()
 	if x < 0 || y < 0 {
 		panic("CharAt out of bounds")
 	}
@@ -156,7 +161,6 @@ func (t *GuiTerm) SetExtendedColors(b bool) { // N/A
 }
 
 func (t *GuiTerm) paint() {
-	fmt.Println("paint")
 	c := t.ctx
 	w := fixed.Int26_6(t.charW << 6)
 	h := fixed.Int26_6(t.charH << 6)
@@ -190,28 +194,27 @@ func (t *GuiTerm) paint() {
 	t.win.FlushImage()
 }
 
-// xterm-256 palette as in:
-// https://upload.wikimedia.org/wikipedia/en/1/15/Xterm_256color_chart.svg
+// Palette based of what's used in gnome-terminal / xterm-256
 func xtermPalette() *[256]color.Color {
 	a := uint8(255)
-	// base colors
+	// base colors (from gnome-terminal)
 	palette := [256]color.Color{
-		color.RGBA{0, 0, 0, a},
-		color.RGBA{128, 0, 0, a},
-		color.RGBA{0, 128, 0, a},
-		color.RGBA{128, 128, 0, a},
-		color.RGBA{0, 0, 128, a},
-		color.RGBA{128, 0, 128, a},
-		color.RGBA{0, 128, 128, a},
-		color.RGBA{192, 192, 192, a},
-		color.RGBA{128, 128, 128, a},
-		color.RGBA{255, 0, 0, a},
-		color.RGBA{0, 255, 0, a},
-		color.RGBA{255, 255, 0, a},
-		color.RGBA{0, 0, 255, a},
-		color.RGBA{255, 0, 255, a},
-		color.RGBA{0, 255, 255, a},
-		color.RGBA{255, 255, 255, a},
+		color.RGBA{0x2e, 0x34, 0x36, a},
+		color.RGBA{0xcc, 0, 0, a},
+		color.RGBA{0x4e, 0x9a, 0x06, a},
+		color.RGBA{0xc4, 0xa0, 0, a},
+		color.RGBA{0x34, 0x65, 0xa4, a},
+		color.RGBA{0x75, 0x50, 0x7b, a},
+		color.RGBA{0x06, 0x98, 0x9a, a},
+		color.RGBA{0xd3, 0xd7, 0xcf, a},
+		color.RGBA{0x55, 0x57, 0x53, a},
+		color.RGBA{0xef, 0x29, 0x29, a},
+		color.RGBA{0x8a, 0xe2, 0x34, a},
+		color.RGBA{0xfc, 0xe9, 0x4f, a},
+		color.RGBA{0x72, 0x9f, 0xcf, a},
+		color.RGBA{0xad, 0x7f, 0xa8, a},
+		color.RGBA{0x34, 0xe2, 0xe2, a},
+		color.RGBA{0xee, 0xee, 0xec, a},
 	}
 	// xterm-256 colors
 	for i := 16; i != 232; i++ {
