@@ -69,7 +69,7 @@ but for now here they are:
 | Open Terminal view                      | CTRL+T            | same          |
 | Open path (in New view)                 | RightClick        | same          |
 |                                         | or CTRL+O         | same          |
-| Open path (in current view)             | ALT+O             | **TBD**       |
+| Open path (in current view)             | ALT+O             | N/A - TBD     |
 | Paste text                              | CTRL+V            | same          |
 | Quit Goed                               | CTRL+Q            | same          |
 | Redo                                    | CTRL+Y            | same          | 
@@ -81,7 +81,7 @@ but for now here they are:
 | Swap views                         (4)  | Dbl LC top left   | same          |
 | Undo                                    | CTRL+Z            | same          |
 | Text selection                     (3)  | Mouse drag        | same          |
-|                                         | or SHIFT+move     | same          |
+|                                         | or SHIFT+move     | N/A           |
 | Toogle command bar                      | ESC               | same          |
 
 
@@ -102,6 +102,7 @@ Note that while in a terminal a limited number of global shortcuts are enabled.
 ### Terminal actions
 
 The Terminal provides a few builtin shortcuts, such as:
+  - `sz` : Set the shell tty rows/cols to match the current goed view size.
   - `o <path>` : To open a given path/location in goed (or just right click it)
   - `s [-i] <pattern> [path]` : Search text (grep -rn[i] <pattern> [path])
   - `f <pattern> [path]` : Find files (find <path> -name *pattern*) 

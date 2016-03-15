@@ -45,6 +45,16 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 		}
 		return true
 	}
+	// horizontal tab
+	if b.consume(data, i, 9) {
+		spaces := []byte{}
+		b.flush(data[from:start])
+		for i := 0; i < 8-(b.col%8); i++ {
+			spaces = append(spaces, ' ')
+		}
+		b.flush(spaces)
+		return true
+	}
 	// delete
 	*i = start
 	if b.consume(data, i, 127) {
@@ -209,8 +219,6 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 		return true
 	}
 
-	// ###### Start unhandled ! ######################################
-
 	*i = start + 2
 	// Color attribute + fg color  + bg color
 	if b.consumeNbTriple(data, i) && b.consume(data, i, 'm') {
@@ -242,6 +250,9 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 		b.curFg, b.curBg = t.Fg, t.Bg
 		return true
 	}
+
+	// ###### Start unhandled ! ######################################
+
 	*i = start + 2
 	// set scrolling region (r)
 	if b.consumeNbTuple(data, i) && b.consume(data, i, 'r') {
