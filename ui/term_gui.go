@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -12,16 +11,18 @@ import (
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
-	"github.com/skelterjohn/go.wde"
+	wde "github.com/skelterjohn/go.wde"
 	_ "github.com/skelterjohn/go.wde/init"
 	"github.com/tcolar/goed/core"
-	"github.com/tcolar/termbox-go"
+	"github.com/tcolar/goed/event"
+	termbox "github.com/tcolar/termbox-go"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 )
 
 var palette = xtermPalette()
 
+// TODO: font config, provide a default ??
 var fontPath = "test_data/Hack-Regular.ttf"
 var fontSize = 12
 
@@ -43,7 +44,8 @@ type char struct {
 }
 
 func NewGuiTerm(h, w int) *GuiTerm {
-	win, err := wde.NewWindow(1400, 800)
+	win, err := wde.NewWindow(1400, 800) // TODO: Window size
+	win.SetTitle("GoEd")
 	if err != nil {
 		panic(err)
 	}
@@ -94,12 +96,11 @@ func (t *GuiTerm) applyFont(fontPath string, fontSize int) {
 	c.SetDst(t.rgba)
 	c.SetHinting(font.HintingFull)
 	t.ctx = c
-
-	fmt.Printf("w:%d h:%d, cw:%d, ch:%d\n", t.w, t.h, t.charW, t.charH)
 }
 
 func (t *GuiTerm) Init() error {
 	t.win.Show()
+	go t.listen()
 	return nil
 }
 
@@ -158,6 +159,31 @@ func (t *GuiTerm) SetInputMode(m termbox.InputMode) { // N/A
 }
 
 func (t *GuiTerm) SetExtendedColors(b bool) { // N/A
+}
+
+func (t *GuiTerm) listen() {
+	evtState := event.EventState{}
+	for ev := range t.win.EventChan() {
+		switch e := ev.(type) {
+		case wde.ResizeEvent:
+			// TODO: resize
+		case wde.CloseEvent:
+			os.Exit(0) //TODO : proper quit event
+		case wde.MouseDownEvent:
+			evtState.MouseDown(int(e.Which), e.Where.Y, e.Where.X)
+		case wde.MouseUpEvent:
+			evtState.MouseUp(int(e.Which), e.Where.Y, e.Where.X)
+		case wde.MouseDraggedEvent:
+			evtState.MouseDown(int(e.Which), e.Where.Y, e.Where.X)
+		case wde.KeyDownEvent:
+			evtState.KeyDown(e.Key)
+		case wde.KeyUpEvent:
+			evtState.KeyUp(e.Key)
+		default:
+			continue
+		}
+		event.Queue(evtState)
+	}
 }
 
 func (t *GuiTerm) paint() {
