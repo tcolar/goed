@@ -12,7 +12,8 @@ import (
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
-	"github.com/tcolar/termbox-go"
+	"github.com/tcolar/goed/event"
+	termbox "github.com/tcolar/termbox-go"
 )
 
 // Editor is goed's main Editor pane (singleton)
@@ -131,6 +132,9 @@ func (e *Editor) Start(locs []string) {
 	actions.EdRender()
 
 	go e.autoScroller()
+
+	go event.Listen()
+	defer event.Shutdown()
 
 	if !core.Testing {
 		e.EventLoop()
