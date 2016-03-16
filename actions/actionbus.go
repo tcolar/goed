@@ -35,6 +35,9 @@ func (a actionBus) Start() {
 				core.Ed.SetStatusErr(err.Error())
 				log.Println(err.Error())
 			}
+			if core.Trace {
+				pretty.Logln(action)
+			}
 		case <-a.quitc:
 			break
 		}
