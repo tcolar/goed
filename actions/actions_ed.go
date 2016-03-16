@@ -1,6 +1,10 @@
 package actions
 
-import "github.com/tcolar/goed/core"
+import (
+	"log"
+
+	"github.com/tcolar/goed/core"
+)
 
 func (a *ar) EdActivateView(viewId int64, y, x int) {
 	d(edActivateView{viewId: viewId, y: y, x: x})
@@ -12,12 +16,12 @@ func (a *ar) EdCurView() int64 {
 	return <-vid
 }
 
-func (a *ar) EdDelColCheck(colIndex int) {
-	d(edDelColCheck{colIndex: colIndex})
+func (a *ar) EdDelCol(colIndex int, check bool) {
+	d(edDelCol{colIndex: colIndex, check: check})
 }
 
-func (a *ar) EdDelViewCheck(viewId int64) {
-	d(edDelViewCheck{viewId: viewId})
+func (a *ar) EdDelView(viewId int64, check bool) {
+	d(edDelView{viewId: viewId, check: check})
 }
 
 func (a *ar) EdOpen(loc string, viewId int64, rel string, create bool) int64 {
@@ -57,6 +61,12 @@ func (a *ar) EdTermFlush() {
 	d(edTermFlush{})
 }
 
+func (a *ar) EdViewByLoc(loc string) int64 {
+	vid := make(chan (int64), 1)
+	d(edViewByLoc{loc: loc, vid: vid})
+	return <-vid
+}
+
 func (a *ar) EdViewMove(viewId int64, y1, x1, y2, x2 int) {
 	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
 }
@@ -86,21 +96,23 @@ func (a edCurView) Run() error {
 	return nil
 }
 
-type edDelColCheck struct {
+type edDelCol struct {
 	colIndex int
+	check    bool
 }
 
-func (a edDelColCheck) Run() error {
-	core.Ed.DelColCheckByIndex(a.colIndex)
+func (a edDelCol) Run() error {
+	core.Ed.DelColByIndex(a.colIndex, a.check)
 	return nil
 }
 
-type edDelViewCheck struct {
+type edDelView struct {
 	viewId int64
+	check  bool
 }
 
-func (a edDelViewCheck) Run() error {
-	core.Ed.DelViewCheck(a.viewId)
+func (a edDelView) Run() error {
+	core.Ed.DelViewByIndex(a.viewId, a.check)
 	return nil
 }
 
@@ -114,6 +126,9 @@ type edOpen struct {
 func (a edOpen) Run() error {
 	vid, err := core.Ed.Open(a.loc, a.viewId, a.rel, a.create)
 	a.vid <- vid
+	if err != nil {
+		log.Printf("EdOpen error : %s\n", err.Error())
+	}
 	return err
 }
 
@@ -169,6 +184,17 @@ type edTermFlush struct{}
 
 func (a edTermFlush) Run() error {
 	core.Ed.TermFlush()
+	return nil
+}
+
+type edViewByLoc struct {
+	loc string
+	vid chan int64
+}
+
+func (a edViewByLoc) Run() error {
+	vid := core.Ed.ViewByLoc(a.loc)
+	a.vid <- vid
 	return nil
 }
 
