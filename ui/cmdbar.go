@@ -64,9 +64,9 @@ func (c *Cmdbar) RunCmd() {
 		exec(parts, false)
 	}
 	if err == nil {
-		actions.CmdbarEnable(false)
+		actions.Ar.CmdbarEnable(false)
 	} else {
-		actions.EdSetStatusErr(err.Error())
+		actions.Ar.EdSetStatusErr(err.Error())
 	}
 }
 
@@ -100,7 +100,7 @@ func (c *Cmdbar) line(args []string) {
 	}
 	v := ed.ViewById(ed.CurViewId())
 	if v != nil {
-		actions.ViewMoveCursor(ed.CurViewId(), l-v.CurLine()-1, 0)
+		actions.Ar.ViewMoveCursor(ed.CurViewId(), l-v.CurLine()-1, 0)
 	}
 }
 

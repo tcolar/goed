@@ -127,9 +127,9 @@ func (e *Editor) Start(locs []string) {
 		e.curViewId = c.Views[0]
 	}
 
-	actions.EdResize(e.term.Size())
+	actions.Ar.EdResize(e.term.Size())
 
-	actions.EdRender()
+	actions.Ar.EdRender()
 
 	go e.autoScroller()
 
