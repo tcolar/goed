@@ -12,7 +12,7 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-// Execute an external script, meant to be run within a routine.
+// Execute an external script, meant to be ran within a routine.
 func ExecScript(script string) {
 	vid := Ar.EdCurView()
 	loc := core.FindResource(path.Join("actions", script))
@@ -33,17 +33,15 @@ func ExecScript(script string) {
 		file.Write([]byte{'\n'})
 		file.Write(out)
 		file.Close()
-		//errv := e.ViewByLoc(fp)
-		//errv, err = e.Open(fp, errv, "", true)
-		if err != nil {
-			Ar.EdSetStatusErr(err.Error())
+		errv := Ar.EdViewByLoc(fp)
+		Ar.EdOpen(fp, errv, "", true)
+	} else {
+		// no error
+		errv := Ar.EdViewByLoc(fp)
+		if errv > 0 {
+			Ar.EdDelView(errv, false)
 		}
 	}
-	// no error
-	//errv := e.ViewByLoc(fp)
-	//if errv > 0 {
-	//	Ar.EdDelView(errv, true)
-	//}
 	Ar.EdRender()
 }
 
