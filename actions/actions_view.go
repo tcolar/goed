@@ -1,126 +1,136 @@
 package actions
 
-import "github.com/tcolar/goed/core"
+import (
+	"fmt"
 
-func ViewAddSelection(viewId int64, l1, c1, l2, c2 int) {
+	"github.com/tcolar/goed/core"
+)
+
+func (a *ar) ViewAddSelection(viewId int64, l1, c1, l2, c2 int) {
 	d(viewAddSelection{viewId: viewId, l1: l1, c1: c1, l2: l2, c2: c2})
 }
 
-func ViewAutoScroll(viewId int64, y, x int, on bool) {
+func (a *ar) ViewAutoScroll(viewId int64, y, x int, on bool) {
 	d(viewAutoScroll{viewId: viewId, x: x, y: y, on: on})
 }
 
-func ViewBackspace(viewId int64) {
+func (a *ar) ViewBackspace(viewId int64) {
 	d(viewBackspace{viewId: viewId})
 }
 
-func ViewClearSelections(viewId int64) {
+func (a *ar) ViewClearSelections(viewId int64) {
 	d(viewClearSelections{viewId: viewId})
 }
 
-func ViewCmdStop(viewId int64) {
+func (a *ar) ViewCmdStop(viewId int64) {
 	d(viewCmdStop{viewId: viewId})
 }
 
-func ViewCopy(viewId int64) {
+func (a *ar) ViewCopy(viewId int64) {
 	d(viewCopy{viewId: viewId})
 }
 
-func ViewCut(viewId int64) {
+func (a *ar) ViewCut(viewId int64) {
 	d(viewCut{viewId: viewId})
 }
 
-func ViewCurPos(viewId int64) (ln, col int) {
-	answer := make(chan (int), 2)
+func (a *ar) ViewCurPos(viewId int64) (ln, col int) {
+	answer := make(chan int, 2)
 	d(viewCurPos{viewId: viewId, answer: answer})
 	return <-answer, <-answer
 }
 
-func ViewCursorMvmt(viewId int64, mvmt core.CursorMvmt) {
+func (a *ar) ViewCursorMvmt(viewId int64, mvmt core.CursorMvmt) {
 	d(viewCursorMvmt{viewId: viewId, mvmt: mvmt})
 }
 
-func ViewDelete(viewId int64, row1, col1, row2, col2 int, undoable bool) {
+func (a *ar) ViewDelete(viewId int64, row1, col1, row2, col2 int, undoable bool) {
 	d(viewDeleteAction{viewId: viewId, row1: row1, col1: col1, row2: row2, col2: col2, undoable: undoable})
 }
 
-func ViewDeleteCur(viewId int64) {
+func (a *ar) ViewDeleteCur(viewId int64) {
 	d(viewDeleteCur{viewId: viewId})
 }
 
-func ViewInsert(viewId int64, row, col int, text string, undoable bool) {
+func (a *ar) ViewInsert(viewId int64, row, col int, text string, undoable bool) {
 	d(viewInsertAction{viewId: viewId, row: row, col: col, text: text, undoable: undoable})
 }
 
-func ViewInsertCur(viewId int64, text string) {
+func (a *ar) ViewInsertCur(viewId int64, text string) {
 	d(viewInsertCur{viewId: viewId, text: text})
 }
 
-func ViewInsertNewLine(viewId int64) {
+func (a *ar) ViewInsertNewLine(viewId int64) {
 	d(viewInsertNewLine{viewId: viewId})
 }
 
-func ViewMoveCursor(viewId int64, y, x int) {
+func (a *ar) ViewMoveCursor(viewId int64, y, x int) {
 	d(viewMoveCursor{viewId: viewId, x: x, y: y})
 }
 
-func ViewMoveCursorRoll(viewId int64, y, x int) {
+func (a *ar) ViewMoveCursorRoll(viewId int64, y, x int) {
 	d(viewMoveCursor{viewId: viewId, x: x, y: y, roll: true})
 }
 
-func ViewPaste(viewId int64) {
+func (a *ar) ViewPaste(viewId int64) {
 	d(viewPaste{viewId: viewId})
 }
 
-func ViewOpenSelection(viewId int64, newView bool) {
+func (a *ar) ViewOpenSelection(viewId int64, newView bool) {
 	d(viewOpenSelection{viewId: viewId, newView: newView})
 }
 
-func ViewRedo(viewId int64) {
+func (a *ar) ViewRedo(viewId int64) {
 	d(viewRedo{viewId: viewId})
 }
 
-func ViewReload(viewId int64) {
+func (a *ar) ViewReload(viewId int64) {
 	d(viewReload{viewId: viewId})
 }
 
-func ViewRender(viewId int64) {
+func (a *ar) ViewRender(viewId int64) {
 	d(viewRender{viewId: viewId})
 }
 
-func ViewSave(viewId int64) {
+func (a *ar) ViewSave(viewId int64) {
 	d(viewSave{viewId: viewId})
 }
 
-func ViewSelectAll(viewId int64) {
+func (a *ar) ViewSelectAll(viewId int64) {
 	d(viewSelectAll{viewId: viewId})
 }
 
-func ViewSetDirty(viewId int64, on bool) {
+func (a *ar) ViewSetDirty(viewId int64, on bool) {
 	d(viewSetDirty{viewId: viewId, on: on})
 }
 
-func ViewSetTitle(viewId int64, title string) {
+func (a *ar) ViewSetTitle(viewId int64, title string) {
 	d(viewSetTitle{viewId: viewId, title: title})
 }
 
-func ViewSetVtCols(viewId int64, cols int) {
+func (a *ar) ViewSetVtCols(viewId int64, cols int) {
 	d(viewSetVtCols{viewId: viewId, cols: cols})
 }
 
-func ViewStretchSelection(viewId int64, prevLn, prevCol int) {
+func (a *ar) ViewStretchSelection(viewId int64, prevLn, prevCol int) {
 	d(viewStretchSelection{viewId: viewId, prevLn: prevLn, prevCol: prevCol})
 }
 
-func ViewSetWorkdir(viewId int64, workDir string) {
+func (a *ar) ViewSetWorkdir(viewId int64, workDir string) {
 	d(viewSetWorkdir{viewId: viewId, workDir: workDir})
 }
 
-func ViewSyncSlice(viewId int64) {
+func (a *ar) ViewSrcLoc(viewId int64) string {
+	answer := make(chan string, 1)
+	d(viewSrcLoc{viewId: viewId, answer: answer})
+	return <-answer
+}
+
+func (a *ar) ViewSyncSlice(viewId int64) {
 	d(viewSyncSlice{viewId: viewId})
 }
 
-func ViewUndo(viewId int64) {
+func (a *ar) ViewUndo(viewId int64) {
 	d(viewUndo{viewId: viewId})
 }
 
@@ -479,6 +489,21 @@ func (a viewSetVtCols) Run() error {
 	if v != nil {
 		v.SetVtCols(a.cols)
 	}
+	return nil
+}
+
+type viewSrcLoc struct {
+	viewId int64
+	answer chan string
+}
+
+func (a viewSrcLoc) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Id() == 0 {
+		a.answer <- fmt.Sprintf("No such view %d", a.viewId)
+		return fmt.Errorf("No such view : %d", a.viewId)
+	}
+	a.answer <- v.Backend().SrcLoc()
 	return nil
 }
 

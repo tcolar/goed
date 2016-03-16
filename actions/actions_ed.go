@@ -2,66 +2,66 @@ package actions
 
 import "github.com/tcolar/goed/core"
 
-func EdActivateView(viewId int64, y, x int) {
+func (a *ar) EdActivateView(viewId int64, y, x int) {
 	d(edActivateView{viewId: viewId, y: y, x: x})
 }
 
-func EdCurView() int64 {
+func (a *ar) EdCurView() int64 {
 	vid := make(chan (int64), 1)
 	d(edCurView{viewId: vid})
 	return <-vid
 }
 
-func EdDelColCheck(colIndex int) {
+func (a *ar) EdDelColCheck(colIndex int) {
 	d(edDelColCheck{colIndex: colIndex})
 }
 
-func EdDelViewCheck(viewId int64) {
+func (a *ar) EdDelViewCheck(viewId int64) {
 	d(edDelViewCheck{viewId: viewId})
 }
 
-func EdOpen(loc string, viewId int64, rel string, create bool) int64 {
+func (a *ar) EdOpen(loc string, viewId int64, rel string, create bool) int64 {
 	vid := make(chan (int64), 1)
 	d(edOpen{loc: loc, viewId: viewId, rel: rel, create: create, vid: vid})
 	return <-vid
 }
 
 // Retuns whether the editor can be quit.
-func EdQuitCheck() bool {
+func (a *ar) EdQuitCheck() bool {
 	answer := make(chan (bool), 1)
 	d(edQuitCheck{answer: answer})
 	return <-answer
 }
 
-func EdRender() {
+func (a *ar) EdRender() {
 	d(edRender{})
 }
 
-func EdResize(h, w int) {
+func (a *ar) EdResize(h, w int) {
 	d(edResize{h: h, w: w})
 }
 
-func EdSetStatus(status string) {
+func (a *ar) EdSetStatus(status string) {
 	d(edSetStatus{status: status, err: false})
 }
 
-func EdSetStatusErr(status string) {
+func (a *ar) EdSetStatusErr(status string) {
 	d(edSetStatus{status: status, err: true})
 }
 
-func EdSwapViews(view1Id, view2Id int64) {
+func (a *ar) EdSwapViews(view1Id, view2Id int64) {
 	d(edSwapViews{view1Id: view1Id, view2Id: view2Id})
 }
 
-func EdTermFlush() {
+func (a *ar) EdTermFlush() {
 	d(edTermFlush{})
 }
 
-func EdViewMove(viewId int64, y1, x1, y2, x2 int) {
+func (a *ar) EdViewMove(viewId int64, y1, x1, y2, x2 int) {
 	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
 }
 
-func EdViewNavigate(mvmt core.CursorMvmt) {
+func (a *ar) EdViewNavigate(mvmt core.CursorMvmt) {
 	d(edViewNavigate{mvmt})
 }
 
