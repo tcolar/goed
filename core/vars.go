@@ -7,7 +7,7 @@ import "os"
 const Version = "0.0.3"
 const ApiVersion = "v1"
 
-var Trace = false
+var Trace = true
 
 // Ed is thew editor singleton
 var Ed Editable
@@ -41,16 +41,16 @@ var InstanceId int64 // instance ID
 type CursorMvmt byte
 
 const (
-	CursorMvmtRight CursorMvmt = iota
-	CursorMvmtLeft
-	CursorMvmtUp
-	CursorMvmtDown
-	CursorMvmtPgDown
-	CursorMvmtPgUp
-	CursorMvmtHome
-	CursorMvmtEnd
-	CursorMvmtTop
-	CursorMvmtBottom
+	CursorMvmtRight  CursorMvmt = 0
+	CursorMvmtLeft              = 1
+	CursorMvmtUp                = 2
+	CursorMvmtDown              = 3
+	CursorMvmtPgDown            = 4
+	CursorMvmtPgUp              = 5
+	CursorMvmtHome              = 6
+	CursorMvmtEnd               = 7
+	CursorMvmtTop               = 8
+	CursorMvmtBottom            = 9
 )
 
 type ViewType int
