@@ -95,11 +95,11 @@ func (b *BackendCmd) Head() int { // for unit testing
 
 func (c *BackendCmd) Start(viewId int64) {
 	workDir, _ := filepath.Abs(c.dir)
-	actions.ViewSetWorkdir(viewId, workDir)
+	actions.Ar.ViewSetWorkdir(viewId, workDir)
 	c.runner.Dir = workDir
-	actions.ViewSetTitle(viewId, fmt.Sprintf("[RUNNING] %s", *c.title))
-	actions.ViewRender(viewId)
-	actions.EdTermFlush()
+	actions.Ar.ViewSetTitle(viewId, fmt.Sprintf("[RUNNING] %s", *c.title))
+	actions.Ar.ViewRender(viewId)
+	actions.Ar.EdTermFlush()
 
 	c.runner.Env = core.EnvWith([]string{"TERM=vt100",
 		fmt.Sprintf("GOED_INSTANCE=%d", core.InstanceId),
@@ -108,16 +108,16 @@ func (c *BackendCmd) Start(viewId int64) {
 	err := c.Starter.Start(c)
 
 	if err != nil {
-		actions.EdSetStatusErr(err.Error())
-		actions.ViewSetTitle(viewId, fmt.Sprintf("[FAILED] %s", *c.title))
+		actions.Ar.EdSetStatusErr(err.Error())
+		actions.Ar.ViewSetTitle(viewId, fmt.Sprintf("[FAILED] %s", *c.title))
 	} else {
-		actions.ViewSetTitle(viewId, *c.title)
+		actions.Ar.ViewSetTitle(viewId, *c.title)
 	}
-	actions.ViewSetWorkdir(viewId, workDir) // might have changed
+	actions.Ar.ViewSetWorkdir(viewId, workDir) // might have changed
 	if c.scrollTop {
-		actions.ViewCursorMvmt(viewId, core.CursorMvmtTop)
+		actions.Ar.ViewCursorMvmt(viewId, core.CursorMvmtTop)
 	}
-	actions.EdRender()
+	actions.Ar.EdRender()
 }
 
 func (c *BackendCmd) stop() {
@@ -340,7 +340,7 @@ func (c *BackendCmd) stream() error {
 	err = c.runner.Wait()
 	close(endc)
 	time.Sleep(50 * time.Millisecond)
-	actions.EdRender()
+	actions.Ar.EdRender()
 	return err
 }
 
@@ -358,7 +358,7 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 	for {
 		select {
 		case <-endc:
-			actions.EdRender()
+			actions.Ar.EdRender()
 			return
 		default:
 			if atomic.SwapInt32(&b.dirty, 0) > 0 {
@@ -367,9 +367,9 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 				// in an interactive program
 				//if v != nil && (rows != v.LastViewLine() || cols != v.LastViewCol()) {
 				// refresh view
-				l, c := actions.ViewCurPos(b.viewId)
-				actions.ViewMoveCursor(b.viewId, b.line-l, b.col-c)
-				actions.EdRender()
+				l, c := actions.Ar.ViewCurPos(b.viewId)
+				actions.Ar.ViewMoveCursor(b.viewId, b.line-l, b.col-c)
+				actions.Ar.EdRender()
 			}
 		}
 		time.Sleep(50 * time.Millisecond)

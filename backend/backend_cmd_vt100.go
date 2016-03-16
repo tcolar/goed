@@ -32,7 +32,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// bell
 	if b.consume(data, i, 7) {
 		b.flush(data[from:start])
-		actions.EdSetStatusErr("Beep !!")
+		actions.Ar.EdSetStatusErr("Beep !!")
 		return true
 	}
 	*i = start
@@ -59,7 +59,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	*i = start
 	if b.consume(data, i, 127) {
 		b.flush(data[from:start])
-		actions.ViewDeleteCur(b.viewId)
+		actions.Ar.ViewDeleteCur(b.viewId)
 		return true
 	}
 	*i = start // \r\n
@@ -106,7 +106,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	if b.consume(data, i, 27) && b.consume(data, i, 93) &&
 		b.consume(data, i, '0') && b.consume(data, i, ';') {
 		b.consumeUntil(data, i, 7)
-		actions.ViewSetTitle(b.viewId, string(data[start+4:*i]))
+		actions.Ar.ViewSetTitle(b.viewId, string(data[start+4:*i]))
 		return true
 	}
 
