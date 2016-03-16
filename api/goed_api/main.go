@@ -62,7 +62,7 @@ func main() {
 		//todo : usage
 		fmt.Println("--help : usage info")
 		fmt.Println("version : get goed_api version")
-		fmt.Println("instances : get all goed insatnces Ids")
+		fmt.Println("instances : get all goed instances Ids")
 		fmt.Println("instance : get most recent goed instance Id")
 		fmt.Println()
 		fmt.Println("Goed Api methods: (More details at http://github.com/tcolar/goed/api/)")
