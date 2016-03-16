@@ -34,63 +34,6 @@ func Edit(instance int64, cwd, loc string) error {
 	return err
 }
 
-/*
-func ApiVersion(instance int64) (version string, err error) {
-	c := getClient(instance)
-	defer c.Close()
-	err = c.Call("GoedRpc.ApiVersion", struct{}{}, &version)
-	return version, err
-}
-
-func ViewReload(instance, viewId int64) (err error) {
-	c := getClient(instance)
-	defer c.Close()
-	err = c.Call("GoedRpc.ViewReload", viewId, &struct{}{})
-	return err
-}
-
-func ViewCwd(instance, viewId int64, loc string) (err error) {
-	c := getClient(instance)
-	defer c.Close()
-	err = c.Call("GoedRpc.ViewCwd", []interface{}{viewId, loc}, &struct{}{})
-	return err
-}
-
-func ViewSave(instance, viewId int64) (err error) {
-	c := getClient(instance)
-	defer c.Close()
-	err = c.Call("GoedRpc.ViewSave", viewId, &struct{}{})
-	return err
-}
-
-func ViewSrcLoc(instance, viewId int64) (loc string, err error) {
-	c := getClient(instance)
-	defer c.Close()
-	err = c.Call("GoedRpc.ViewSrcLoc", viewId, &loc)
-	return loc, err
-}
-
-func ViewRows(instance, viewId int64) (rows int, err error) {
-	c := getClient(instance)
-	defer c.Close()
-	err = c.Call("GoedRpc.ViewRows", viewId, &rows)
-	return rows, err
-}
-
-func ViewCols(instance, viewId int64) (cols int, err error) {
-	c := getClient(instance)
-	defer c.Close()
-	err = c.Call("GoedRpc.ViewCols", viewId, &cols)
-	return cols, err
-}
-
-func ViewVtCols(instance, viewId int64, cols int) (err error) {
-	c := getClient(instance)
-	defer c.Close()
-	return c.Call("GoedRpc.ViewVtCols", []interface{}{viewId, cols}, &struct{}{})
-}
-*/
-
 func getClient(id int64) *rpc.Client {
 	sock := core.GoedSocket(id)
 	c, err := rpc.DialHTTP("unix", sock)

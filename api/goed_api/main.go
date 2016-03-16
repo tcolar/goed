@@ -13,50 +13,6 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-/*
-var (
-	app = kingpin.New("goed_api", "API service for goed Editor")
-
-	version = app.Command("version", "goed_api version.")
-
-	instances   = app.Command("instances", "Returns the known goed instance ID'S, space separated, latest first.")
-	instances1  = instances.Flag("1", "Returns only the most recent instance ID.").Default("false").Bool()
-	apiVersion  = app.Command("api_version", "Returns the API version.")
-	apiVersionI = apiVersion.Arg("ApiInstanceId", "InstanceId").Required().Int64()
-	viewReload  = app.Command("view_reload", "Reload a view's buffer from the source.")
-	viewReloadI = viewReload.Arg("InstanceId", "InstanceId").Required().Int64()
-	viewReloadV = viewReload.Arg("ViewId", "ViewId").Required().Int64()
-	viewCols    = app.Command("view_cols", "Size of the view in columns.")
-	viewColsI   = viewCols.Arg("InstanceId", "InstanceId").Required().Int64()
-	viewColsV   = viewCols.Arg("ViewId", "ViewId").Required().Int64()
-	viewRows    = app.Command("view_rows", "Size of the views in rows.")
-	viewRowsI   = viewRows.Arg("InstanceId", "InstanceId").Required().Int64()
-	viewRowsV   = viewRows.Arg("ViewId", "ViewId").Required().Int64()
-	viewSave    = app.Command("view_save", "Save the view buffer to the source.")
-	viewSaveI   = viewSave.Arg("InstanceId", "InstanceId").Required().Int64()
-	viewSaveV   = viewSave.Arg("ViewId", "ViewId").Required().Int64()
-	viewSrcLoc  = app.Command("view_src_loc", "Get the view's source document path.")
-	viewSrcLocI = viewSrcLoc.Arg("InstanceId", "InstanceId").Required().Int64()
-	viewSrcLocV = viewSrcLoc.Arg("ViewId", "ViewId").Required().Int64()
-	viewCwd     = app.Command("view_cwd", "Change view working directory.")
-	viewCwdI    = viewCwd.Arg("InstanceId", "InstanceId").Required().Int64()
-	viewCwdV    = viewCwd.Arg("ViewId", "ViewId").Required().Int64()
-	viewCwdLoc  = viewCwd.Arg("dir", "dir").Required().String()
-	viewVtCols  = app.Command("view_vt_cols", "Set vt100 wrap column.")
-	viewVtColsI = viewVtCols.Arg("InstanceId", "InstanceId").Required().Int64()
-	viewVtColsV = viewVtCols.Arg("ViewId", "ViewId").Required().Int64()
-	viewVtColsC = viewVtCols.Arg("Cols", "Cols").Required().Int()
-	open        = app.Command("open", "Open a file/directory in Goed (New view).")
-	openI       = open.Arg("InstanceId", "InstanceId").Required().Int64()
-	openCwd     = open.Arg("cwd", "cwd").Required().String()
-	openLoc     = open.Arg("loc", "loc").Required().String()
-	edit        = app.Command("edit", "Edit a file in Goed and wait until saved.")
-	editI       = edit.Arg("InstanceId", "InstanceId").Required().Int64()
-	editCwd     = edit.Arg("cwd", "cwd").Required().String()
-	editLoc     = edit.Arg("loc", "loc").Required().String()
-	generic     = app.Command("generic", "testing")
-)*/
-
 func main() {
 	if len(os.Args) <= 1 || os.Args[1] == "--help" {
 		fmt.Println("--help : usage info")
@@ -153,49 +109,3 @@ func Edit(args []string) {
 		os.Exit(1)
 	}
 }
-
-/*
-func ApiVersion() {
-	version, err := client.ApiVersion(*apiVersionI)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	fmt.Println(version)
-}
-
-func ViewRows() {
-	rows, err := client.ViewRows(*viewRowsI, *viewRowsV)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	fmt.Println(rows)
-}
-
-func ViewCols() {
-	cols, err := client.ViewCols(*viewColsI, *viewColsV)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	fmt.Println(cols)
-}
-
-func ViewVtCols() {
-	err := client.ViewVtCols(*viewVtColsI, *viewVtColsV, *viewVtColsC)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
-
-func ViewCwd() {
-	err := client.ViewCwd(*viewCwdI, *viewCwdV, *viewCwdLoc)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
-
-*/
