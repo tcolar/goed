@@ -9,7 +9,7 @@ inst=$GOED_INSTANCE
 rows=`goed_api view_rows $inst $view`
 cols=`goed_api view_cols $inst $view`
 
-goed_api view_vt_cols $inst $view $cols
+goed_api view_set_vt_cols $inst $view $cols
 stty rows $rows
 stty cols $cols
 

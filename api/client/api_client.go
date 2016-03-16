@@ -20,6 +20,20 @@ func Action(instanceId int64, strs []string) ([]string, error) {
 	return results.Data, err
 }
 
+func Open(instance int64, cwd, loc string) error {
+	c := getClient(instance)
+	defer c.Close()
+	err := c.Call("GoedRpc.Open", []interface{}{cwd, loc}, &struct{}{})
+	return err
+}
+
+func Edit(instance int64, cwd, loc string) error {
+	c := getClient(instance)
+	defer c.Close()
+	err := c.Call("GoedRpc.Edit", []interface{}{cwd, loc}, &struct{}{})
+	return err
+}
+
 /*
 func ApiVersion(instance int64) (version string, err error) {
 	c := getClient(instance)
@@ -74,20 +88,6 @@ func ViewVtCols(instance, viewId int64, cols int) (err error) {
 	c := getClient(instance)
 	defer c.Close()
 	return c.Call("GoedRpc.ViewVtCols", []interface{}{viewId, cols}, &struct{}{})
-}
-
-func Open(instance int64, cwd, loc string) error {
-	c := getClient(instance)
-	defer c.Close()
-	err := c.Call("GoedRpc.Open", []interface{}{cwd, loc}, &struct{}{})
-	return err
-}
-
-func Edit(instance int64, cwd, loc string) error {
-	c := getClient(instance)
-	defer c.Close()
-	err := c.Call("GoedRpc.Edit", []interface{}{cwd, loc}, &struct{}{})
-	return err
 }
 */
 

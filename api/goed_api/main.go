@@ -59,11 +59,12 @@ var (
 
 func main() {
 	if len(os.Args) <= 1 || os.Args[1] == "--help" {
-		//todo : usage
 		fmt.Println("--help : usage info")
-		fmt.Println("version : get goed_api version")
+		fmt.Println("edit <instid> <dir> <file>: Open a file and wait until closed.")
 		fmt.Println("instances : get all goed instances Ids")
 		fmt.Println("instance : get most recent goed instance Id")
+		fmt.Println("open <instid> <dir> <file>: Open a file.")
+		fmt.Println("version : get goed_api version")
 		fmt.Println()
 		fmt.Println("Goed Api methods: (More details at http://github.com/tcolar/goed/api/)")
 		fmt.Println(actions.Usage())
@@ -76,28 +77,10 @@ func main() {
 		Instances(true)
 	case "instances":
 		Instances(false)
-		/*	case apiVersion.FullCommand():
-				ApiVersion()
-			case viewReload.FullCommand():
-				ViewReload()
-			case viewRows.FullCommand():
-				ViewRows()
-			case viewCols.FullCommand():
-				ViewCols()
-			case viewSave.FullCommand():
-				ViewSave()
-			case viewSrcLoc.FullCommand():
-				ViewSrcLoc()
-			case viewCwd.FullCommand():
-				ViewCwd()
-			case viewVtCols.FullCommand():
-				ViewVtCols()
-			case open.FullCommand():
-				Open()
-			case edit.FullCommand():
-				Edit()
-			case generic.FullCommand():
-				Generic()*/
+	case "edit":
+		Edit(os.Args[2:])
+	case "open":
+		Open(os.Args[2:])
 	default:
 		// Everything else is passed to a goed instance
 		Action(os.Args[1:])
@@ -120,7 +103,9 @@ func Action(args []string) {
 		fmt.Printf("RPC call failed: %s\n", err.Error())
 		os.Exit(1)
 	}
-	fmt.Println(strings.Join(results, " "))
+	if len(results) > 0 {
+		fmt.Println(strings.Join(results, " "))
+	}
 }
 
 func Instances(lastOnly bool) {
@@ -133,6 +118,42 @@ func Instances(lastOnly bool) {
 	}
 }
 
+func Open(args []string) {
+	if len(args) < 3 {
+		fmt.Printf("Action open needs instance, path, file arguments\n")
+		os.Exit(1)
+	}
+	instance, err := strconv.ParseInt(args[0], 10, 64)
+	if err != nil {
+		fmt.Printf("InstanceId must be a number: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	err = client.Open(instance, args[1], args[2])
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func Edit(args []string) {
+	if len(args) < 3 {
+		fmt.Printf("Action edit needs instance, path, file arguments\n")
+		os.Exit(1)
+	}
+	instance, err := strconv.ParseInt(args[0], 10, 64)
+	if err != nil {
+		fmt.Printf("InstanceId must be a number: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	err = client.Edit(instance, args[1], args[2])
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
 /*
 func ApiVersion() {
 	version, err := client.ApiVersion(*apiVersionI)
@@ -141,31 +162,6 @@ func ApiVersion() {
 		os.Exit(1)
 	}
 	fmt.Println(version)
-}
-
-func ViewReload() {
-	err := client.ViewReload(*viewReloadI, *viewReloadV)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
-
-func ViewSave() {
-	err := client.ViewSave(*viewSaveI, *viewSaveV)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
-
-func ViewSrcLoc() {
-	loc, err := client.ViewSrcLoc(*viewSrcLocI, *viewSrcLocV)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	fmt.Println(loc)
 }
 
 func ViewRows() {
@@ -194,14 +190,6 @@ func ViewVtCols() {
 	}
 }
 
-func Open() {
-	err := client.Open(*openI, *openCwd, *openLoc)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
-
 func ViewCwd() {
 	err := client.ViewCwd(*viewCwdI, *viewCwdV, *viewCwdLoc)
 	if err != nil {
@@ -210,10 +198,4 @@ func ViewCwd() {
 	}
 }
 
-func Edit() {
-	err := client.Edit(*editI, *editCwd, *editLoc)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}*/
+*/

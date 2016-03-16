@@ -26,6 +26,12 @@ func (a *ar) ViewCmdStop(viewId int64) {
 	d(viewCmdStop{viewId: viewId})
 }
 
+func (a *ar) ViewCols(viewId int64) (cols int) {
+	answer := make(chan int, 1)
+	d(viewCols{viewId: viewId, answer: answer})
+	return <-answer
+}
+
 func (a *ar) ViewCopy(viewId int64) {
 	d(viewCopy{viewId: viewId})
 }
@@ -90,6 +96,12 @@ func (a *ar) ViewReload(viewId int64) {
 
 func (a *ar) ViewRender(viewId int64) {
 	d(viewRender{viewId: viewId})
+}
+
+func (a *ar) ViewRows(viewId int64) (rows int) {
+	answer := make(chan int, 1)
+	d(viewRows{viewId: viewId, answer: answer})
+	return <-answer
 }
 
 func (a *ar) ViewSave(viewId int64) {
@@ -206,6 +218,20 @@ func (a viewCmdStop) Run() error {
 	if b != nil {
 		b.Close()
 	}
+	return nil
+}
+
+type viewCols struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewCols) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 0
+	}
+	a.answer <- v.LastViewCol()
 	return nil
 }
 
@@ -410,6 +436,20 @@ func (a viewRender) Run() error {
 	if v != nil {
 		v.Render()
 	}
+	return nil
+}
+
+type viewRows struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewRows) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 0
+	}
+	a.answer <- v.LastViewLine()
 	return nil
 }
 

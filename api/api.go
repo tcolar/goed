@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"time"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -48,31 +49,34 @@ func (r *GoedRpc) Action(args RpcStruct, res *RpcStruct) error {
 	return err
 }
 
-/*
-func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
-	*version = core.ApiVersion
-	return nil
-}
-
 func (r *GoedRpc) Open(args []interface{}, _ *struct{}) error {
-	actions.EdOpen(args[1].(string), -1, args[0].(string), true)
+	vid := actions.Ar.EdOpen(args[1].(string), -1, args[0].(string), true)
+	actions.Ar.EdActivateView(vid, 0, 0)
+	actions.Ar.EdRender()
 	return nil
 }
 
 func (r *GoedRpc) Edit(args []interface{}, _ *struct{}) error {
-	curView := actions.EdCurView()
-	vid := actions.EdOpen(args[1].(string), -1, args[0].(string), true)
-	actions.EdActivateView(vid, 0, 0)
-	actions.EdRender()
+	curView := actions.Ar.EdCurView()
+	vid := actions.Ar.EdOpen(args[1].(string), -1, args[0].(string), true)
+	actions.Ar.EdActivateView(vid, 0, 0)
+	actions.Ar.EdRender()
 	// Wait til file closed
 	for {
 		v := core.Ed.ViewById(vid)
 		if v.Terminated() {
-			actions.EdActivateView(curView, 0, 0)
+			actions.Ar.EdActivateView(curView, 0, 0)
+			actions.Ar.EdRender()
 			return nil
 		}
 		time.Sleep(250 * time.Millisecond)
 	}
+}
+
+/*
+func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
+	*version = core.ApiVersion
+	return nil
 }
 
 func (r *GoedRpc) ViewReload(viewId int64, _ *struct{}) error {
