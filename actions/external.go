@@ -12,26 +12,19 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-func External(script string) {
-	d(external{script: script})
-}
-
-type external struct {
-	script string
-}
-
-func (a external) Run() error {
-	e := core.Ed
-	v := e.ViewById(e.CurViewId())
-	loc := core.FindResource(path.Join("actions", a.script))
+// Execute an external script, meant to be run within a routine.
+func ExecScript(script string) {
+	vid := Ar.EdCurView()
+	loc := core.FindResource(path.Join("actions", script))
 	if _, err := os.Stat(loc); os.IsNotExist(err) {
-		loc = a.script // assume a system wide command
+		loc = script // assume a system wide command
 	}
 	env := os.Environ()
 	env = append(env, fmt.Sprintf("GOED_INSTANCE=%d", core.InstanceId))
-	env = append(env, fmt.Sprintf("GOED_VIEW=%d", v.Id()))
+	env = append(env, fmt.Sprintf("GOED_VIEW=%d", vid))
 	cmd := exec.Command(loc)
 	cmd.Env = env
+
 	out, err := cmd.CombinedOutput()
 	fp := path.Join(core.Home, "errors.txt")
 	if err != nil {
@@ -40,20 +33,18 @@ func (a external) Run() error {
 		file.Write([]byte{'\n'})
 		file.Write(out)
 		file.Close()
-		errv := e.ViewByLoc(fp)
-		errv, err = e.Open(fp, errv, "", true)
+		//errv := e.ViewByLoc(fp)
+		//errv, err = e.Open(fp, errv, "", true)
 		if err != nil {
-			e.SetStatusErr(err.Error())
+			Ar.EdSetStatusErr(err.Error())
 		}
-		e.Render()
-		return fmt.Errorf("%s failed", a.script)
 	}
 	// no error
-	errv := e.ViewByLoc(fp)
-	if errv > 0 {
-		e.DelView(errv, true)
-	}
-	return nil
+	//errv := e.ViewByLoc(fp)
+	//if errv > 0 {
+	//	Ar.EdDelView(errv, true)
+	//}
+	Ar.EdRender()
 }
 
 func runAnko() {
