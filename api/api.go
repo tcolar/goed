@@ -4,12 +4,10 @@
 package api
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"net/rpc"
-	"time"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -38,6 +36,19 @@ func (a *Api) Start() {
 // Goed RPC functions holder
 type GoedRpc struct{}
 
+type RpcStruct struct {
+	Data []string
+}
+
+func (r *GoedRpc) Action(args RpcStruct, res *RpcStruct) error {
+	results, err := actions.Exec(args.Data[0], args.Data[1:])
+	for _, r := range results {
+		res.Data = append(res.Data, r)
+	}
+	return err
+}
+
+/*
 func (r *GoedRpc) ApiVersion(_ struct{}, version *string) error {
 	*version = core.ApiVersion
 	return nil
@@ -110,4 +121,4 @@ func (r *GoedRpc) ViewCols(viewId int64, cols *int) error {
 func (r *GoedRpc) ViewVtCols(args []interface{}, _ *struct{}) error {
 	actions.ViewSetVtCols(args[0].(int64), args[1].(int))
 	return nil
-}
+}*/

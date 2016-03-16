@@ -7,9 +7,20 @@ import (
 	"net/rpc"
 	"path"
 
+	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/core"
 )
 
+func Action(instanceId int64, strs []string) ([]string, error) {
+	c := getClient(instanceId)
+	defer c.Close()
+	args := api.RpcStruct{Data: strs}
+	results := api.RpcStruct{}
+	err := c.Call("GoedRpc.Action", args, &results)
+	return results.Data, err
+}
+
+/*
 func ApiVersion(instance int64) (version string, err error) {
 	c := getClient(instance)
 	defer c.Close()
@@ -78,6 +89,7 @@ func Edit(instance int64, cwd, loc string) error {
 	err := c.Call("GoedRpc.Edit", []interface{}{cwd, loc}, &struct{}{})
 	return err
 }
+*/
 
 func getClient(id int64) *rpc.Client {
 	sock := core.GoedSocket(id)

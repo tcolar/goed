@@ -5,12 +5,15 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/api/client"
 	"github.com/tcolar/goed/core"
-	kingpin "gopkg.in/alecthomas/kingpin.v1"
 )
 
+/*
 var (
 	app = kingpin.New("goed_api", "API service for goed Editor")
 
@@ -51,55 +54,86 @@ var (
 	editI       = edit.Arg("InstanceId", "InstanceId").Required().Int64()
 	editCwd     = edit.Arg("cwd", "cwd").Required().String()
 	editLoc     = edit.Arg("loc", "loc").Required().String()
-)
+	generic     = app.Command("generic", "testing")
+)*/
 
 func main() {
-	kingpin.Version(core.Version)
-	action := kingpin.MustParse(app.Parse(os.Args[1:]))
-	Dispatch(action)
-}
-
-func Dispatch(action string) {
-	switch action {
-	case version.FullCommand():
+	if len(os.Args) <= 1 || os.Args[1] == "--help" {
+		//todo : usage
+		fmt.Println("--help : usage info")
+		fmt.Println("version : get goed_api version")
+		fmt.Println("instances : get all goed insatnces Ids")
+		fmt.Println("instance : get most recent goed instance Id")
+		fmt.Println()
+		fmt.Println("Goed Api methods: (More details at http://github.com/tcolar/goed/api/)")
+		fmt.Println(actions.Usage())
+		os.Exit(1)
+	}
+	switch os.Args[1] {
+	case "version":
 		fmt.Println(core.Version)
-	case instances.FullCommand():
-		Instances()
-	case apiVersion.FullCommand():
-		ApiVersion()
-	case viewReload.FullCommand():
-		ViewReload()
-	case viewRows.FullCommand():
-		ViewRows()
-	case viewCols.FullCommand():
-		ViewCols()
-	case viewSave.FullCommand():
-		ViewSave()
-	case viewSrcLoc.FullCommand():
-		ViewSrcLoc()
-	case viewCwd.FullCommand():
-		ViewCwd()
-	case viewVtCols.FullCommand():
-		ViewVtCols()
-	case open.FullCommand():
-		Open()
-	case edit.FullCommand():
-		Edit()
+	case "instance":
+		Instances(true)
+	case "instances":
+		Instances(false)
+		/*	case apiVersion.FullCommand():
+				ApiVersion()
+			case viewReload.FullCommand():
+				ViewReload()
+			case viewRows.FullCommand():
+				ViewRows()
+			case viewCols.FullCommand():
+				ViewCols()
+			case viewSave.FullCommand():
+				ViewSave()
+			case viewSrcLoc.FullCommand():
+				ViewSrcLoc()
+			case viewCwd.FullCommand():
+				ViewCwd()
+			case viewVtCols.FullCommand():
+				ViewVtCols()
+			case open.FullCommand():
+				Open()
+			case edit.FullCommand():
+				Edit()
+			case generic.FullCommand():
+				Generic()*/
 	default:
-		kingpin.Usage()
+		// Everything else is passed to a goed instance
+		Action(os.Args[1:])
 	}
 }
 
-func Instances() {
+func Action(args []string) {
+	action := args[0]
+	if len(args) < 2 {
+		fmt.Printf("Action '%s' needs instanceId as first argument\n", action)
+		os.Exit(1)
+	}
+	instance, err := strconv.ParseInt(args[1], 10, 64)
+	if err != nil {
+		fmt.Printf("InstanceId must be a number: %s\n", err.Error())
+		os.Exit(1)
+	}
+	results, err := client.Action(instance, append(args[0:1], args[2:]...))
+	if err != nil {
+		fmt.Printf("RPC call failed: %s\n", err.Error())
+		os.Exit(1)
+	}
+	fmt.Println(strings.Join(results, " "))
+}
+
+func Instances(lastOnly bool) {
 	ids := core.Instances()
 	for _, id := range ids {
 		fmt.Println(id)
-		if *instances1 {
+		if lastOnly {
 			break
 		}
 	}
 }
 
+/*
 func ApiVersion() {
 	version, err := client.ApiVersion(*apiVersionI)
 	if err != nil {
@@ -182,4 +216,4 @@ func Edit() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-}
+}*/
