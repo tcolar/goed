@@ -145,7 +145,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 		actions.Ar.ViewPaste(vid)
 		dirty = true
 	case termbox.KeyCtrlW:
-		actions.Ar.EdDelViewCheck(e.curViewId)
+		actions.Ar.EdDelView(e.curViewId, true)
 		return
 	case termbox.KeyCtrlX:
 		actions.Ar.ViewCut(vid)
@@ -398,7 +398,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 		}
 		// 'X' button (close view)
 		if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
-			actions.Ar.EdDelViewCheck(vid)
+			actions.Ar.EdDelView(vid, true)
 			return
 		}
 		// start view move

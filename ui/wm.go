@@ -494,8 +494,12 @@ func (e *Editor) ReplaceView(oldView, newView *View) {
 	e.TerminateView(oldView.Id())
 }
 
-func (e *Editor) DelColCheckByIndex(index int) {
-	e.DelColCheck(e.Cols[index])
+func (e *Editor) DelColByIndex(index int, check bool) {
+	if check {
+		e.DelColCheck(e.Cols[index])
+	} else {
+		e.DelCol(e.Cols[index], true)
+	}
 }
 
 func (e *Editor) DelCol(col *Col, terminateViews bool) {
@@ -593,13 +597,13 @@ func (e *Editor) TerminateView(vid int64) {
 	actions.UndoClear(vid)
 }
 
-// Delete (close) a view, but with dirty check
-func (e *Editor) DelViewCheck(viewId int64) {
+// Delete (close) a view, dirty check optional
+func (e *Editor) DelViewByIndex(viewId int64, check bool) {
 	view := e.ViewById(viewId).(*View)
 	if view == nil {
 		return
 	}
-	if !view.canClose() {
+	if check && !view.canClose() {
 		e.SetStatusErr("Unsaved changes. Save or request close again.")
 		return
 	}
