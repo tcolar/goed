@@ -94,6 +94,7 @@ func main() {
 		exec.Command("reset").Run()
 	}()
 
+	actions.RegisterActions()
 	apiServer.Start()
 
 	go core.Bus.Start()

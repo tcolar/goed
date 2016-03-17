@@ -15,6 +15,7 @@ import (
 
 func main() {
 	if len(os.Args) <= 1 || os.Args[1] == "--help" {
+		actions.RegisterActions()
 		fmt.Println("--help : usage info")
 		fmt.Println("edit <instid> <dir> <file>: Open a file and wait until closed.")
 		fmt.Println("instances : get all goed instances Ids")

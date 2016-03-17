@@ -59,12 +59,8 @@ type actionProto struct {
 	sig  string
 }
 
-func init() {
+func RegisterActions() {
 	Ar = &ar{}
-	registerActions()
-}
-
-func registerActions() {
 	t := reflect.TypeOf(Ar)
 	for i := 0; i != t.NumMethod(); i++ {
 		registerAction(t.Method(i))
