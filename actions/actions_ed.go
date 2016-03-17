@@ -6,71 +6,93 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+// activate the given view, with the cursor at y,x
 func (a *ar) EdActivateView(viewId int64, y, x int) {
 	d(edActivateView{viewId: viewId, y: y, x: x})
 }
 
+// returns the currently active view
 func (a *ar) EdCurView() int64 {
 	vid := make(chan (int64), 1)
 	d(edCurView{viewId: vid})
 	return <-vid
 }
 
+// delete the given column (by index)
+// if 'check' is true it will check if dirty first, in which case it will do nothing
+// unless called twice in a row.
 func (a *ar) EdDelCol(colIndex int, check bool) {
 	d(edDelCol{colIndex: colIndex, check: check})
 }
 
+// delete the given view (by id)
+// if 'check' is true it will check if dirty first, in which case it will do nothing
+// unless called twice in a row.
 func (a *ar) EdDelView(viewId int64, check bool) {
 	d(edDelView{viewId: viewId, check: check})
 }
 
+// Open a file/dir(loc) in the editor
+// rel is optionally the path to loc
+// viewId is the viewId where to open into (or a new one if viewId<0)
+// create indicates whether the file/dir needs to be created if it does not exist.
 func (a *ar) EdOpen(loc string, viewId int64, rel string, create bool) int64 {
 	vid := make(chan (int64), 1)
 	d(edOpen{loc: loc, viewId: viewId, rel: rel, create: create, vid: vid})
 	return <-vid
 }
 
-// Retuns whether the editor can be quit.
+// Retuns whether the editor can be quit (ie: are any views "dirty")
 func (a *ar) EdQuitCheck() bool {
 	answer := make(chan (bool), 1)
 	d(edQuitCheck{answer: answer})
 	return <-answer
 }
 
+// Render/repaint the editor UI
 func (a *ar) EdRender() {
 	d(edRender{})
 }
 
+// resize the editor
 func (a *ar) EdResize(h, w int) {
 	d(edResize{h: h, w: w})
 }
 
+// Show a status message in the satus bar
 func (a *ar) EdSetStatus(status string) {
 	d(edSetStatus{status: status, err: false})
 }
 
+// Show an error message (red) in the status bar.
 func (a *ar) EdSetStatusErr(status string) {
 	d(edSetStatus{status: status, err: true})
 }
 
+// swap two views (their position in the UI)
 func (a *ar) EdSwapViews(view1Id, view2Id int64) {
 	d(edSwapViews{view1Id: view1Id, view2Id: view2Id})
 }
 
+// call flush on the underlying terminal (force sync)
 func (a *ar) EdTermFlush() {
 	d(edTermFlush{})
 }
 
+// returns the viewId of the view that holds a file/dir of the given path.
+// or -1 if not found.
 func (a *ar) EdViewByLoc(loc string) int64 {
 	vid := make(chan (int64), 1)
 	d(edViewByLoc{loc: loc, vid: vid})
 	return <-vid
 }
 
+// move a view to the new coordinates (UI position)
 func (a *ar) EdViewMove(viewId int64, y1, x1, y2, x2 int) {
 	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
 }
 
+// navigate between UI views given the CursorMvmt value (left,right,top,down)
 func (a *ar) EdViewNavigate(mvmt core.CursorMvmt) {
 	d(edViewNavigate{mvmt})
 }

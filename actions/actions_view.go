@@ -6,142 +6,181 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+// Add a text selection to the view. from l1,c1 to l2,c2
 func (a *ar) ViewAddSelection(viewId int64, l1, c1, l2, c2 int) {
 	d(viewAddSelection{viewId: viewId, l1: l1, c1: c1, l2: l2, c2: c2})
 }
 
+// Enable/disable a view autoscrolling (by y,x increments)
 func (a *ar) ViewAutoScroll(viewId int64, y, x int, on bool) {
 	d(viewAutoScroll{viewId: viewId, x: x, y: y, on: on})
 }
 
+// send 'backspace' to the view
 func (a *ar) ViewBackspace(viewId int64) {
 	d(viewBackspace{viewId: viewId})
 }
 
+// remove all the view selections.
 func (a *ar) ViewClearSelections(viewId int64) {
 	d(viewClearSelections{viewId: viewId})
 }
 
+// stop the command currenty running in the view (for exec views.)
 func (a *ar) ViewCmdStop(viewId int64) {
 	d(viewCmdStop{viewId: viewId})
 }
 
+// return the nuber of columns (width) of the view.
 func (a *ar) ViewCols(viewId int64) (cols int) {
 	answer := make(chan int, 1)
 	d(viewCols{viewId: viewId, answer: answer})
 	return <-answer
 }
 
+// copy text from the view (current selection, if none, current line)
 func (a *ar) ViewCopy(viewId int64) {
 	d(viewCopy{viewId: viewId})
 }
 
+// cut text from the view (current selection, if none, current line)
 func (a *ar) ViewCut(viewId int64) {
 	d(viewCut{viewId: viewId})
 }
 
+// return the current cursor position in the view
 func (a *ar) ViewCurPos(viewId int64) (ln, col int) {
 	answer := make(chan int, 2)
 	d(viewCurPos{viewId: viewId, answer: answer})
 	return <-answer, <-answer
 }
 
+// send a movement event to the view. (ie: down, up, left, right, etc...)
 func (a *ar) ViewCursorMvmt(viewId int64, mvmt core.CursorMvmt) {
 	d(viewCursorMvmt{viewId: viewId, mvmt: mvmt})
 }
 
+// delete text from the view (from row1,col1 to row2,col2)
 func (a *ar) ViewDelete(viewId int64, row1, col1, row2, col2 int, undoable bool) {
 	d(viewDeleteAction{viewId: viewId, row1: row1, col1: col1, row2: row2, col2: col2, undoable: undoable})
 }
 
+// delete text from the view (current selection, if none, current line)
 func (a *ar) ViewDeleteCur(viewId int64) {
 	d(viewDeleteCur{viewId: viewId})
 }
 
+// insert text into the view at the row,col location
 func (a *ar) ViewInsert(viewId int64, row, col int, text string, undoable bool) {
 	d(viewInsertAction{viewId: viewId, row: row, col: col, text: text, undoable: undoable})
 }
 
+// insert text into the view at the current cursor location
 func (a *ar) ViewInsertCur(viewId int64, text string) {
 	d(viewInsertCur{viewId: viewId, text: text})
 }
 
+// insert a newLine at the current cursor location
 func (a *ar) ViewInsertNewLine(viewId int64) {
 	d(viewInsertNewLine{viewId: viewId})
 }
 
+// move the cursor by y,x (relative)
 func (a *ar) ViewMoveCursor(viewId int64, y, x int) {
 	d(viewMoveCursor{viewId: viewId, x: x, y: y})
 }
 
+// move the cursor by y,x (relative) but also scroll te view as needed to keep
+// the cursor in view and in place.
 func (a *ar) ViewMoveCursorRoll(viewId int64, y, x int) {
 	d(viewMoveCursor{viewId: viewId, x: x, y: y, roll: true})
 }
 
+// paste text into the view at the curent location
+// if in a selection, paste over it.
 func (a *ar) ViewPaste(viewId int64) {
 	d(viewPaste{viewId: viewId})
 }
 
+// try to "open" the current selection into a view (ie: expect a file path)
 func (a *ar) ViewOpenSelection(viewId int64, newView bool) {
 	d(viewOpenSelection{viewId: viewId, newView: newView})
 }
 
+// redo
 func (a *ar) ViewRedo(viewId int64) {
 	d(viewRedo{viewId: viewId})
 }
 
+// reload the view from it's source file, discard all unsaved buffer changes
 func (a *ar) ViewReload(viewId int64) {
 	d(viewReload{viewId: viewId})
 }
 
+// render/repaint the view
 func (a *ar) ViewRender(viewId int64) {
 	d(viewRender{viewId: viewId})
 }
 
+// return the number of rows (lines) in the view
 func (a *ar) ViewRows(viewId int64) (rows int) {
 	answer := make(chan int, 1)
 	d(viewRows{viewId: viewId, answer: answer})
 	return <-answer
 }
 
+// save the view content to the backing file
 func (a *ar) ViewSave(viewId int64) {
 	d(viewSave{viewId: viewId})
 }
 
+// select all
 func (a *ar) ViewSelectAll(viewId int64) {
 	d(viewSelectAll{viewId: viewId})
 }
 
+// mark the view "dirty" or not (ie: modified, unsaved)
 func (a *ar) ViewSetDirty(viewId int64, on bool) {
 	d(viewSetDirty{viewId: viewId, on: on})
 }
 
+// se the view title (typically file path)
 func (a *ar) ViewSetTitle(viewId int64, title string) {
 	d(viewSetTitle{viewId: viewId, title: title})
 }
 
+// set the number of vt100 columns, this is useful so that tty programs that
+// can use the full view wisth properly
 func (a *ar) ViewSetVtCols(viewId int64, cols int) {
 	d(viewSetVtCols{viewId: viewId, cols: cols})
 }
 
+// extends the current text selection toward the given location
+// this maybe in any direction
 func (a *ar) ViewStretchSelection(viewId int64, prevLn, prevCol int) {
 	d(viewStretchSelection{viewId: viewId, prevLn: prevLn, prevCol: prevCol})
 }
 
+// set the current working dir of the view, especially usefull for terminal views.
+// this is used when "opening" relative locations, among other things.
 func (a *ar) ViewSetWorkdir(viewId int64, workDir string) {
 	d(viewSetWorkdir{viewId: viewId, workDir: workDir})
 }
 
+// return the absolute path of the file backing the view (if any)
 func (a *ar) ViewSrcLoc(viewId int64) string {
 	answer := make(chan string, 1)
 	d(viewSrcLoc{viewId: viewId, answer: answer})
 	return <-answer
 }
 
+// this force sync of the in memory slice representing the part of the content
+// that is currently visible in the view (performance optimization)
 func (a *ar) ViewSyncSlice(viewId int64) {
 	d(viewSyncSlice{viewId: viewId})
 }
 
+// undo
 func (a *ar) ViewUndo(viewId int64) {
 	d(viewUndo{viewId: viewId})
 }
