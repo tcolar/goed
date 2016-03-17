@@ -23,7 +23,7 @@ func main() {
 		fmt.Println("open <instid> <dir> <file>: Open a file.")
 		fmt.Println("version : get goed_api version")
 		fmt.Println()
-		fmt.Println("Goed Api methods: (More details at http://github.com/tcolar/goed/api/)")
+		fmt.Println("Goed Api methods: https://godoc.org/github.com/tcolar/goed/api")
 		fmt.Println(actions.Usage())
 		os.Exit(1)
 	}
