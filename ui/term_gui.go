@@ -164,21 +164,28 @@ func (t *GuiTerm) SetExtendedColors(b bool) { // N/A
 func (t *GuiTerm) listen() {
 	evtState := event.EventState{}
 	for ev := range t.win.EventChan() {
+		evtState.Type = event.Evt_None
+		evtState.Glyph = ""
 		switch e := ev.(type) {
 		case wde.ResizeEvent:
-			// TODO: resize
+			// TODO: pass new size
+			evtState.Type = event.EvtWinResize
 		case wde.CloseEvent:
-			os.Exit(0) //TODO : proper quit event
+			evtState.Type = event.EvtQuit
 		case wde.MouseDownEvent:
 			evtState.MouseDown(int(e.Which), e.Where.Y, e.Where.X)
 		case wde.MouseUpEvent:
 			evtState.MouseUp(int(e.Which), e.Where.Y, e.Where.X)
 		case wde.MouseDraggedEvent:
 			evtState.MouseDown(int(e.Which), e.Where.Y, e.Where.X)
+		case wde.KeyTypedEvent:
+			evtState.Glyph = e.Glyph
 		case wde.KeyDownEvent:
 			evtState.KeyDown(e.Key)
+			continue
 		case wde.KeyUpEvent:
 			evtState.KeyUp(e.Key)
+			continue
 		default:
 			continue
 		}
