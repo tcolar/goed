@@ -245,7 +245,7 @@ func (v *View) viewCommonEvent(e *Editor, ev *termbox.Event) bool {
 		actions.Ar.ViewOpenSelection(vid, true)
 		return true
 	case termbox.KeyCtrlT:
-		v := execTerm([]string{core.Terminal})
+		v := actions.Ar.EdOpenTerm([]string{core.Terminal})
 		actions.Ar.EdActivateView(v, 0, 0)
 		return true
 	}

@@ -133,9 +133,11 @@ func (e *Editor) Start(locs []string) {
 
 	go e.autoScroller()
 
+	// TODO: make this not in a routine
 	go event.Listen()
 	defer event.Shutdown()
 
+	// TODO: remove this
 	if !core.Testing {
 		e.EventLoop()
 	}
@@ -290,6 +292,21 @@ func (e *Editor) QuitCheck() bool {
 		}
 	}
 	return true
+}
+
+func (e *Editor) StartTermView(args []string) int64 {
+	vid := exec(args, true)
+	v := core.Ed.ViewById(vid).(*View)
+	b := v.backend.(*backend.BackendCmd)
+	time.Sleep(500 * time.Millisecond)
+	ext := ".sh"
+	if os.Getenv("SHELL") == "rc" {
+		ext = ".rc"
+	}
+	cmd := ". $HOME/.goed/default/actions/goed" +
+		fmt.Sprintf("%s %d %d\n", ext, core.InstanceId, v.Id())
+	b.SendBytes([]byte(cmd))
+	return vid
 }
 
 // Handle selection auto scrolling of views
