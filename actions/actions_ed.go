@@ -42,6 +42,13 @@ func (a *ar) EdOpen(loc string, viewId int64, rel string, create bool) int64 {
 	return <-vid
 }
 
+// Open a new terminal view (~ vt100)
+func (a *ar) EdOpenTerm(args []string) int64 {
+	vid := make(chan (int64), 1)
+	d(edOpenTerm{args: args, vid: vid})
+	return <-vid
+}
+
 // Retuns whether the editor can be quit (ie: are any views "dirty")
 func (a *ar) EdQuitCheck() bool {
 	answer := make(chan (bool), 1)
@@ -152,6 +159,17 @@ func (a edOpen) Run() error {
 		log.Printf("EdOpen error : %s\n", err.Error())
 	}
 	return err
+}
+
+type edOpenTerm struct {
+	args []string
+	vid  chan int64 // returned new viewid if viewId==-1
+}
+
+func (a edOpenTerm) Run() error {
+	vid := core.Ed.StartTermView(a.args)
+	a.vid <- vid
+	return nil
 }
 
 type edQuitCheck struct {
