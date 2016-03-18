@@ -109,9 +109,12 @@ func (t *GuiTerm) Close() {
 }
 
 func (t *GuiTerm) Clear(fg, bg uint16) {
-	c := image.NewUniform(palette[bg&255])
-	x, y := t.win.Size()
-	draw.Draw(t.win.Screen(), image.Rect(0, 0, x, y), c, image.ZP, draw.Src)
+	zero := rune(0)
+	for y, ln := range t.text {
+		for x, _ := range ln {
+			t.text[y][x].rune = zero
+		}
+	}
 }
 
 func (t *GuiTerm) Flush() {
