@@ -10,6 +10,7 @@ import (
 var queue chan EventState = make(chan EventState)
 
 func Queue(es EventState) {
+	fmt.Println(es.Type)
 	if es.Type == Evt_None {
 		es.parseType()
 	}
@@ -42,12 +43,10 @@ func handleEvent(es *EventState) bool {
 
 	actions.Ar.ViewAutoScroll(curView, 0, 0, false)
 
-	fmt.Printf("e: %s %s '%s'\n", et, es.String(), es.Glyph)
-	//pretty.Println(es)
-
 	// TODO: cmdbar, term(ctrl+c)
 	// TODO : common/termonly//cmdbar/view only
 	// TODO: couldn't cmdbar e a view ?
+	fmt.Printf("%s %s \n", et, es.String())
 
 	switch et {
 	case EvtBackspace:

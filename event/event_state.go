@@ -24,13 +24,16 @@ type EventState struct {
 }
 
 func (e *EventState) parseType() {
+	bestScore := 0
+	t := Evt_None
 	for chord, et := range standard {
-		if e.matches(chord) {
-			e.Type = et
-			return
+		score := e.scoreMatch(chord)
+		if score > bestScore {
+			t = et
+			bestScore = score
 		}
 	}
-	e.Type = Evt_None
+	e.Type = t
 }
 
 func (e *EventState) KeyDown(key string) {
@@ -97,90 +100,87 @@ func (e *EventState) hasKey(key string) bool {
 	return false
 }
 
-// todo : validate any combo does not start with another combo
-
-// ie: "super-rshift-alt-ctrl-function-x"
-// ie: "mm"
-func (e *EventState) matches(s string) bool {
+func (e *EventState) scoreMatch(s string) (score int) {
 	for _, k := range strings.Split(s, "+") {
 		switch k {
 		case "ml":
 			if !e.LMouse {
-				return false
+				return score
 			}
 		case "mr":
 			if !e.RMouse {
-				return false
+				return score
 			}
 		case "mm":
 			if !e.MMouse {
-				return false
+				return score
 			}
 
 		case KeyFunction:
 			if !e.Combo.Func {
-				return false
+				return score
 			}
 
 		case "ctrl":
 			if !e.Combo.RCtrl && !e.Combo.LCtrl {
-				return false
+				return score
 			}
 		case KeyLeftControl:
 			if !e.Combo.LCtrl {
-				return false
+				return score
 			}
 		case KeyRightControl:
 			if !e.Combo.RCtrl {
-				return false
+				return score
 			}
 
 		case "alt":
 			if !e.Combo.RAlt && !e.Combo.LAlt {
-				return false
+				return score
 			}
 		case "lalt":
 			if !e.Combo.LAlt {
-				return false
+				return score
 			}
 		case "ralt":
 			if !e.Combo.RAlt {
-				return false
+				return score
 			}
 
 		case "super":
 			if !e.Combo.RSuper && !e.Combo.LSuper {
-				return false
+				return score
 			}
 		case "lsuper":
 			if !e.Combo.LSuper {
-				return false
+				return score
 			}
 		case "rsuper":
 			if !e.Combo.RSuper {
-				return false
+				return score
 			}
 
 		case "shift":
 			if !e.Combo.RShift && !e.Combo.LShift {
-				return false
+				return score
 			}
 		case "lshift":
 			if !e.Combo.LShift {
-				return false
+				return score
 			}
 		case "rshift":
 			if !e.Combo.RShift {
-				return false
+				return score
 			}
 
 		default:
 			if !e.hasKey(k) {
-				return false
+				return score
 			}
 		}
+		score++
 	}
-	return true
+	return score
 }
 
 func (e *EventState) String() string {
