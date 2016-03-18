@@ -19,6 +19,7 @@ type Editable interface {
 	// Render updates the whole editor UI
 	Render()
 	Resize(h, w int)
+	StartTermView(args []string) int64
 	// SetStatusErr displays an error message in the status bar
 	SetStatusErr(err string)
 	// SetStatusErr displays a message in the status bar

@@ -6,11 +6,31 @@ import (
 )
 
 type EventState struct {
+	Type EventType
+	// current values
+	Glyph                  string
 	Keys                   []string
 	Combo                  Combo
 	LMouse, MMouse, RMouse bool
 	MouseBtn               int
 	MouseY, MouseX         int
+
+	// state
+	movingView                         bool
+	lastClickX, lastClickY             int
+	lastLClick, lastMClick, lastRClick int64 // timestamp
+	dragLn, dragCol                    int
+	inDrag                             bool
+}
+
+func (e *EventState) parseType() {
+	for chord, et := range standard {
+		if e.matches(chord) {
+			e.Type = et
+			return
+		}
+	}
+	e.Type = Evt_None
 }
 
 func (e *EventState) KeyDown(key string) {

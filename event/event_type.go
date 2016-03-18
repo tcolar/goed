@@ -4,7 +4,7 @@ package event
 var standard = map[string]EventType{
 	"ml":                "set_cursor",
 	"mr":                "open_new_view",
-	"esc":               "toggle_cmd_bar",
+	"escape":            "toggle_cmd_bar",
 	"ctrl+q":            "quit",
 	"backspace":         "backspace",
 	"enter":             "enter",
@@ -42,20 +42,22 @@ var standard = map[string]EventType{
 	"alt+down_arrow":    "nav_down",
 	"alt+up_arrow":      "nav_up",
 	"ctrl+t":            "open_term",
+	"return":            "enter",
 }
 
 type EventType string
 
 const (
-	Evt_              EventType = "_"
+	Evt_None          EventType = "_"
 	EvtBackspace                = "backspace"
+	EvtBottom                   = "bottom"
 	EvtCloseWindow              = "close_window"
 	EvtCut                      = "cut"
 	EvtCopy                     = "copy"
 	EvtDelete                   = "delete"
 	EvtEnd                      = "end"
 	EvtHome                     = "home"
-	EvtKeyEnter                 = "enter"
+	EvtEnter                    = "enter"
 	EvtMoveDown                 = "move_down"
 	EvtMoveLeft                 = "move_left"
 	EvtMoveRight                = "move_right"
@@ -84,9 +86,9 @@ const (
 	EvtSelectRight              = "select_right"
 	EvtSelectUp                 = "select_up"
 	EvtSetCursor                = "set_cursor"
-	EvtStart                    = "start"
 	EvtTab                      = "tab"
-	EvtToggleCmdBar             = "toggle_cmd_bar"
+	EvtToggleCmdbar             = "toggle_cmd_bar"
+	EvtTop                      = "top"
 	EvtUndo                     = "undo"
 	EvtWinResize                = "win_resize" // no key/mouse
 )
