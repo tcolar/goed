@@ -551,8 +551,9 @@ func (a viewScrollPos) Run() error {
 		a.answer <- 0
 		a.answer <- 0
 	}
-	a.answer <- v.CurLine()
-	a.answer <- v.CurCol()
+	y, x := v.ScrollPos()
+	a.answer <- y
+	a.answer <- x
 	return nil
 }
 
