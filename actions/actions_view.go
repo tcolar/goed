@@ -21,6 +21,13 @@ func (a *ar) ViewBackspace(viewId int64) {
 	d(viewBackspace{viewId: viewId})
 }
 
+// return the current view location in the ui
+func (a *ar) ViewBounds(viewId int64) (ln, col, ln2, col2 int) {
+	answer := make(chan int, 4)
+	d(viewBounds{viewId: viewId, answer: answer})
+	return <-answer, <-answer, <-answer, <-answer
+}
+
 // remove all the view selections.
 func (a *ar) ViewClearSelections(viewId int64) {
 	d(viewClearSelections{viewId: viewId})
@@ -174,6 +181,13 @@ func (a *ar) ViewSrcLoc(viewId int64) string {
 	return <-answer
 }
 
+// return the current scrolling position (0,0 is top, left)
+func (a *ar) ViewScrollPos(viewId int64) (ln, col int) {
+	answer := make(chan int, 2)
+	d(viewScrollPos{viewId: viewId, answer: answer})
+	return <-answer, <-answer
+}
+
 // this force sync of the in memory slice representing the part of the content
 // that is currently visible in the view (performance optimization)
 func (a *ar) ViewSyncSlice(viewId int64) {
@@ -228,6 +242,27 @@ func (a viewBackspace) Run() error {
 		return nil
 	}
 	v.Backspace()
+	return nil
+}
+
+type viewBounds struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewBounds) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 0
+		a.answer <- 0
+		a.answer <- 0
+		a.answer <- 0
+	}
+	l1, c1, l2, c2 := v.Bounds()
+	a.answer <- l1
+	a.answer <- c1
+	a.answer <- l2
+	a.answer <- c2
 	return nil
 }
 
@@ -502,6 +537,22 @@ func (a viewSave) Run() error {
 		return nil
 	}
 	v.Save()
+	return nil
+}
+
+type viewScrollPos struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewScrollPos) Run() error {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 0
+		a.answer <- 0
+	}
+	a.answer <- v.CurLine()
+	a.answer <- v.CurCol()
 	return nil
 }
 
