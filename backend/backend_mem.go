@@ -22,7 +22,7 @@ type MemBackend struct {
 }
 
 // NewmemBackend creates a new in memory backend by reading a file.
-func NewMemBackend(loc string, viewId int64) error {
+func NewMemBackend(loc string, viewId int64) (*MemBackend, error) {
 	m := &MemBackend{
 		text:   [][]rune{[]rune{}},
 		colors: [][]*color{[]*color{}},
