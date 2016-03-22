@@ -8,19 +8,25 @@ import (
 type EventState struct {
 	Type EventType
 	// current values
-	Glyph                  string
-	Keys                   []string
-	Combo                  Combo
-	LMouse, MMouse, RMouse bool
-	MouseBtn               int
-	MouseY, MouseX         int
+	Glyph          string
+	Keys           []string
+	Combo          Combo
+	MouseBtns      map[int]bool
+	MouseY, MouseX int
 
 	// state
-	movingView                         bool
-	lastClickX, lastClickY             int
-	lastLClick, lastMClick, lastRClick int64 // timestamp
-	dragLn, dragCol                    int
-	inDrag                             bool
+	movingView               bool
+	lastLClickX, lastLClickY int
+	lastLClick               int64 // timestamp
+	dragLn, dragCol          int
+	inDrag                   bool
+}
+
+func NewEventState() *EventState {
+	return &EventState{
+		MouseBtns: map[int]bool{},
+		Keys:      []string{},
+	}
 }
 
 func (e *EventState) parseType() {
@@ -45,13 +51,12 @@ func (e *EventState) KeyUp(key string) {
 }
 
 func (e *EventState) MouseUp(button, y, x int) {
-	e.MouseY, e.MouseX = y, x
-	e.MouseBtn = 0
+	e.MouseBtns[button] = false
 }
 
 func (e *EventState) MouseDown(button, y, x int) {
 	e.MouseY, e.MouseX = y, x
-	e.MouseBtn = button
+	e.MouseBtns[button] = true
 }
 
 func (e *EventState) updKey(key string, isDown bool) {
@@ -102,20 +107,15 @@ func (e *EventState) hasKey(key string) bool {
 
 func (e *EventState) scoreMatch(s string) (score int) {
 	for _, k := range strings.Split(s, "+") {
+		if k[0] == 'M' {
+			for btn, b := range e.MouseBtns {
+				if b && fmt.Sprintf("M%d", btn) == k {
+					score++
+					continue
+				}
+			}
+		}
 		switch k {
-		case "ml":
-			if !e.LMouse {
-				return score
-			}
-		case "mr":
-			if !e.RMouse {
-				return score
-			}
-		case "mm":
-			if !e.MMouse {
-				return score
-			}
-
 		case KeyFunction:
 			if !e.Combo.Func {
 				return score
@@ -185,17 +185,10 @@ func (e *EventState) scoreMatch(s string) (score int) {
 
 func (e *EventState) String() string {
 	s := []string{}
-	if e.MouseBtn != 0 {
-		s = append(s, fmt.Sprintf("M%d", e.MouseBtn))
-	}
-	if e.LMouse {
-		s = append(s, "lm")
-	}
-	if e.MMouse {
-		s = append(s, "mm")
-	}
-	if e.RMouse {
-		s = append(s, "rm")
+	for btn, b := range e.MouseBtns {
+		if b {
+			s = append(s, fmt.Sprintf("M%d", btn))
+		}
 	}
 	if e.Combo.LSuper {
 		s = append(s, "lsuper")

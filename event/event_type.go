@@ -2,8 +2,8 @@ package event
 
 // TODO: temporary, read from config file
 var standard = map[string]EventType{
-	"ml":                "set_cursor",
-	"mr":                "open_new_view",
+	"M1":                "set_cursor",
+	"M4":                "open_in_new_view",
 	"escape":            "toggle_cmd_bar",
 	"ctrl+q":            "quit",
 	"backspace":         "backspace",
@@ -35,8 +35,8 @@ var standard = map[string]EventType{
 	"shift+end":         "select_end",
 	"tab":               "tab",
 	"delete":            "delete",
-	"alt+o":             "open_new_view",
-	"ctrl+o":            "open_same_view",
+	"alt+o":             "open_in_new_view",
+	"ctrl+o":            "open_in_same_view",
 	"alt+right_arrow":   "nav_right",
 	"alt+left_arrow":    "nav_left",
 	"alt+down_arrow":    "nav_down",
@@ -66,8 +66,8 @@ const (
 	EvtNavLeft                  = "nav_left"
 	EvtNavRight                 = "nav_right"
 	EvtNavUp                    = "nav_up"
-	EvtOpenNewView              = "open_new_view"
-	EvtOpenSameView             = "open_same_view"
+	EvtOpenInNewView            = "open_in_new_view"
+	EvtOpenInSameView           = "open_in_same_view"
 	EvtOpenTerm                 = "open_term"
 	EvtPaste                    = "paste"
 	EvtPageDown                 = "page_down"

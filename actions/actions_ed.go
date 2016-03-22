@@ -99,6 +99,14 @@ func (a *ar) EdViewMove(viewId int64, y1, x1, y2, x2 int) {
 	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
 }
 
+// returns the view at the given ui location
+// -1 if not within any view bounds.
+func (a *ar) EdViewAt(ln, col int) int64 {
+	vid := make(chan (int64), 1)
+	d(edViewAt{ln: ln, col: col, vid: vid})
+	return <-vid
+}
+
 // navigate between UI views given the CursorMvmt value (left,right,top,down)
 func (a *ar) EdViewNavigate(mvmt core.CursorMvmt) {
 	d(edViewNavigate{mvmt})
@@ -224,6 +232,16 @@ type edTermFlush struct{}
 
 func (a edTermFlush) Run() error {
 	core.Ed.TermFlush()
+	return nil
+}
+
+type edViewAt struct {
+	ln, col int
+	vid     chan int64
+}
+
+func (a edViewAt) Run() error {
+	a.vid <- core.Ed.ViewAt(a.ln, a.col)
 	return nil
 }
 

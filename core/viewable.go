@@ -35,6 +35,7 @@ type Viewable interface {
 	// Reset reinitializes the view to it's startup state.
 	Reset()
 	Save() // Save from buffer to src
+	ScrollPos() (ln, col int)
 	SetBackend(backend Backend)
 	SetDirty(bool)
 	SelectAll()

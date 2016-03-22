@@ -38,6 +38,7 @@ type Editable interface {
 	TermStrv(y, x int, s string)
 	Theme() *Theme
 	ViewActivate(v int64, y, x int)
+	ViewAt(ln, col int) int64
 	// ViewByLoc finds if there is an existing view for the given file (loc)
 	ViewByLoc(loc string) int64
 	ViewById(id int64) Viewable

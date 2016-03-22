@@ -36,7 +36,14 @@ func handleEvent(es *EventState) bool {
 	if curView < 0 {
 		return false
 	}
-	//	ln, col := actions.Ar.ViewCurPos(curView)
+	// TODO: only do those as needed ?
+	ln, col := actions.Ar.ViewCurPos(curView)
+	l1, c1, _, _ := actions.Ar.ViewBounds(curView)
+	offy, offx := actions.Ar.ViewScrollPos(curView)
+
+	mouseView := actions.Ar.EdViewAt(es.MouseY, es.MouseX)
+	mouseCol := es.MouseX - c1 + offx - 2
+	mouseLn := es.MouseY - l1 + offy - 2
 
 	dirty := false
 	es.inDrag = false
@@ -46,7 +53,7 @@ func handleEvent(es *EventState) bool {
 	// TODO: cmdbar, term(ctrl+c)
 	// TODO : common/termonly//cmdbar/view only
 	// TODO: couldn't cmdbar e a view ?
-	fmt.Printf("%s %s \n", et, es.String())
+	//fmt.Printf("%s %s mv:%d [%d:%d] (%d,%d)\n", et, es.String(), mouseView, mouseLn, mouseCol, es.MouseY, es.MouseX)
 
 	switch et {
 	case EvtBackspace:
@@ -88,9 +95,11 @@ func handleEvent(es *EventState) bool {
 		actions.Ar.EdViewNavigate(core.CursorMvmtRight)
 	case EvtNavUp:
 		actions.Ar.EdViewNavigate(core.CursorMvmtUp)
-	case EvtOpenNewView:
-		actions.Ar.ViewOpenSelection(curView, true)
-	case EvtOpenSameView:
+	case EvtOpenInNewView:
+		actions.Ar.ViewClearSelections(mouseView)
+		actions.Ar.ViewMoveCursor(mouseView, es.MouseY-l1-2-ln, es.MouseX-c1-2-col)
+		actions.Ar.ViewOpenSelection(mouseView, true)
+	case EvtOpenInSameView:
 		actions.Ar.ViewOpenSelection(curView, false)
 	case EvtOpenTerm:
 		v := actions.Ar.EdOpenTerm([]string{core.Terminal})
@@ -115,9 +124,11 @@ func handleEvent(es *EventState) bool {
 		actions.Ar.ViewSave(curView)
 	case EvtSelectAll:
 		actions.Ar.ViewSelectAll(curView)
-	//todo other selects
-	//case EvetSetCursor:
-	//	actions.Ar.ViewSetCursor(curView, es.MouseY, es.MouseX)
+	// TODO other selects
+	case EvtSetCursor:
+		//	fmt.Printf("set cursor %d %d\n", mouseLn, mouseCol)
+		actions.Ar.ViewClearSelections(mouseView)
+		actions.Ar.EdActivateView(mouseView, mouseLn, mouseCol)
 	case EvtTab:
 		actions.Ar.ViewInsertCur(curView, "\t")
 		dirty = true
