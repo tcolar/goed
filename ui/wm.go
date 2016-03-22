@@ -27,6 +27,17 @@ func (e *Editor) NewCol(width float64, views []int64) *Col {
 	}
 }
 
+func (e *Editor) ViewAt(y, x int) int64 {
+	vid := int64(-1)
+	w := e.WidgetAt(y, x)
+	if w != nil {
+		if v, ok := w.(core.Viewable); ok {
+			vid = v.Id()
+		}
+	}
+	return vid
+}
+
 // WidgetAt returns the widget at a given editor location
 func (e *Editor) WidgetAt(y, x int) Renderer {
 	h, _ := e.term.Size()
