@@ -506,3 +506,7 @@ func (v *View) Terminated() bool {
 	}
 	return v.terminated
 }
+
+func (v *View) ScrollPos() (ln, col int) {
+	return v.offy, v.offx
+}
