@@ -10,7 +10,6 @@ import (
 var queue chan EventState = make(chan EventState)
 
 func Queue(es EventState) {
-	fmt.Println(es.Type)
 	if es.Type == Evt_None {
 		es.parseType()
 	}
@@ -48,19 +47,27 @@ func handleEvent(es *EventState) bool {
 	dirty := false
 	es.inDrag = false
 
-	if es.hasMouse() {
-		fmt.Printf("has mouse |%d| %s\n", curView, actions.Ar.ViewSrcLoc(curView))
+	/*if es.hasMouse() {
 		actions.Ar.ViewClearSelections(curView)
-		//actions.Ar.ViewMoveCursor(curView, es.MouseY-l1-2-ln, es.MouseX-c1-2-col)
-		//actions.Ar.EdActivateView(curView)
+	}*/
 
+	if et != Evt_None {
+		fmt.Printf("%s %s ln:%d col:%d my:%d mx:%d\n",
+			et, es.String(), y, x, es.MouseY, es.MouseX)
 	}
-	fmt.Printf("%s %s ln:%d col:%d my:%d mx:%d\n",
-		et, es.String(), y, x, es.MouseY, es.MouseX)
 
-	// TODO: cmdbar, term(ctrl+c)
 	// TODO : common/termonly//cmdbar/view only
 	// TODO: couldn't cmdbar e a view ?
+
+	// TODO : right click select still broken
+	// TODO : dbl click
+	// TODO : swap view
+	// TODO : move view
+	// TODO : click to close view
+	// TODO : term Enter + VT100
+	// TODO : cmdbar
+	// TODO : shift selections
+	// TODO : mouse select / scroll / drag / drag + scroll
 	switch et {
 	case EvtBackspace:
 		actions.Ar.ViewBackspace(curView)

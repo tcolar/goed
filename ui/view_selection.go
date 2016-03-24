@@ -103,7 +103,6 @@ var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':\x1B]+)(:\
 // Try to select a "location" from the given position
 // a location is a path with possibly a line number and maybe a column number as well
 func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
-	fmt.Printf("c: %d l:%d\n", col, line)
 	l := v.Line(v.slice, line)
 	ln := string(l)
 	// Note: Indexes taken and returned by FindAllStringIndex are in BYTES, not runes
