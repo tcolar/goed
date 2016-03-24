@@ -94,8 +94,8 @@ func (v *View) Paste() {
 	if len(v.selections) > 0 {
 		v.DeleteCur()
 	}
-	_, y, x := v.CurChar()
-	v.Insert(y, x, text, true)
+	ln, col := v.CurTextPos()
+	v.Insert(ln, col, text, true)
 }
 
 var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':\x1B]+)(:\d+)?(:\d+)?`)
@@ -103,6 +103,7 @@ var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':\x1B]+)(:\
 // Try to select a "location" from the given position
 // a location is a path with possibly a line number and maybe a column number as well
 func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
+	fmt.Printf("c: %d l:%d\n", col, line)
 	l := v.Line(v.slice, line)
 	ln := string(l)
 	// Note: Indexes taken and returned by FindAllStringIndex are in BYTES, not runes
@@ -124,7 +125,7 @@ func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
 	// convert byte indexes back to rune count
 	r1 := utf8.RuneCountInString(ln[:best[0]])
 	r2 := utf8.RuneCountInString(ln[:best[1]])
-	return core.NewSelection(line, r1, line, r2)
+	return core.NewSelection(line, r1, line, r2-1)
 }
 
 // Try to select the longest "word" from current position.
@@ -222,7 +223,8 @@ func (v *View) OpenSelection(newView bool) {
 	ed := core.Ed.(*Editor)
 	newView = newView || v.Dirty()
 	if len(v.selections) == 0 {
-		selection := v.ExpandSelectionPath(v.CurLine(), v.CurCol())
+		ln, col := v.CurTextPos()
+		selection := v.ExpandSelectionPath(ln, col)
 		if selection == nil {
 			ed.SetStatusErr("Could not expand location from cursor location.")
 			return
@@ -234,11 +236,15 @@ func (v *View) OpenSelection(newView bool) {
 	col--
 	isDir := false
 	loc, isDir = core.LookupLocation(v.WorkDir(), strings.TrimSpace(loc))
-	vv := ed.ViewByLoc(loc)
-	if vv > 0 {
-		// Already open
-		ed.ViewActivate(vv, line, col)
-		return
+	vid := ed.ViewByLoc(loc)
+	if vid >= 0 {
+		vv := ed.ViewById(vid)
+		if vv != nil {
+			// Already open
+			vv.MoveCursor(line-vv.CurLine(), col-vv.CurCol())
+			ed.ViewActivate(vv.Id())
+			return
+		}
 	}
 	v2 := ed.NewView(loc)
 	if _, err := ed.Open(loc, v2.Id(), v.WorkDir(), false); err != nil {
@@ -254,5 +260,6 @@ func (v *View) OpenSelection(newView bool) {
 	} else {
 		ed.ReplaceView(v, v2)
 	}
-	ed.ViewActivate(v2.Id(), line, col)
+	v2.MoveCursor(line-v2.CurLine(), col-v2.CurCol())
+	ed.ViewActivate(v2.Id())
 }
