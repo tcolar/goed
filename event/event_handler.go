@@ -33,28 +33,34 @@ func handleEvent(es *EventState) bool {
 	et := es.Type
 
 	curView := actions.Ar.EdCurView()
+	actions.Ar.ViewAutoScroll(curView, 0, 0, false)
+
+	y, x := actions.Ar.ViewCurPos(curView)
+
+	if es.hasMouse() {
+		curView, y, x = actions.Ar.EdViewAt(es.MouseY, es.MouseX)
+	}
+
 	if curView < 0 {
 		return false
 	}
-	// TODO: only do those as needed ?
-	ln, col := actions.Ar.ViewCurPos(curView)
-	l1, c1, _, _ := actions.Ar.ViewBounds(curView)
-	offy, offx := actions.Ar.ViewScrollPos(curView)
-
-	mouseView := actions.Ar.EdViewAt(es.MouseY, es.MouseX)
-	mouseCol := es.MouseX - c1 + offx - 2
-	mouseLn := es.MouseY - l1 + offy - 2
 
 	dirty := false
 	es.inDrag = false
 
-	actions.Ar.ViewAutoScroll(curView, 0, 0, false)
+	if es.hasMouse() {
+		fmt.Printf("has mouse |%d| %s\n", curView, actions.Ar.ViewSrcLoc(curView))
+		actions.Ar.ViewClearSelections(curView)
+		//actions.Ar.ViewMoveCursor(curView, es.MouseY-l1-2-ln, es.MouseX-c1-2-col)
+		//actions.Ar.EdActivateView(curView)
+
+	}
+	fmt.Printf("%s %s ln:%d col:%d my:%d mx:%d\n",
+		et, es.String(), y, x, es.MouseY, es.MouseX)
 
 	// TODO: cmdbar, term(ctrl+c)
 	// TODO : common/termonly//cmdbar/view only
 	// TODO: couldn't cmdbar e a view ?
-	//fmt.Printf("%s %s mv:%d [%d:%d] (%d,%d)\n", et, es.String(), mouseView, mouseLn, mouseCol, es.MouseY, es.MouseX)
-
 	switch et {
 	case EvtBackspace:
 		actions.Ar.ViewBackspace(curView)
@@ -96,14 +102,14 @@ func handleEvent(es *EventState) bool {
 	case EvtNavUp:
 		actions.Ar.EdViewNavigate(core.CursorMvmtUp)
 	case EvtOpenInNewView:
-		actions.Ar.ViewClearSelections(mouseView)
-		actions.Ar.ViewMoveCursor(mouseView, es.MouseY-l1-2-ln, es.MouseX-c1-2-col)
-		actions.Ar.ViewOpenSelection(mouseView, true)
+		actions.Ar.ViewMoveCursorTo(curView, y, x)
+		actions.Ar.ViewOpenSelection(curView, true)
 	case EvtOpenInSameView:
+		actions.Ar.ViewMoveCursorTo(curView, y, x)
 		actions.Ar.ViewOpenSelection(curView, false)
 	case EvtOpenTerm:
 		v := actions.Ar.EdOpenTerm([]string{core.Terminal})
-		actions.Ar.EdActivateView(v, 0, 0)
+		actions.Ar.EdActivateView(v)
 	case EvtPaste:
 		actions.Ar.ViewPaste(curView)
 		dirty = true
@@ -126,9 +132,8 @@ func handleEvent(es *EventState) bool {
 		actions.Ar.ViewSelectAll(curView)
 	// TODO other selects
 	case EvtSetCursor:
-		//	fmt.Printf("set cursor %d %d\n", mouseLn, mouseCol)
-		actions.Ar.ViewClearSelections(mouseView)
-		actions.Ar.EdActivateView(mouseView, mouseLn, mouseCol)
+		actions.Ar.ViewMoveCursorTo(curView, y, x)
+		actions.Ar.EdActivateView(curView)
 	case EvtTab:
 		actions.Ar.ViewInsertCur(curView, "\t")
 		dirty = true
@@ -142,8 +147,10 @@ func handleEvent(es *EventState) bool {
 	//case EvtWinResize:
 	//	actions.Ar.EdResize(ev.Height, ev.Width)
 	case Evt_None:
-		actions.Ar.ViewInsertCur(curView, es.Glyph)
-		dirty = true
+		if len(es.Glyph) > 0 {
+			actions.Ar.ViewInsertCur(curView, es.Glyph)
+			dirty = true
+		}
 	default:
 		actions.Ar.EdSetStatusErr("Unhandled action : " + string(et))
 	}

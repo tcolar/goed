@@ -25,7 +25,6 @@ type Editable interface {
 	// SetStatusErr displays a message in the status bar
 	SetStatus(status string)
 	SetCursor(y, x int)
-	SetCurView(id int64) error
 	// SetCmdOn activates or desactives the CommandBar
 	SetCmdOn(v bool)
 	SwapViews(v1, v2 int64)
@@ -37,7 +36,7 @@ type Editable interface {
 	TermStr(y, x int, s string)
 	TermStrv(y, x int, s string)
 	Theme() *Theme
-	ViewActivate(v int64, y, x int)
+	ViewActivate(v int64)
 	ViewAt(ln, col int) int64
 	// ViewByLoc finds if there is an existing view for the given file (loc)
 	ViewByLoc(loc string) int64

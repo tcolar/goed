@@ -3,7 +3,7 @@ package core
 import (
 	"fmt"
 
-	"github.com/tcolar/termbox-go"
+	termbox "github.com/tcolar/termbox-go"
 )
 
 // Terminal interface

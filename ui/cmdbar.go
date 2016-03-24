@@ -83,7 +83,7 @@ func (c *Cmdbar) open(args []string) error {
 	if err != nil {
 		return err
 	}
-	ed.ViewActivate(cv.Id(), 0, 0)
+	ed.ViewActivate(cv.Id())
 	return nil
 }
 

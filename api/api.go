@@ -51,7 +51,7 @@ func (r *GoedRpc) Action(args RpcStruct, res *RpcStruct) error {
 
 func (r *GoedRpc) Open(args []interface{}, _ *struct{}) error {
 	vid := actions.Ar.EdOpen(args[1].(string), -1, args[0].(string), true)
-	actions.Ar.EdActivateView(vid, 0, 0)
+	actions.Ar.EdActivateView(vid)
 	actions.Ar.EdRender()
 	return nil
 }
@@ -59,13 +59,13 @@ func (r *GoedRpc) Open(args []interface{}, _ *struct{}) error {
 func (r *GoedRpc) Edit(args []interface{}, _ *struct{}) error {
 	curView := actions.Ar.EdCurView()
 	vid := actions.Ar.EdOpen(args[1].(string), -1, args[0].(string), true)
-	actions.Ar.EdActivateView(vid, 0, 0)
+	actions.Ar.EdActivateView(vid)
 	actions.Ar.EdRender()
 	// Wait til file closed
 	for {
 		v := core.Ed.ViewById(vid)
 		if v.Terminated() {
-			actions.Ar.EdActivateView(curView, 0, 0)
+			actions.Ar.EdActivateView(curView)
 			actions.Ar.EdRender()
 			return nil
 		}

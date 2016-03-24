@@ -321,17 +321,17 @@ func (e *Editor) autoScroller() {
 type autoScrollAction struct {
 }
 
-func (e autoScrollAction) Run() error {
+func (e autoScrollAction) Run() {
 	v := core.Ed.ViewById(core.Ed.CurViewId()).(*View)
 	if v == nil {
-		return nil
+		return
 	}
 	x, y := v.autoScrollX, v.autoScrollY
 	if x == 0 && y == 0 {
-		return nil
+		return
 	}
 	if len(v.selections) == 0 {
-		return nil
+		return
 	}
 	s := v.selections[0]
 	ln := v.CurLine()
@@ -386,5 +386,4 @@ func (e autoScrollAction) Run() error {
 		s,
 	}
 	core.Ed.Render()
-	return nil
 }

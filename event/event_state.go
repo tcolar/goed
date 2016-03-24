@@ -29,6 +29,15 @@ func NewEventState() *EventState {
 	}
 }
 
+func (e *EventState) hasMouse() bool {
+	for _, on := range e.MouseBtns {
+		if on {
+			return true
+		}
+	}
+	return false
+}
+
 func (e *EventState) parseType() {
 	bestScore := 0
 	t := Evt_None
@@ -106,76 +115,73 @@ func (e *EventState) hasKey(key string) bool {
 }
 
 func (e *EventState) scoreMatch(s string) (score int) {
+outer:
 	for _, k := range strings.Split(s, "+") {
-		if k[0] == 'M' {
+		if k[0] == 'M' { // mouse
 			for btn, b := range e.MouseBtns {
 				if b && fmt.Sprintf("M%d", btn) == k {
 					score++
-					continue
+					continue outer
 				}
 			}
+			return 0
 		}
-		switch k {
+		switch k { // kb
 		case KeyFunction:
 			if !e.Combo.Func {
-				return score
+				return 0
 			}
-
 		case "ctrl":
 			if !e.Combo.RCtrl && !e.Combo.LCtrl {
-				return score
+				return 0
 			}
 		case KeyLeftControl:
 			if !e.Combo.LCtrl {
-				return score
+				return 0
 			}
 		case KeyRightControl:
 			if !e.Combo.RCtrl {
-				return score
+				return 0
 			}
-
 		case "alt":
 			if !e.Combo.RAlt && !e.Combo.LAlt {
-				return score
+				return 0
 			}
 		case "lalt":
 			if !e.Combo.LAlt {
-				return score
+				return 0
 			}
 		case "ralt":
 			if !e.Combo.RAlt {
-				return score
+				return 0
 			}
-
 		case "super":
 			if !e.Combo.RSuper && !e.Combo.LSuper {
-				return score
+				return 0
 			}
 		case "lsuper":
 			if !e.Combo.LSuper {
-				return score
+				return 0
 			}
 		case "rsuper":
 			if !e.Combo.RSuper {
-				return score
+				return 0
 			}
-
 		case "shift":
 			if !e.Combo.RShift && !e.Combo.LShift {
-				return score
+				return 0
 			}
 		case "lshift":
 			if !e.Combo.LShift {
-				return score
+				return 0
 			}
 		case "rshift":
 			if !e.Combo.RShift {
-				return score
+				return 0
 			}
-
 		default:
 			if !e.hasKey(k) {
-				return score
+				return 0
 			}
 		}
 		score++

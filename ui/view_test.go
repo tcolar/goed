@@ -132,6 +132,8 @@ func TestViewSelections(t *testing.T) {
 	assert.Equal(t, cb, "bcdefghijklmnopqrstuvwxyz\nABCDEFGH", "copy")
 	s = v.ExpandSelectionPath(0, 2)
 	assert.Equal(t, core.RunesToString(v.SelectionText(s)), "1234567890", "path2")
+	s = v.ExpandSelectionPath(9, 2)
+	assert.Equal(t, s.String(), "9 2 9 4", "abc")
 	s = v.ExpandSelectionPath(10, 0)
 	assert.Equal(t, s.String(), "10 0 10 2", "ps1 selection")
 	assert.Equal(t, core.RunesToString(v.SelectionText(s)), "aaa", "ps1")

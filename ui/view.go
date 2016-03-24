@@ -320,12 +320,7 @@ func (v *View) MoveCursor(y, x int) {
 		v.CursorY = v.LastViewLine()
 	}
 
-	v.NormalizeCursor()
-
-	tox := v.x1 + 2 + v.CursorX
-	toy := v.y1 + 2 + v.CursorY
-
-	v.setCursor(toy, tox)
+	v.updateCursor()
 }
 
 func (v *View) NormalizeCursor() {
@@ -363,14 +358,19 @@ func (v *View) Title() string {
 	return v.title
 }
 
-// Return the current line (0 indexed)
+// Return the current UI line (0 indexed)
 func (v *View) CurLine() int {
 	return v.CursorY + v.offy
 }
 
-// Return the current column (0 indexed)
+// Return the current UI column (0 indexed)
 func (v *View) CurCol() int {
 	return v.CursorX + v.offx
+}
+
+// Return the postion of the cursor in the view's text.
+func (v *View) CurTextPos() (ln int, col int) {
+	return v.CurLine(), v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol())
 }
 
 // canClose checks if the view can be closed
@@ -388,8 +388,10 @@ func (v *View) canClose() bool {
 	return true
 }
 
-func (v *View) setCursor(y, x int) {
-	core.Ed.SetCursor(y, x)
+// Update the editor cursor to be this view current cursor
+func (v *View) updateCursor() {
+	v.NormalizeCursor()
+	core.Ed.SetCursor(v.y1+2+v.CursorY, v.x1+2+v.CursorX)
 }
 
 func (v *View) Backend() core.Backend {

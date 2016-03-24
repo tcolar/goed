@@ -7,7 +7,7 @@ import (
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
-	"github.com/tcolar/termbox-go"
+	termbox "github.com/tcolar/termbox-go"
 )
 
 const (
@@ -246,7 +246,7 @@ func (v *View) viewCommonEvent(e *Editor, ev *termbox.Event) bool {
 		return true
 	case termbox.KeyCtrlT:
 		v := actions.Ar.EdOpenTerm([]string{core.Terminal})
-		actions.Ar.EdActivateView(v, 0, 0)
+		actions.Ar.EdActivateView(v)
 		return true
 	}
 	return false
@@ -357,7 +357,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 		if ev.MouseX == v.x1 && ev.MouseY == v.y1 {
 			// view swap
 			actions.Ar.EdSwapViews(e.CurViewId(), vid)
-			actions.Ar.EdActivateView(vid, v.CurLine(), v.CurCol())
+			actions.Ar.EdActivateView(vid)
 			e.evtState.MovingView = false
 			actions.Ar.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
 			return
@@ -418,7 +418,8 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			if !e.evtState.InDrag {
 				e.evtState.InDrag = true
 				actions.Ar.ViewClearSelections(vid)
-				actions.Ar.EdActivateView(vid, e.evtState.DragLn, e.evtState.DragCol)
+				actions.Ar.ViewSetCursor(vid, e.evtState.DragLn, e.evtState.DragCol)
+				actions.Ar.EdActivateView(vid)
 			}
 			// continued drag
 			x1 := e.evtState.DragCol
@@ -454,7 +455,8 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			}
 			if !e.evtState.InDrag {
 				actions.Ar.ViewClearSelections(vid)
-				actions.Ar.EdActivateView(vid, ln, col)
+				actions.Ar.ViewSetCursor(vid, ln, col)
+				actions.Ar.EdActivateView(vid)
 				e.evtState.LastLeftClick = time.Now().Unix()
 				e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
 				actions.Ar.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))

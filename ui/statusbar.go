@@ -39,7 +39,7 @@ func (s *Statusbar) RenderPos() {
 	if v == nil || v.Backend() == nil {
 		return
 	}
-	col, ln := v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()), v.CurLine()
+	ln, col := v.CurTextPos()
 	pos := fmt.Sprintf(" %d:%d [%d]", ln+1, col+1, v.LineCount())
 	e.TermStr(s.y1, s.x2-len(pos), pos)
 }

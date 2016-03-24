@@ -8,7 +8,7 @@ import (
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
-	"github.com/tcolar/termbox-go"
+	termbox "github.com/tcolar/termbox-go"
 )
 
 // Col represent a column of the editor (a set of views)
@@ -310,7 +310,7 @@ func (e *Editor) ViewNavigate(mvmt core.CursorMvmt) {
 		view = len(e.Cols[col].Views) - 1
 	}
 	tv, _ := e.views[e.Cols[col].Views[view]]
-	e.ViewActivate(tv.Id(), tv.CurLine(), tv.CurCol())
+	e.ViewActivate(tv.Id())
 }
 
 func (e *Editor) CurColIndex() int {
@@ -329,7 +329,7 @@ func (e *Editor) AddCol(toCol *Col, ratio float64) *Col {
 	copy(e.Cols[i+1:], e.Cols[i:])
 	e.Cols[i] = c
 
-	e.ViewActivate(nv.Id(), 0, 0)
+	e.ViewActivate(nv.Id())
 	e.Resize(e.term.Size())
 	return c
 }
@@ -346,7 +346,6 @@ func (e *Editor) AddViewSmart(v *View) *View {
 		v = e.addToCol(col, v)
 	}
 
-	//	e.ViewActivate(v.Id(), 0, 0)
 	e.Resize(e.term.Size())
 	return v
 }
@@ -461,7 +460,7 @@ func (e *Editor) tryNewCol(v *View) *Col {
 
 func (e *Editor) AddDirViewSmart(view *View) {
 	e.addToCol(e.ColNarrowest(), view)
-	e.ViewActivate(view.Id(), 0, 0)
+	e.ViewActivate(view.Id())
 	e.Resize(e.term.Size())
 }
 
@@ -473,7 +472,7 @@ func (e *Editor) InsertViewSmart(view *View) {
 func (e *Editor) AddView(toView *View, ratio float64) *View {
 	nv := e.NewView("")
 	e.InsertView(nv, toView, ratio)
-	e.ViewActivate(nv.Id(), 0, 0)
+	e.ViewActivate(nv.Id())
 	return nv
 }
 
@@ -529,7 +528,7 @@ func (e *Editor) DelCol(col *Col, terminateViews bool) {
 				e.CurCol = e.Cols[i+1]
 			}
 			v := e.views[e.CurCol.Views[0]]
-			e.ViewActivate(v.Id(), v.CurLine(), v.CurCol())
+			e.ViewActivate(v.Id())
 			e.Cols = append(e.Cols[:i], e.Cols[i+1:]...)
 			break
 		}
@@ -573,7 +572,7 @@ func (e *Editor) DelView(viewId int64, terminate bool) {
 			}
 			c.Views = append(c.Views[:i], c.Views[i+1:]...)
 			cv, _ := e.views[e.curViewId]
-			e.ViewActivate(cv.Id(), cv.CurLine(), cv.CurCol())
+			e.ViewActivate(cv.Id())
 			break
 		}
 		prev, _ = e.views[c.Views[i]]
@@ -638,23 +637,15 @@ func (e *Editor) DelColCheck(c *Col) {
 	e.DelCol(c, true)
 }
 
-func (e *Editor) ViewActivate(viewId int64, cursory, cursorx int) {
+func (e *Editor) ViewActivate(viewId int64) {
 	v := e.ViewById(viewId).(*View)
 	if v == nil {
 		return
 	}
 	e.curViewId = viewId
 	e.CurCol = e.ViewColumn(e.curViewId)
-	v.MoveCursor(cursory-v.CurLine(), cursorx-v.CurCol())
-}
-
-func (e *Editor) SetCurView(id int64) error {
-	v := e.ViewById(id)
-	if v == nil {
-		return fmt.Errorf("No such view %d", id)
-	}
-	e.ViewActivate(v.Id(), 0, 0)
-	return nil
+	v.updateCursor()
+	e.SetStatus(fmt.Sprintf("%s [%d]", v.WorkDir(), viewId))
 }
 
 func (e *Editor) ViewById(id int64) core.Viewable {
