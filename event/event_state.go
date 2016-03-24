@@ -15,11 +15,11 @@ type EventState struct {
 	MouseY, MouseX int
 
 	// state
-	movingView               bool
-	lastLClickX, lastLClickY int
-	lastLClick               int64 // timestamp
-	dragLn, dragCol          int
-	inDrag                   bool
+	//movingView               bool
+	//lastLClickX, lastLClickY int
+	//lastLClick               int64 // timestamp
+	dragLn, dragCol int  // drag start point
+	inDrag          bool // mouse dragging
 }
 
 func NewEventState() *EventState {
@@ -63,6 +63,7 @@ func (e *EventState) KeyUp(key string) {
 func (e *EventState) MouseUp(button, y, x int) {
 	e.MouseBtns[button] = false
 	e.inDrag = false
+	// TODO some sort of endDrag event ?
 }
 
 func (e *EventState) MouseDown(button, y, x int) {
@@ -126,8 +127,12 @@ func (e *EventState) scoreMatch(s string) (score int) {
 outer:
 	for _, k := range strings.Split(s, "+") {
 		if k[0] == 'M' { // mouse
+			a := "MC"
+			if e.inDrag {
+				a = "MD"
+			}
 			for btn, b := range e.MouseBtns {
-				if b && fmt.Sprintf("M%d", btn) == k {
+				if b && fmt.Sprintf("%s%d", a, btn) == k {
 					score++
 					continue outer
 				}
@@ -201,7 +206,11 @@ func (e *EventState) String() string {
 	s := []string{}
 	for btn, b := range e.MouseBtns {
 		if b {
-			s = append(s, fmt.Sprintf("M%d", btn))
+			a := "MC"
+			if e.inDrag {
+				a = "MD"
+			}
+			s = append(s, fmt.Sprintf("%s%d", a, btn))
 		}
 	}
 	if e.Combo.LSuper {

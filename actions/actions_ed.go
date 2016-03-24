@@ -239,7 +239,6 @@ func (a edViewAt) Run() {
 		y = a.y - l1 + scrollLn - 2
 		x = a.x - c1 + scrollCol - 2
 	}
-	fmt.Printf("v:%d y:%d x:%d", vid, y, x)
 	a.answer <- int64(y)
 	a.answer <- int64(x)
 }

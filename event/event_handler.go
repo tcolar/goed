@@ -47,10 +47,6 @@ func handleEvent(es *EventState) bool {
 
 	dirty := false
 
-	/*if es.hasMouse() {
-		actions.Ar.ViewClearSelections(curView)
-	}*/
-
 	if et != Evt_None {
 		fmt.Printf("%s %s ln:%d col:%d my:%d mx:%d - %v\n",
 			et, es.String(), y, x, es.MouseY, es.MouseX, es.inDrag)
@@ -59,7 +55,7 @@ func handleEvent(es *EventState) bool {
 	// TODO : common/termonly//cmdbar/view only
 	// TODO: couldn't cmdbar e a view ?
 
-	// TODO : right click select still broken
+	// TODO : right click select/open still broken
 	// TODO : dbl click
 	// TODO : swap view
 	// TODO : move view
@@ -69,7 +65,9 @@ func handleEvent(es *EventState) bool {
 	// TODO : shift selections
 	// TODO : mouse select / scroll / drag / drag + scroll
 	// TODO : down/pg_down slection seems buggy too (tabs ?)
-	// TODO : window reixe
+	// TODO : window resize
+	// TODO : allow other acme like events such as drag selection / click on selection
+	// TODO : events & actions tests
 
 	cs := true // clear selections
 
@@ -158,6 +156,10 @@ func handleEvent(es *EventState) bool {
 	case EvtSelectLeft:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtLeft)
 		actions.Ar.ViewStretchSelection(curView, y, x)
+		cs = false
+	case EvtSelectMouse:
+		actions.Ar.ViewMoveCursorTo(curView, y, x)
+		actions.Ar.ViewStretchSelection(curView, es.dragLn, es.dragCol)
 		cs = false
 	case EvtSelectPageDown:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtPgDown)

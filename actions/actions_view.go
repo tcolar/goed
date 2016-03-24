@@ -1,6 +1,10 @@
 package actions
 
-import "github.com/tcolar/goed/core"
+import (
+	"fmt"
+
+	"github.com/tcolar/goed/core"
+)
 
 // Add a text selection to the view. from l1,c1 to l2,c2
 func (a *ar) ViewAddSelection(viewId int64, l1, c1, l2, c2 int) {
@@ -633,12 +637,14 @@ type viewStretchSelection struct {
 
 func (a viewStretchSelection) Run() {
 	v := core.Ed.ViewById(a.viewId)
+	ln, col := v.CurLine(), v.CurCol()
+	fmt.Printf("ss %d %d %d %d\n", a.prevLn, a.prevCol, ln, col)
 	if v != nil {
 		v.StretchSelection(
 			a.prevLn,
 			v.LineRunesTo(v.Slice(), a.prevLn, a.prevCol),
-			v.CurLine(),
-			v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()),
+			ln,
+			v.LineRunesTo(v.Slice(), ln, col),
 		)
 	}
 }
