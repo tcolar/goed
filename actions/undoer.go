@@ -27,7 +27,7 @@ type actionTuple struct {
 }
 
 // or group by alphanum sequence ??
-func Undo(viewId int64) error {
+func Undo(viewId int64) {
 	action, err := func() (core.Action, error) {
 		lock.Lock()
 		defer lock.Unlock()
@@ -41,12 +41,13 @@ func Undo(viewId int64) error {
 		return tuple.undo, nil
 	}()
 	if err != nil {
-		return err
+		Ar.EdSetStatusErr(err.Error())
+		return
 	}
-	return action.Run()
+	action.Run()
 }
 
-func Redo(viewId int64) error {
+func Redo(viewId int64) {
 	action, err := func() (core.Action, error) {
 		lock.Lock()
 		defer lock.Unlock()
@@ -60,9 +61,10 @@ func Redo(viewId int64) error {
 		return tuple.do, nil
 	}()
 	if err != nil {
-		return err
+		Ar.EdSetStatusErr(err.Error())
+		return
 	}
-	return action.Run()
+	action.Run()
 }
 
 func UndoAdd(viewId int64, do, undo core.Action) {

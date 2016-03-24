@@ -1,14 +1,14 @@
 package actions
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/tcolar/goed/core"
 )
 
 // activate the given view, with the cursor at y,x
-func (a *ar) EdActivateView(viewId int64, y, x int) {
-	d(edActivateView{viewId: viewId, y: y, x: x})
+func (a *ar) EdActivateView(viewId int64) {
+	d(edActivateView{viewId: viewId})
 }
 
 // returns the currently active view
@@ -99,12 +99,13 @@ func (a *ar) EdViewMove(viewId int64, y1, x1, y2, x2 int) {
 	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
 }
 
-// returns the view at the given ui location
-// -1 if not within any view bounds.
-func (a *ar) EdViewAt(ln, col int) int64 {
-	vid := make(chan (int64), 1)
-	d(edViewAt{ln: ln, col: col, vid: vid})
-	return <-vid
+// For a given UI position (in characters) returns
+// - The view at that position. -1 if not within any view bounds.
+// - y,x coordinates within that view.
+func (a *ar) EdViewAt(y, x int) (vid int64, vy, vx int) {
+	answer := make(chan (int64), 3)
+	d(edViewAt{y: y, x: x, answer: answer})
+	return <-answer, int(<-answer), int(<-answer)
 }
 
 // navigate between UI views given the CursorMvmt value (left,right,top,down)
@@ -116,21 +117,18 @@ func (a *ar) EdViewNavigate(mvmt core.CursorMvmt) {
 
 type edActivateView struct {
 	viewId int64
-	y, x   int
 }
 
-func (a edActivateView) Run() error {
-	core.Ed.ViewActivate(a.viewId, a.y, a.x)
-	return nil
+func (a edActivateView) Run() {
+	core.Ed.ViewActivate(a.viewId)
 }
 
 type edCurView struct {
 	viewId chan int64
 }
 
-func (a edCurView) Run() error {
+func (a edCurView) Run() {
 	a.viewId <- core.Ed.CurViewId()
-	return nil
 }
 
 type edDelCol struct {
@@ -138,9 +136,8 @@ type edDelCol struct {
 	check    bool
 }
 
-func (a edDelCol) Run() error {
+func (a edDelCol) Run() {
 	core.Ed.DelColByIndex(a.colIndex, a.check)
-	return nil
 }
 
 type edDelView struct {
@@ -148,9 +145,8 @@ type edDelView struct {
 	check  bool
 }
 
-func (a edDelView) Run() error {
+func (a edDelView) Run() {
 	core.Ed.DelViewByIndex(a.viewId, a.check)
-	return nil
 }
 
 type edOpen struct {
@@ -160,13 +156,12 @@ type edOpen struct {
 	vid      chan int64 // returned new viewid if viewId==-1
 }
 
-func (a edOpen) Run() error {
+func (a edOpen) Run() {
 	vid, err := core.Ed.Open(a.loc, a.viewId, a.rel, a.create)
 	a.vid <- vid
 	if err != nil {
-		log.Printf("EdOpen error : %s\n", err.Error())
+		core.Ed.SetStatusErr(fmt.Sprintf("EdOpen error : %s\n", err.Error()))
 	}
-	return err
 }
 
 type edOpenTerm struct {
@@ -174,35 +169,31 @@ type edOpenTerm struct {
 	vid  chan int64 // returned new viewid if viewId==-1
 }
 
-func (a edOpenTerm) Run() error {
+func (a edOpenTerm) Run() {
 	vid := core.Ed.StartTermView(a.args)
 	a.vid <- vid
-	return nil
 }
 
 type edQuitCheck struct {
 	answer chan (bool)
 }
 
-func (a edQuitCheck) Run() error {
+func (a edQuitCheck) Run() {
 	a.answer <- core.Ed.QuitCheck()
-	return nil
 }
 
 type edRender struct{}
 
-func (a edRender) Run() error {
+func (a edRender) Run() {
 	core.Ed.Render()
-	return nil
 }
 
 type edResize struct {
 	h, w int
 }
 
-func (a edResize) Run() error {
+func (a edResize) Run() {
 	core.Ed.Resize(a.h, a.w)
-	return nil
 }
 
 type edSetStatus struct {
@@ -210,39 +201,47 @@ type edSetStatus struct {
 	err    bool
 }
 
-func (a edSetStatus) Run() error {
+func (a edSetStatus) Run() {
 	if a.err {
 		core.Ed.SetStatusErr(a.status)
 	} else {
 		core.Ed.SetStatus(a.status)
 	}
-	return nil
 }
 
 type edSwapViews struct {
 	view1Id, view2Id int64
 }
 
-func (a edSwapViews) Run() error {
+func (a edSwapViews) Run() {
 	core.Ed.SwapViews(a.view1Id, a.view2Id)
-	return nil
 }
 
 type edTermFlush struct{}
 
-func (a edTermFlush) Run() error {
+func (a edTermFlush) Run() {
 	core.Ed.TermFlush()
-	return nil
 }
 
 type edViewAt struct {
-	ln, col int
-	vid     chan int64
+	y, x   int
+	answer chan int64
 }
 
-func (a edViewAt) Run() error {
-	a.vid <- core.Ed.ViewAt(a.ln, a.col)
-	return nil
+func (a edViewAt) Run() {
+	vid := core.Ed.ViewAt(a.y, a.x)
+	a.answer <- vid
+	y, x := 0, 0
+	if vid >= 0 {
+		v := core.Ed.ViewById(vid)
+		l1, c1, _, _ := v.Bounds()
+		scrollLn, scrollCol := v.ScrollPos()
+		y = a.y - l1 + scrollLn - 2
+		x = a.x - c1 + scrollCol - 2
+	}
+	fmt.Printf("v:%d y:%d x:%d", vid, y, x)
+	a.answer <- int64(y)
+	a.answer <- int64(x)
 }
 
 type edViewByLoc struct {
@@ -250,10 +249,9 @@ type edViewByLoc struct {
 	vid chan int64
 }
 
-func (a edViewByLoc) Run() error {
+func (a edViewByLoc) Run() {
 	vid := core.Ed.ViewByLoc(a.loc)
 	a.vid <- vid
-	return nil
 }
 
 type edViewMove struct {
@@ -261,20 +259,17 @@ type edViewMove struct {
 	y1, x1, y2, x2 int
 }
 
-func (a edViewMove) Run() error {
+func (a edViewMove) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		core.Ed.ViewMove(a.y1, a.x1, a.y2, a.x2)
 	}
-	core.Ed.ViewMove(a.y1, a.x1, a.y2, a.x2)
-	return nil
 }
 
 type edViewNavigate struct {
 	mvmt core.CursorMvmt
 }
 
-func (a edViewNavigate) Run() error {
+func (a edViewNavigate) Run() {
 	core.Ed.ViewNavigate(a.mvmt)
-	return nil
 }

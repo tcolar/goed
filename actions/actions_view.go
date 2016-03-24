@@ -1,10 +1,6 @@
 package actions
 
-import (
-	"fmt"
-
-	"github.com/tcolar/goed/core"
-)
+import "github.com/tcolar/goed/core"
 
 // Add a text selection to the view. from l1,c1 to l2,c2
 func (a *ar) ViewAddSelection(viewId int64, l1, c1, l2, c2 int) {
@@ -55,8 +51,8 @@ func (a *ar) ViewCut(viewId int64) {
 	d(viewCut{viewId: viewId})
 }
 
-// return the current cursor position in the view
-func (a *ar) ViewCurPos(viewId int64) (ln, col int) {
+// return the current cursor UI position in the view
+func (a *ar) ViewCurPos(viewId int64) (y, x int) {
 	answer := make(chan int, 2)
 	d(viewCurPos{viewId: viewId, answer: answer})
 	return <-answer, <-answer
@@ -92,15 +88,19 @@ func (a *ar) ViewInsertNewLine(viewId int64) {
 	d(viewInsertNewLine{viewId: viewId})
 }
 
-// move the cursor by y,x (relative)
+// move the cursor by ln, col runes (relative), scroll as needed
 func (a *ar) ViewMoveCursor(viewId int64, y, x int) {
 	d(viewMoveCursor{viewId: viewId, x: x, y: y})
 }
 
-// move the cursor by y,x (relative) but also scroll te view as needed to keep
-// the cursor in view and in place.
+// move the cursor by y,x runes (relative) but also "roll" to rev/next line as needed.
 func (a *ar) ViewMoveCursorRoll(viewId int64, y, x int) {
 	d(viewMoveCursor{viewId: viewId, x: x, y: y, roll: true})
+}
+
+// move the cursor to the given position, scroll as needed
+func (a *ar) ViewMoveCursorTo(viewId int64, y, x int) {
+	d(viewMoveCursorTo{viewId: viewId, x: x, y: y})
 }
 
 // paste text into the view at the curent location
@@ -144,6 +144,10 @@ func (a *ar) ViewSave(viewId int64) {
 // select all
 func (a *ar) ViewSelectAll(viewId int64) {
 	d(viewSelectAll{viewId: viewId})
+}
+
+func (a *ar) ViewSetCursor(viewId int64, y, x int) {
+	d(viewSetCursor{viewId: viewId, y: y, x: x})
 }
 
 // mark the view "dirty" or not (ie: modified, unsaved)
@@ -206,15 +210,13 @@ type viewAddSelection struct {
 	l1, c1, l2, c2 int
 }
 
-func (a viewAddSelection) Run() error {
+func (a viewAddSelection) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		s := core.NewSelection(a.l1, a.c1, a.l2, a.c2)
+		selections := v.Selections()
+		*selections = append(*selections, *s)
 	}
-	s := core.NewSelection(a.l1, a.c1, a.l2, a.c2)
-	selections := v.Selections()
-	*selections = append(*selections, *s)
-	return nil
 }
 
 type viewAutoScroll struct {
@@ -223,26 +225,22 @@ type viewAutoScroll struct {
 	on     bool
 }
 
-func (a viewAutoScroll) Run() error {
+func (a viewAutoScroll) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.SetAutoScroll(a.y, a.x, a.on)
 	}
-	v.SetAutoScroll(a.y, a.x, a.on)
-	return nil
 }
 
 type viewBackspace struct {
 	viewId int64
 }
 
-func (a viewBackspace) Run() error {
+func (a viewBackspace) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Backspace()
 	}
-	v.Backspace()
-	return nil
 }
 
 type viewBounds struct {
@@ -250,49 +248,47 @@ type viewBounds struct {
 	viewId int64
 }
 
-func (a viewBounds) Run() error {
+func (a viewBounds) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		a.answer <- 0
 		a.answer <- 0
 		a.answer <- 0
 		a.answer <- 0
+		return
 	}
 	l1, c1, l2, c2 := v.Bounds()
 	a.answer <- l1
 	a.answer <- c1
 	a.answer <- l2
 	a.answer <- c2
-	return nil
 }
 
 type viewClearSelections struct {
 	viewId int64
 }
 
-func (a viewClearSelections) Run() error {
+func (a viewClearSelections) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.ClearSelections()
 	}
-	v.ClearSelections()
-	return nil
 }
 
 type viewCmdStop struct {
 	viewId int64
 }
 
-func (a viewCmdStop) Run() error {
+func (a viewCmdStop) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
-		return nil
+		return
 	}
 	b := v.Backend()
 	if b != nil {
 		b.Close()
 	}
-	return nil
+	return
 }
 
 type viewCols struct {
@@ -300,26 +296,24 @@ type viewCols struct {
 	viewId int64
 }
 
-func (a viewCols) Run() error {
+func (a viewCols) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		a.answer <- 0
+		return
 	}
 	a.answer <- v.LastViewCol()
-	return nil
 }
 
 type viewCopy struct {
 	viewId int64
 }
 
-func (a viewCopy) Run() error {
+func (a viewCopy) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Copy()
 	}
-	v.Copy()
-	return nil
 }
 
 type viewCurPos struct {
@@ -327,15 +321,15 @@ type viewCurPos struct {
 	viewId int64
 }
 
-func (a viewCurPos) Run() error {
+func (a viewCurPos) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		a.answer <- 0
 		a.answer <- 0
+		return
 	}
 	a.answer <- v.CurLine()
 	a.answer <- v.CurCol()
-	return nil
 }
 
 type viewCursorMvmt struct {
@@ -343,26 +337,22 @@ type viewCursorMvmt struct {
 	mvmt   core.CursorMvmt
 }
 
-func (a viewCursorMvmt) Run() error {
+func (a viewCursorMvmt) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.CursorMvmt(a.mvmt)
 	}
-	v.CursorMvmt(a.mvmt)
-	return nil
 }
 
 type viewCut struct {
 	viewId int64
 }
 
-func (a viewCut) Run() error {
+func (a viewCut) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Cut()
 	}
-	v.Cut()
-	return nil
 }
 
 type viewDeleteAction struct {
@@ -371,26 +361,22 @@ type viewDeleteAction struct {
 	undoable               bool
 }
 
-func (a viewDeleteAction) Run() error {
+func (a viewDeleteAction) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Delete(a.row1, a.col1, a.row2, a.col2, a.undoable)
 	}
-	v.Delete(a.row1, a.col1, a.row2, a.col2, a.undoable)
-	return nil
 }
 
 type viewDeleteCur struct {
 	viewId int64
 }
 
-func (a viewDeleteCur) Run() error {
+func (a viewDeleteCur) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.DeleteCur()
 	}
-	v.DeleteCur()
-	return nil
 }
 
 type viewInsertAction struct {
@@ -400,13 +386,11 @@ type viewInsertAction struct {
 	undoable bool
 }
 
-func (a viewInsertAction) Run() error {
+func (a viewInsertAction) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Insert(a.row, a.col, a.text, a.undoable)
 	}
-	v.Insert(a.row, a.col, a.text, a.undoable)
-	return nil
 }
 
 type viewInsertCur struct {
@@ -414,46 +398,54 @@ type viewInsertCur struct {
 	text   string
 }
 
-func (a viewInsertCur) Run() error {
+func (a viewInsertCur) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.InsertCur(a.text)
 	}
-	v.InsertCur(a.text)
-	return nil
 }
 
 type viewInsertNewLine struct {
 	viewId int64
 }
 
-func (a viewInsertNewLine) Run() error {
+func (a viewInsertNewLine) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.InsertNewLineCur()
 	}
-	v.InsertNewLineCur()
-	return nil
 }
 
 type viewMoveCursor struct {
 	viewId int64
-	status string
 	y, x   int
 	roll   bool
 }
 
-func (a viewMoveCursor) Run() error {
+func (a viewMoveCursor) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
-		return nil
+		return
 	}
 	if a.roll {
 		v.MoveCursorRoll(a.y, a.x)
 	} else {
 		v.MoveCursor(a.y, a.x)
 	}
-	return nil
+}
+
+type viewMoveCursorTo struct {
+	viewId int64
+	y, x   int
+}
+
+func (a viewMoveCursorTo) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		return
+	}
+	y, x := v.CurLine(), v.CurCol()
+	v.MoveCursor(a.y-y, a.x-x)
 }
 
 type viewOpenSelection struct {
@@ -461,56 +453,50 @@ type viewOpenSelection struct {
 	newView bool
 }
 
-func (a viewOpenSelection) Run() error {
+func (a viewOpenSelection) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.OpenSelection(a.newView)
 	}
-	v.OpenSelection(a.newView)
-	return nil
 }
 
 type viewPaste struct {
 	viewId int64
 }
 
-func (a viewPaste) Run() error {
+func (a viewPaste) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Paste()
 	}
-	v.Paste()
-	return nil
 }
 
 type viewRedo struct {
 	viewId int64
 }
 
-func (a viewRedo) Run() error {
-	return Redo(a.viewId)
+func (a viewRedo) Run() {
+	Redo(a.viewId)
 }
 
 type viewReload struct{ viewId int64 }
 
-func (a viewReload) Run() error {
+func (a viewReload) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.Reload()
 	}
-	return nil
 }
 
 type viewRender struct {
 	viewId int64
 }
 
-func (a viewRender) Run() error {
+func (a viewRender) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.Render()
 	}
-	return nil
 }
 
 type viewRows struct {
@@ -518,26 +504,24 @@ type viewRows struct {
 	viewId int64
 }
 
-func (a viewRows) Run() error {
+func (a viewRows) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		a.answer <- 0
+		return
 	}
 	a.answer <- v.LastViewLine()
-	return nil
 }
 
 type viewSave struct {
 	viewId int64
 }
 
-func (a viewSave) Run() error {
+func (a viewSave) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Save()
 	}
-	v.Save()
-	return nil
 }
 
 type viewScrollPos struct {
@@ -545,29 +529,39 @@ type viewScrollPos struct {
 	viewId int64
 }
 
-func (a viewScrollPos) Run() error {
+func (a viewScrollPos) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		a.answer <- 0
 		a.answer <- 0
+		return
 	}
 	y, x := v.ScrollPos()
 	a.answer <- y
 	a.answer <- x
-	return nil
 }
 
 type viewSelectAll struct {
 	viewId int64
 }
 
-func (a viewSelectAll) Run() error {
+func (a viewSelectAll) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.SelectAll()
 	}
-	v.SelectAll()
-	return nil
+}
+
+type viewSetCursor struct {
+	viewId int64
+	y, x   int
+}
+
+func (a viewSetCursor) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.MoveCursor(a.y-v.CurLine(), a.x-v.CurCol())
+	}
 }
 
 type viewSetDirty struct {
@@ -575,13 +569,11 @@ type viewSetDirty struct {
 	on     bool
 }
 
-func (a viewSetDirty) Run() error {
+func (a viewSetDirty) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.SetDirty(a.on)
 	}
-	v.SetDirty(a.on)
-	return nil
 }
 
 type viewSetTitle struct {
@@ -589,12 +581,11 @@ type viewSetTitle struct {
 	title  string
 }
 
-func (a viewSetTitle) Run() error {
+func (a viewSetTitle) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetTitle(a.title)
 	}
-	return nil
 }
 
 type viewSetWorkdir struct {
@@ -602,12 +593,11 @@ type viewSetWorkdir struct {
 	workDir string
 }
 
-func (a viewSetWorkdir) Run() error {
+func (a viewSetWorkdir) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetWorkDir(a.workDir)
 	}
-	return nil
 }
 
 type viewSetVtCols struct {
@@ -615,12 +605,11 @@ type viewSetVtCols struct {
 	cols   int
 }
 
-func (a viewSetVtCols) Run() error {
+func (a viewSetVtCols) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetVtCols(a.cols)
 	}
-	return nil
 }
 
 type viewSrcLoc struct {
@@ -628,14 +617,13 @@ type viewSrcLoc struct {
 	answer chan string
 }
 
-func (a viewSrcLoc) Run() error {
+func (a viewSrcLoc) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil || v.Id() == 0 {
-		a.answer <- fmt.Sprintf("No such view %d", a.viewId)
-		return fmt.Errorf("No such view : %d", a.viewId)
+		a.answer <- ""
+		return
 	}
 	a.answer <- v.Backend().SrcLoc()
-	return nil
 }
 
 type viewStretchSelection struct {
@@ -643,31 +631,27 @@ type viewStretchSelection struct {
 	prevLn, prevCol int
 }
 
-func (a viewStretchSelection) Run() error {
+func (a viewStretchSelection) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.StretchSelection(
+			a.prevLn,
+			v.LineRunesTo(v.Slice(), a.prevLn, a.prevCol),
+			v.CurLine(),
+			v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()),
+		)
 	}
-	v.StretchSelection(
-		a.prevLn,
-		v.LineRunesTo(v.Slice(), a.prevLn, a.prevCol),
-		v.CurLine(),
-		v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()),
-	)
-	return nil
 }
 
 type viewSyncSlice struct {
 	viewId int64
 }
 
-func (a viewSyncSlice) Run() error {
+func (a viewSyncSlice) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.SyncSlice()
 	}
-	v.SyncSlice()
-	return nil
 }
 
 type viewTrim struct {
@@ -679,8 +663,8 @@ type viewUndo struct {
 	viewId int64
 }
 
-func (a viewUndo) Run() error {
-	return Undo(a.viewId)
+func (a viewUndo) Run() {
+	Undo(a.viewId)
 }
 
 func NewViewInsertAction(viewId int64, row, col int, text string, undoable bool) core.Action {

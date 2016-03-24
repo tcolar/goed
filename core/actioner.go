@@ -1,7 +1,7 @@
 package core
 
 type Action interface {
-	Run() error
+	Run()
 }
 
 type ActionDispatcher interface {

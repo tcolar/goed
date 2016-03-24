@@ -19,14 +19,12 @@ type cmdbarEnable struct {
 	_help string
 }
 
-func (a cmdbarEnable) Run() error {
+func (a cmdbarEnable) Run() {
 	core.Ed.SetCmdOn(a.on)
-	return nil
 }
 
 type cmdbarToggle struct{}
 
-func (a cmdbarToggle) Run() error {
+func (a cmdbarToggle) Run() {
 	core.Ed.CmdbarToggle()
-	return nil
 }

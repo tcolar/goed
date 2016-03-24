@@ -1,8 +1,6 @@
 package actions
 
 import (
-	"log"
-
 	"github.com/kr/pretty"
 	"github.com/tcolar/goed/core"
 )
@@ -30,11 +28,7 @@ func (a actionBus) Start() {
 			if core.Trace {
 				pretty.Logln(action)
 			}
-			err := action.Run()
-			if err != nil {
-				core.Ed.SetStatusErr(err.Error())
-				log.Println(err.Error())
-			}
+			action.Run()
 			if core.Trace {
 				pretty.Logln(action)
 			}
@@ -59,7 +53,6 @@ type flushAction struct {
 	c chan (struct{})
 }
 
-func (a flushAction) Run() error {
+func (a flushAction) Run() {
 	a.c <- struct{}{}
-	return nil
 }
