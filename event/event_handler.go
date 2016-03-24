@@ -2,6 +2,7 @@ package event
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -45,15 +46,14 @@ func handleEvent(es *EventState) bool {
 	}
 
 	dirty := false
-	es.inDrag = false
 
 	/*if es.hasMouse() {
 		actions.Ar.ViewClearSelections(curView)
 	}*/
 
 	if et != Evt_None {
-		fmt.Printf("%s %s ln:%d col:%d my:%d mx:%d\n",
-			et, es.String(), y, x, es.MouseY, es.MouseX)
+		fmt.Printf("%s %s ln:%d col:%d my:%d mx:%d - %v\n",
+			et, es.String(), y, x, es.MouseY, es.MouseX, es.inDrag)
 	}
 
 	// TODO : common/termonly//cmdbar/view only
@@ -68,6 +68,11 @@ func handleEvent(es *EventState) bool {
 	// TODO : cmdbar
 	// TODO : shift selections
 	// TODO : mouse select / scroll / drag / drag + scroll
+	// TODO : down/pg_down slection seems buggy too (tabs ?)
+	// TODO : window reixe
+
+	cs := true // clear selections
+
 	switch et {
 	case EvtBackspace:
 		actions.Ar.ViewBackspace(curView)
@@ -137,7 +142,39 @@ func handleEvent(es *EventState) bool {
 		actions.Ar.ViewSave(curView)
 	case EvtSelectAll:
 		actions.Ar.ViewSelectAll(curView)
-	// TODO other selects
+		cs = false
+	case EvtSelectDown:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtDown)
+		actions.Ar.ViewStretchSelection(curView, y, x)
+		cs = false
+	case EvtSelectEnd:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtEnd)
+		actions.Ar.ViewStretchSelection(curView, y, x)
+		cs = false
+	case EvtSelectHome:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtHome)
+		actions.Ar.ViewStretchSelection(curView, y, x)
+		cs = false
+	case EvtSelectLeft:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtLeft)
+		actions.Ar.ViewStretchSelection(curView, y, x)
+		cs = false
+	case EvtSelectPageDown:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtPgDown)
+		actions.Ar.ViewStretchSelection(curView, y, x)
+		cs = false
+	case EvtSelectPageUp:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtPgUp)
+		actions.Ar.ViewStretchSelection(curView, y, x)
+		cs = false
+	case EvtSelectRight:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtRight)
+		actions.Ar.ViewStretchSelection(curView, y, x)
+		cs = false
+	case EvtSelectUp:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtUp)
+		actions.Ar.ViewStretchSelection(curView, y, x)
+		cs = false
 	case EvtSetCursor:
 		actions.Ar.ViewMoveCursorTo(curView, y, x)
 		actions.Ar.EdActivateView(curView)
@@ -159,7 +196,12 @@ func handleEvent(es *EventState) bool {
 			dirty = true
 		}
 	default:
+		log.Println("Unhandled action : " + string(et))
 		actions.Ar.EdSetStatusErr("Unhandled action : " + string(et))
+	}
+
+	if cs {
+		actions.Ar.ViewClearSelections(curView)
 	}
 
 	if dirty {

@@ -53,6 +53,7 @@ func (e *EventState) parseType() {
 
 func (e *EventState) KeyDown(key string) {
 	e.updKey(key, true)
+	e.inDrag = false
 }
 
 func (e *EventState) KeyUp(key string) {
@@ -61,11 +62,18 @@ func (e *EventState) KeyUp(key string) {
 
 func (e *EventState) MouseUp(button, y, x int) {
 	e.MouseBtns[button] = false
+	e.inDrag = false
 }
 
 func (e *EventState) MouseDown(button, y, x int) {
+	if e.MouseBtns[button] && (e.MouseX != x || e.MouseY != y) {
+		e.inDrag = true
+	}
 	e.MouseY, e.MouseX = y, x
 	e.MouseBtns[button] = true
+	if !e.inDrag {
+		e.dragLn, e.dragCol = y, x
+	}
 }
 
 func (e *EventState) updKey(key string, isDown bool) {
