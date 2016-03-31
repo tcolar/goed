@@ -182,7 +182,7 @@ func (b *MemBackend) Insert(row, col int, text string) error {
 }
 
 func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
-	h := core.Ed.Config().SyntaxHighlighting
+	h := core.SyntaxHighlighting()
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if row1 < 0 {

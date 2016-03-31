@@ -367,7 +367,7 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 				// in an interactive program
 				//if v != nil && (rows != v.LastViewLine() || cols != v.LastViewCol()) {
 				// refresh view
-				l, c := actions.Ar.ViewCurPos(b.viewId)
+				l, c := actions.Ar.ViewCursorPos(b.viewId)
 				actions.Ar.ViewMoveCursor(b.viewId, b.line-l, b.col-c)
 				actions.Ar.EdRender()
 			}

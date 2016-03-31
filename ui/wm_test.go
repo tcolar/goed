@@ -51,7 +51,7 @@ func TestWm(t *testing.T) {
 	assert.Equal(t, Ed.ViewByLoc(""), int64(-1))
 	assert.Equal(t, Ed.ViewByLoc(v.Backend().SrcLoc()), v.Id())
 	assert.Equal(t, Ed.CurView(), v)
-	Ed.SetCurView(v2.Id())
+	Ed.ViewActivate(v2.Id())
 	assert.Equal(t, Ed.CurView(), v2)
 
 	Ed.DelView(v2.Id(), true)

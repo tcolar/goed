@@ -10,3 +10,10 @@ func RandString(n int) string {
 	}
 	return string(b)
 }
+
+func SyntaxHighlighting() bool {
+	if Ed != nil {
+		return Ed.Config().SyntaxHighlighting
+	}
+	return false
+}
