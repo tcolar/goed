@@ -33,7 +33,6 @@ type View struct {
 	autoScrollSelect bool
 	viewType         core.ViewType
 	highlighter      core.Highlighter
-	terminated       bool
 }
 
 func (e *Editor) NewView(loc string) *View {
@@ -501,13 +500,6 @@ func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
 
 func (v *View) SetVtCols(cols int) {
 	v.backend.SetVtCols(cols)
-}
-
-func (v *View) Terminated() bool {
-	if v == nil {
-		return true
-	}
-	return v.terminated
 }
 
 func (v *View) ScrollPos() (ln, col int) {
