@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"runtime"
-	"time"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -588,22 +587,14 @@ func (e *Editor) TerminateView(vid int64) {
 	if !found {
 		return
 	}
-	v.terminated = true
+	delete(e.views, vid)
+	// This probably way overkill, but without nugging the GC it tends to not
+	// be very agressive and leave the memory allocated quite a while.
 	if v.backend != nil {
 		v.backend.Close()
 	}
-	go func() {
-		// let actions flush first to prevent the view to be gone before
-		// actions targeted to it have a chance to finish.
-		// Saves from a bunch of nil checks down the line.
-		core.Bus.Flush()
-		time.Sleep(3 * time.Second)
-		v.backend = nil
-		delete(e.views, vid)
-		// This probably way overkill, but without nugging the GC it tends to not
-		// be very agressive and leave the memory allocated quite a while.
-		runtime.GC()
-	}()
+	v.backend = nil
+	runtime.GC()
 	actions.UndoClear(vid)
 }
 
@@ -650,8 +641,9 @@ func (e *Editor) ViewActivate(viewId int64) {
 
 func (e *Editor) ViewById(id int64) core.Viewable {
 	v, found := e.views[id]
-	if !found {
+	if !found || v.Id() < 0 {
 		log.Printf("View not found %v, \n", id)
+		return nil
 	}
 	return v
 }
@@ -663,7 +655,7 @@ func (e *Editor) ViewByLoc(loc string) int64 {
 		return -1
 	}
 	for _, v := range e.views {
-		if v.backend.SrcLoc() == loc {
+		if v != nil && v.backend != nil && v.backend.SrcLoc() == loc {
 			return v.Id()
 		}
 	}
