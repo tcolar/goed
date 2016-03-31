@@ -90,6 +90,14 @@ func d(action core.Action) {
 	core.Bus.Dispatch(action)
 }
 
+func viewExists(vid int64) bool {
+	v := core.Ed.ViewById(vid)
+	if v == nil {
+		return false
+	}
+	return true
+}
+
 func Usage() string {
 	u := ""
 	var keys []string

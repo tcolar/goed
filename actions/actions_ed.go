@@ -120,6 +120,9 @@ type edActivateView struct {
 }
 
 func (a edActivateView) Run() {
+	if !viewExists(a.viewId) {
+		return
+	}
 	core.Ed.ViewActivate(a.viewId)
 }
 
@@ -147,6 +150,9 @@ type edDelView struct {
 }
 
 func (a edDelView) Run() {
+	if !viewExists(a.viewId) {
+		return
+	}
 	if a.check {
 		core.Ed.DelViewCheck(a.viewId, a.terminate)
 	} else {
@@ -223,6 +229,12 @@ type edSwapViews struct {
 }
 
 func (a edSwapViews) Run() {
+	if !viewExists(a.view1Id) {
+		return
+	}
+	if !viewExists(a.view2Id) {
+		return
+	}
 	core.Ed.SwapViews(a.view1Id, a.view2Id)
 }
 
@@ -268,6 +280,9 @@ type edViewMove struct {
 }
 
 func (a edViewMove) Run() {
+	if !viewExists(a.viewId) {
+		return
+	}
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		core.Ed.ViewMove(a.y1, a.x1, a.y2, a.x2)
