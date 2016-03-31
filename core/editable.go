@@ -45,4 +45,5 @@ type Editable interface {
 	ViewMove(y1, x1, y2, x2 int)
 	// Navigate from a view to another
 	ViewNavigate(mvmt CursorMvmt)
+	Views() []int64 // list of all opened views
 }

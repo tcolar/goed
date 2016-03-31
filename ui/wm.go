@@ -678,3 +678,10 @@ func (e *Editor) SwapViews(vv1, vv2 int64) {
 	v1.y1, v1.x1, v2.y1, v2.x1 = v2.y1, v2.x1, v1.y1, v1.x1
 	v1.y2, v1.x2, v2.y2, v2.x2 = v2.y2, v2.x2, v1.y2, v1.x2
 }
+
+func (e *Editor) Views() (views []int64) {
+	for vid, _ := range e.views {
+		views = append(views, vid)
+	}
+	return views
+}

@@ -113,6 +113,13 @@ func (a *ar) EdViewNavigate(mvmt core.CursorMvmt) {
 	d(edViewNavigate{mvmt})
 }
 
+// return a space separated list of currently opened views (viewids)
+func (a *ar) EdViews() string {
+	answer := make(chan (string), 1)
+	d(edViews{answer: answer})
+	return <-answer
+}
+
 // ########  Impl ......
 
 type edActivateView struct {
@@ -295,4 +302,18 @@ type edViewNavigate struct {
 
 func (a edViewNavigate) Run() {
 	core.Ed.ViewNavigate(a.mvmt)
+}
+
+type edViews struct {
+	answer chan string
+}
+
+func (a edViews) Run() {
+	answer := ""
+	space := ""
+	for _, v := range core.Ed.Views() {
+		answer = fmt.Sprintf("%s%s%d", space, answer, v)
+		space = " "
+	}
+	a.answer <- answer
 }
