@@ -202,6 +202,10 @@ type edSetStatus struct {
 }
 
 func (a edSetStatus) Run() {
+	if core.Testing {
+		fmt.Println(a.status)
+		return
+	}
 	if a.err {
 		core.Ed.SetStatusErr(a.status)
 	} else {

@@ -7,6 +7,12 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+func init() {
+	core.Testing = true
+	core.Bus = NewActionBus()
+	go core.Bus.Start()
+}
+
 func TestUndo(t *testing.T) {
 	b := core.Bus
 	i := 7
