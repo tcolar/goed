@@ -16,11 +16,10 @@ import (
 	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/ui"
-	"gopkg.in/alecthomas/kingpin.v1"
+	kingpin "gopkg.in/alecthomas/kingpin.v1"
 )
 
 var (
-	app     = kingpin.New("goed", "A code editor")
 	gui     = kingpin.Flag("g", "Star in GUI mode..").Default("false").Bool()
 	test    = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
 	colors  = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()

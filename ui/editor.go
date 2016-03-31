@@ -18,19 +18,18 @@ import (
 
 // Editor is goed's main Editor pane (singleton)
 type Editor struct {
-	Cmdbar     *Cmdbar
-	config     *core.Config
-	Statusbar  *Statusbar
-	Fg, Bg     core.Style
-	theme      *core.Theme
-	Cols       []*Col
-	curViewId  int64
-	CurCol     *Col
-	cmdOn      bool
-	pctw, pcth float64
-	evtState   *EvtState
-	term       core.Term
-	views      map[int64]*View
+	Cmdbar    *Cmdbar
+	config    *core.Config
+	Statusbar *Statusbar
+	Fg, Bg    core.Style
+	theme     *core.Theme
+	Cols      []*Col
+	curViewId int64
+	CurCol    *Col
+	cmdOn     bool
+	evtState  *EvtState
+	term      core.Term
+	views     map[int64]*View
 }
 
 func NewEditor(gui bool) *Editor {

@@ -15,8 +15,7 @@ func (a *ar) CmdbarToggle() {
 // ########  Impl ......
 
 type cmdbarEnable struct {
-	on    bool
-	_help string
+	on bool
 }
 
 func (a cmdbarEnable) Run() {

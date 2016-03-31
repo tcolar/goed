@@ -665,11 +665,6 @@ func (a viewSyncSlice) Run() {
 	}
 }
 
-type viewTrim struct {
-	viewId int64
-	limit  int
-}
-
 type viewUndo struct {
 	viewId int64
 }
