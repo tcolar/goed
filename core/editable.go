@@ -8,7 +8,7 @@ type Editable interface {
 	CurViewId() int64
 	DelColByIndex(col int, check bool)
 	DelView(viewId int64, terminate bool)
-	DelViewByIndex(viewId int64, check bool)
+	DelViewCheck(viewId int64, terminate bool)
 	Dispatch(action Action)
 	// CmdOn indicates whether the CommandBar is currently active
 	CmdOn() bool

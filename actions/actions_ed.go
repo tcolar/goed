@@ -29,7 +29,7 @@ func (a *ar) EdDelCol(colIndex int, check bool) {
 // if 'check' is true it will check if dirty first, in which case it will do nothing
 // unless called twice in a row.
 func (a *ar) EdDelView(viewId int64, check bool) {
-	d(edDelView{viewId: viewId, check: check})
+	d(edDelView{viewId: viewId, check: check, terminate: true})
 }
 
 // Open a file/dir(loc) in the editor
@@ -141,12 +141,17 @@ func (a edDelCol) Run() {
 }
 
 type edDelView struct {
-	viewId int64
-	check  bool
+	viewId    int64
+	check     bool
+	terminate bool
 }
 
 func (a edDelView) Run() {
-	core.Ed.DelViewByIndex(a.viewId, a.check)
+	if a.check {
+		core.Ed.DelViewCheck(a.viewId, a.terminate)
+	} else {
+		core.Ed.DelView(a.viewId, a.terminate)
+	}
 }
 
 type edOpen struct {

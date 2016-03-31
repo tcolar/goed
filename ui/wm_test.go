@@ -76,9 +76,9 @@ func TestWm(t *testing.T) {
 	assert.Equal(t, Ed.WidgetAt(20, 30), v2)
 
 	v3.SetDirty(true)
-	Ed.DelView(v3.Id(), true)
+	Ed.DelViewCheck(v3.Id(), true)
 	assert.Equal(t, len(c2.Views), 2) // dirty disallow it
-	Ed.DelView(v3.Id(), true)
+	Ed.DelViewCheck(v3.Id(), true)
 	assert.Equal(t, len(c2.Views), 1) // allowed second time
 	assert.Equal(t, len(Ed.Cols), 2)
 

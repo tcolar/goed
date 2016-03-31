@@ -607,17 +607,17 @@ func (e *Editor) TerminateView(vid int64) {
 	actions.UndoClear(vid)
 }
 
-// Delete (close) a view, dirty check optional
-func (e *Editor) DelViewByIndex(viewId int64, check bool) {
+// Delete (close) a view, with dirty check
+func (e *Editor) DelViewCheck(viewId int64, terminate bool) {
 	view := e.ViewById(viewId).(*View)
 	if view == nil {
 		return
 	}
-	if check && !view.canClose() {
+	if !view.canClose() {
 		e.SetStatusErr("Unsaved changes. Save or request close again.")
 		return
 	}
-	e.DelView(view.Id(), true)
+	e.DelView(view.Id(), terminate)
 }
 
 // Delete (close) a col, but with dirty check
