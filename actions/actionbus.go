@@ -1,7 +1,8 @@
 package actions
 
 import (
-	"github.com/kr/pretty"
+	"log"
+
 	"github.com/tcolar/goed/core"
 )
 
@@ -26,11 +27,11 @@ func (a actionBus) Start() {
 		select {
 		case action := <-a.actionChan:
 			if core.Trace {
-				pretty.Logln(action)
+				log.Printf("%#v", action)
 			}
 			action.Run()
 			if core.Trace {
-				pretty.Logln(action)
+				log.Printf("%#v", action)
 			}
 		case <-a.quitc:
 			break
