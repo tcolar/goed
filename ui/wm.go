@@ -68,7 +68,7 @@ func (e *Editor) Render() {
 	}
 
 	// cursor
-	v := e.CurView().(*View)
+	v := viewCast(e.CurView())
 	cc, cl := v.CurCol(), v.CurLine()
 	c, _, _ := v.CurChar()
 	// With some terminals & color schemes the cursor might be "invisible" if we are at a
@@ -148,8 +148,8 @@ func (e *Editor) Resize(height, width int) {
 // ViewMove handles moving & resizing views/columns, typically using the mouse
 func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 	h, w := e.term.Size()
-	v1 := e.WidgetAt(y1, x1).(*View)
-	v2 := e.WidgetAt(y2, x2).(*View)
+	v1 := widgetCast(e.WidgetAt(y1, x1))
+	v2 := widgetCast(e.WidgetAt(y2, x2))
 	c1 := e.ViewColumn(v1.Id())
 	c2 := e.ViewColumn(v2.Id())
 	c1i := e.ColIndex(c1)
@@ -279,7 +279,7 @@ func (e *Editor) ColIndex(col *Col) int {
 
 // ViewNavigate navigates from he current view (left, right, up, down)
 func (e *Editor) ViewNavigate(mvmt core.CursorMvmt) {
-	v := e.CurView().(*View)
+	v := viewCast(e.CurView())
 	if v == nil {
 		return
 	}
@@ -600,7 +600,7 @@ func (e *Editor) TerminateView(vid int64) {
 
 // Delete (close) a view, with dirty check
 func (e *Editor) DelViewCheck(viewId int64, terminate bool) {
-	view := e.ViewById(viewId).(*View)
+	view := viewCast(e.ViewById(viewId))
 	if view == nil {
 		return
 	}
@@ -629,7 +629,7 @@ func (e *Editor) DelColCheck(c *Col) {
 }
 
 func (e *Editor) ViewActivate(viewId int64) {
-	v := e.ViewById(viewId).(*View)
+	v := viewCast(e.ViewById(viewId))
 	if v == nil {
 		return
 	}
@@ -664,8 +664,8 @@ func (e *Editor) ViewByLoc(loc string) int64 {
 
 // SwapView swaps 2 views (UI wise)
 func (e *Editor) SwapViews(vv1, vv2 int64) {
-	v1 := e.ViewById(vv1).(*View)
-	v2 := e.ViewById(vv2).(*View)
+	v1 := viewCast(e.ViewById(vv1))
+	v2 := viewCast(e.ViewById(vv2))
 	if v1 == nil || v2 == nil {
 		return
 	}

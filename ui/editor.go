@@ -188,9 +188,9 @@ func (e *Editor) Open(loc string, viewId int64, rel string, create bool) (int64,
 	}
 	if nv {
 		if stat != nil && stat.IsDir() {
-			e.AddDirViewSmart(view.(*View))
+			e.AddDirViewSmart(viewCast(view))
 		} else {
-			e.InsertViewSmart(view.(*View))
+			e.InsertViewSmart(viewCast(view))
 		}
 	}
 	view.Reset()
@@ -200,7 +200,11 @@ func (e *Editor) Open(loc string, viewId int64, rel string, create bool) (int64,
 
 // OpenDir opens a directory listing
 func (e *Editor) openDir(loc string, view core.Viewable) error {
-	view.(*View).highlighter = &TermHighlighter{}
+	v := viewCast(view)
+	if v == nil {
+		return fmt.Errorf("No such view")
+	}
+	v.highlighter = &TermHighlighter{}
 	args := append([]string{"ls"}, core.OsLsArgs...)
 	title := filepath.Base(loc) + "/"
 	backend, err := backend.NewMemBackendCmd(args, loc, view.Id(), &title, true)
@@ -295,7 +299,10 @@ func (e *Editor) QuitCheck() bool {
 
 func (e *Editor) StartTermView(args []string) int64 {
 	vid := exec(args, true)
-	v := core.Ed.ViewById(vid).(*View)
+	v := viewCast(core.Ed.ViewById(vid))
+	if v == nil || v.backend == nil {
+		return -1
+	}
 	b := v.backend.(*backend.BackendCmd)
 	time.Sleep(500 * time.Millisecond)
 	ext := ".sh"
@@ -321,7 +328,7 @@ type autoScrollAction struct {
 }
 
 func (e autoScrollAction) Run() {
-	v := core.Ed.ViewById(core.Ed.CurViewId()).(*View)
+	v := viewCast(core.Ed.ViewById(core.Ed.CurViewId()))
 	if v == nil {
 		return
 	}
@@ -385,4 +392,19 @@ func (e autoScrollAction) Run() {
 		s,
 	}
 	core.Ed.Render()
+}
+
+// TODO: Do away with those ugly assertions
+func viewCast(v core.Viewable) *View {
+	if v == nil {
+		return nil
+	}
+	return v.(*View)
+}
+
+func widgetCast(w Renderer) *View {
+	if w == nil {
+		return nil
+	}
+	return w.(*View)
 }

@@ -19,7 +19,7 @@ func TestWm(t *testing.T) {
 	}
 	v = Ed.ViewById(Ed.Cols[0].Views[0])
 	Ed.views = map[int64]*View{}
-	Ed.views[v.Id()] = v.(*View)
+	Ed.views[v.Id()] = viewCast(v)
 
 	assert.Equal(t, len(Ed.Cols), 1)
 	c := Ed.Cols[0]
@@ -32,7 +32,7 @@ func TestWm(t *testing.T) {
 	assert.Equal(t, len(c.Views), 1)
 
 	v2 = Ed.NewFileView("../test_data/no_eol.txt")
-	Ed.InsertView(v2.(*View), v.(*View), 0.5)
+	Ed.InsertView(viewCast(v2), viewCast(v), 0.5)
 	assert.Equal(t, len(c.Views), 2)
 	assertBounds(t, v, 1, 0, 11, 49)
 	assertBounds(t, v2, 12, 0, 23, 49)
@@ -66,12 +66,12 @@ func TestWm(t *testing.T) {
 	assert.Equal(t, len(c2.Views), 1)
 	assertBounds(t, v, 1, 0, 23, 24)
 	assertBounds(t, v2, 1, 25, 23, 49)
-	v3 := Ed.AddView(v2.(*View), 0.5)
+	v3 := Ed.AddView(viewCast(v2), 0.5)
 	assert.Equal(t, len(Ed.Cols), 2)
 	assert.Equal(t, len(c2.Views), 2)
 	assert.Equal(t, Ed.WidgetAt(2, 30), v2)
 	assert.Equal(t, Ed.WidgetAt(20, 30), v3)
-	Ed.ViewMove(v2.(*View).y1, v2.(*View).x1, v3.y1+5, v2.(*View).x1)
+	Ed.ViewMove(viewCast(v2).y1, viewCast(v2).x1, v3.y1+5, viewCast(v2).x1)
 	assert.Equal(t, Ed.WidgetAt(2, 30), v3)
 	assert.Equal(t, Ed.WidgetAt(20, 30), v2)
 

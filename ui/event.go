@@ -49,7 +49,7 @@ func (e *Editor) EventLoop() {
 			// TODO: for terminal view, tell terminal about new size
 		case termbox.EventKey:
 			// Special case for terminal/command views, pass most keystrokes through
-			v := e.CurView().(*View)
+			v := viewCast(e.CurView())
 			if v != nil && v.viewType == core.ViewTypeInteractive {
 				v.TermEvent(e, &ev)
 				break
@@ -63,7 +63,7 @@ func (e *Editor) EventLoop() {
 				if e.cmdOn {
 					e.Cmdbar.Event(e, &ev)
 				} else if e.CurView != nil {
-					e.CurView().(*View).Event(e, &ev)
+					viewCast(e.CurView()).Event(e, &ev)
 				}
 			}
 		case termbox.EventMouse:
