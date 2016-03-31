@@ -1,12 +1,13 @@
-package api
+package client
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tcolar/goed/actions"
-	"github.com/tcolar/goed/api/client"
+	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/ui"
 )
@@ -19,25 +20,28 @@ func init() {
 	core.InitHome(id)
 	core.Ed = ui.NewMockEditor()
 	core.Bus = actions.NewActionBus()
+	actions.RegisterActions()
+	apiServer := api.Api{}
+	apiServer.Start()
 	go core.Bus.Start()
 	core.Ed.Start([]string{"../test_data/file1.txt"})
 }
 
 func TestApi(t *testing.T) {
 	defer core.Cleanup()
+	ed := core.Ed
 
-	api := Api{}
-	api.Start()
+	inst := core.InstanceId
 
-	version, err := client.ApiVersion(id)
+	res, err := Action(inst, []string{"fuzz"})
+	assert.NotNil(t, err)
+
+	res, err = Action(inst, []string{"cmdbar_enable", "true"})
 	assert.Nil(t, err)
-	assert.Equal(t, core.ApiVersion, version, "api_version")
+	assert.True(t, ed.CmdOn())
 
+	fmt.Println(res)
 	/*
-		body, err = get("/v1/version")
-		assert.Nil(t, err)
-		assert.Equal(t, core.Version, body, "version")
-
 		body, err = get("/v1/cur_view")
 		assert.Nil(t, err)
 		assert.Equal(t, body, "1")
