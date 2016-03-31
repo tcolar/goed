@@ -1,7 +1,7 @@
 package client
 
 import (
-	"fmt"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -13,12 +13,14 @@ import (
 )
 
 var id int64
+var ed core.Editable
 
 func init() {
 	id = time.Now().Unix()
 	core.Testing = true
 	core.InitHome(id)
 	core.Ed = ui.NewMockEditor()
+	ed = core.Ed
 	core.Bus = actions.NewActionBus()
 	actions.RegisterActions()
 	apiServer := api.Api{}
@@ -27,57 +29,65 @@ func init() {
 	core.Ed.Start([]string{"../test_data/file1.txt"})
 }
 
-func TestApi(t *testing.T) {
-	defer core.Cleanup()
-	ed := core.Ed
+func TestCmdBarEnable(t *testing.T) {
 
-	inst := core.InstanceId
-
-	res, err := Action(inst, []string{"fuzz"})
+	res, err := Action(id, []string{"foobar"})
 	assert.NotNil(t, err)
 
-	res, err = Action(inst, []string{"cmdbar_enable", "true"})
+	res, err = Action(id, []string{"cmdbar_enable", "true"})
 	assert.Nil(t, err)
 	assert.True(t, ed.CmdOn())
 
-	fmt.Println(res)
-	/*
-		body, err = get("/v1/cur_view")
-		assert.Nil(t, err)
-		assert.Equal(t, body, "1")
+	res, err = Action(id, []string{"cmdbar_enable", "false"})
+	assert.Nil(t, err)
+	assert.False(t, ed.CmdOn())
 
-		body, err = get("/v1/view/1/title")
-		assert.Nil(t, err)
-		assert.Equal(t, body, "file1.txt")
+	assert.Equal(t, len(res), 0)
+}
 
-		body, err = get("/v1/view/1/workdir")
-		assert.Nil(t, err)
-		d, _ := filepath.Abs("../test_data")
-		assert.Equal(t, body, d)
+func TestCmdBarToggle(t *testing.T) {
+	res, err := Action(id, []string{"cmdbar_toggle"})
+	assert.Nil(t, err)
+	assert.True(t, ed.CmdOn())
 
-		body, err = get("/v1/view/1/src_loc")
-		p, _ := filepath.Abs("../test_data/file1.txt")
-		assert.Nil(t, err)
-		assert.Equal(t, body, p)
+	res, err = Action(id, []string{"cmdbar_toggle"})
+	assert.Nil(t, err)
+	assert.False(t, ed.CmdOn())
 
-		body, err = get("/v1/view/1/dirty")
-		assert.Nil(t, err)
-		assert.Equal(t, body, "0")
+	assert.Equal(t, len(res), 0)
+}
 
-		body, err = get("/v1/view/1/selections")
-		assert.Nil(t, err)
-		assert.Equal(t, body, "")
+func TestOpen(t *testing.T) {
+	err := Open(id, "test_data", "empty.txt")
+	assert.Nil(t, err)
+	loc, _ := filepath.Abs("./test_data/empty.txt")
+	vid := ed.ViewByLoc(loc)
+	assert.NotEqual(t, vid, "-1")
+	ed.DelView(vid, true)
+}
 
-		s := core.Ed.CurView().Selections()
-		sel := core.NewSelection(0, 0, 1, 9)
-		sel2 := core.NewSelection(2, 2, 4, 5)
-		*s = append(*s, *sel, *sel2)
-		body, err = get("/v1/view/1/selections")
+func TestEdit(t *testing.T) {
+	done := false
+	completed := make(chan struct{})
+	go func() {
+		err := Edit(id, "test_data", "fooedit")
+		done = true
 		assert.Nil(t, err)
-		assert.Equal(t, body, "0 0 1 9\n2 2 4 5\n")
-
-		body, err = get("/v1/view/1/line_count")
-		assert.Nil(t, err)
-		assert.Equal(t, body, "12")
-	*/
+		close(completed)
+	}()
+	vid := int64(-1)
+	// view should open up and stay open until the view is closed
+	// at which time the open action should be completed
+	loc, _ := filepath.Abs("./test_data/fooedit")
+	for vid == -1 {
+		vid = ed.ViewByLoc(loc)
+		time.Sleep(100 * time.Millisecond)
+	}
+	assert.False(t, done)
+	ed.DelView(vid, true)
+	select {
+	case <-time.After(5 * time.Second):
+		assert.Fail(t, "timeout waiting for edit to complete.")
+	case <-completed: // good
+	}
 }
