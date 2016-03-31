@@ -119,7 +119,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	es := false //expand selection
 	vid := v.Id()
 	actions.Ar.ViewAutoScroll(vid, 0, 0, false)
-	ln, col := actions.Ar.ViewCurPos(vid)
+	ln, col := actions.Ar.ViewCursorCoords(vid)
 	e.evtState.InDrag = false
 
 	if v.viewCommonEvent(e, ev) {
@@ -259,7 +259,7 @@ func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
 	e.evtState.InDrag = false
 	bc := v.backend.(*backend.BackendCmd)
 	es := false
-	ln, col := actions.Ar.ViewCurPos(vid)
+	ln, col := actions.Ar.ViewCursorCoords(vid)
 
 	if v.viewCommonEvent(e, ev) {
 		return
@@ -418,7 +418,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			if !e.evtState.InDrag {
 				e.evtState.InDrag = true
 				actions.Ar.ViewClearSelections(vid)
-				actions.Ar.ViewSetCursor(vid, e.evtState.DragLn, e.evtState.DragCol)
+				actions.Ar.ViewSetCursorPos(vid, e.evtState.DragLn, e.evtState.DragCol)
 				actions.Ar.EdActivateView(vid)
 			}
 			// continued drag
@@ -455,7 +455,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			}
 			if !e.evtState.InDrag {
 				actions.Ar.ViewClearSelections(vid)
-				actions.Ar.ViewSetCursor(vid, ln, col)
+				actions.Ar.ViewSetCursorPos(vid, ln, col)
 				actions.Ar.EdActivateView(vid)
 				e.evtState.LastLeftClick = time.Now().Unix()
 				e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY

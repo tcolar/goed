@@ -18,7 +18,7 @@ import (
 
 // Action runner, all actions are defined on this type
 // AFAIK need to be on a type for easy reflection (go/importer may help ??)
-var Ar *ar
+var Ar *ar = &ar{}
 
 func Exec(action string, args []string) (res []string, err error) {
 	proto, ok := actions[action]

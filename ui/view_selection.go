@@ -204,7 +204,6 @@ func (v *View) StretchSelection(prevl, prevc, l, c int) {
 	}
 	s.LineFrom, s.LineTo, s.ColFrom, s.ColTo = prevl, l, prevc, c
 	s.Normalize()
-	fmt.Println(s)
 }
 
 // Open what's selected or under the cursor

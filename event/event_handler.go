@@ -35,7 +35,7 @@ func handleEvent(es *EventState) bool {
 	curView := actions.Ar.EdCurView()
 	actions.Ar.ViewAutoScroll(curView, 0, 0, false)
 
-	y, x := actions.Ar.ViewCurPos(curView)
+	y, x := actions.Ar.ViewCursorCoords(curView)
 
 	if es.hasMouse() {
 		curView, y, x = actions.Ar.EdViewAt(es.MouseY, es.MouseX)
@@ -45,11 +45,14 @@ func handleEvent(es *EventState) bool {
 		return false
 	}
 
+	col := 0
+	//	col := actions.Ar.ViewLineRunesTo(curView, y, x)
+
 	dirty := false
 
 	if et != Evt_None {
-		fmt.Printf("%s %s ln:%d col:%d my:%d mx:%d - %v\n",
-			et, es.String(), y, x, es.MouseY, es.MouseX, es.inDrag)
+		fmt.Printf("%s %s ln:%d col:%d(%d) my:%d mx:%d - %v\n",
+			et, es.String(), y, x, col, es.MouseY, es.MouseX, es.inDrag)
 	}
 
 	// TODO : common/termonly//cmdbar/view only
@@ -112,10 +115,10 @@ func handleEvent(es *EventState) bool {
 	case EvtNavUp:
 		actions.Ar.EdViewNavigate(core.CursorMvmtUp)
 	case EvtOpenInNewView:
-		actions.Ar.ViewMoveCursorTo(curView, y, x)
+		actions.Ar.ViewSetCursorPos(curView, y, x)
 		actions.Ar.ViewOpenSelection(curView, true)
 	case EvtOpenInSameView:
-		actions.Ar.ViewMoveCursorTo(curView, y, x)
+		actions.Ar.ViewSetCursorPos(curView, y, x)
 		actions.Ar.ViewOpenSelection(curView, false)
 	case EvtOpenTerm:
 		v := actions.Ar.EdOpenTerm([]string{core.Terminal})
@@ -158,7 +161,7 @@ func handleEvent(es *EventState) bool {
 		actions.Ar.ViewStretchSelection(curView, y, x)
 		cs = false
 	case EvtSelectMouse:
-		actions.Ar.ViewMoveCursorTo(curView, y, x)
+		actions.Ar.ViewSetCursorPos(curView, y, x)
 		actions.Ar.ViewStretchSelection(curView, es.dragLn, es.dragCol)
 		cs = false
 	case EvtSelectPageDown:
@@ -178,7 +181,7 @@ func handleEvent(es *EventState) bool {
 		actions.Ar.ViewStretchSelection(curView, y, x)
 		cs = false
 	case EvtSetCursor:
-		actions.Ar.ViewMoveCursorTo(curView, y, x)
+		actions.Ar.ViewSetCursorPos(curView, y, x)
 		actions.Ar.EdActivateView(curView)
 	case EvtTab:
 		actions.Ar.ViewInsertCur(curView, "\t")

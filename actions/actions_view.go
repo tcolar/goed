@@ -56,9 +56,16 @@ func (a *ar) ViewCut(viewId int64) {
 }
 
 // return the current cursor UI position in the view
-func (a *ar) ViewCurPos(viewId int64) (y, x int) {
+func (a *ar) ViewCursorCoords(viewId int64) (y, x int) {
 	answer := make(chan int, 2)
-	d(viewCurPos{viewId: viewId, answer: answer})
+	d(viewCursorCoords{viewId: viewId, answer: answer})
+	return <-answer, <-answer
+}
+
+// return the current cursor text position in the view
+func (a *ar) ViewCursorPos(viewId int64) (y, x int) {
+	answer := make(chan int, 2)
+	d(viewCursorPos{viewId: viewId, answer: answer})
 	return <-answer, <-answer
 }
 
@@ -100,11 +107,6 @@ func (a *ar) ViewMoveCursor(viewId int64, y, x int) {
 // move the cursor by y,x runes (relative) but also "roll" to rev/next line as needed.
 func (a *ar) ViewMoveCursorRoll(viewId int64, y, x int) {
 	d(viewMoveCursor{viewId: viewId, x: x, y: y, roll: true})
-}
-
-// move the cursor to the given position, scroll as needed
-func (a *ar) ViewMoveCursorTo(viewId int64, y, x int) {
-	d(viewMoveCursorTo{viewId: viewId, x: x, y: y})
 }
 
 // paste text into the view at the curent location
@@ -150,8 +152,9 @@ func (a *ar) ViewSelectAll(viewId int64) {
 	d(viewSelectAll{viewId: viewId})
 }
 
-func (a *ar) ViewSetCursor(viewId int64, y, x int) {
-	d(viewSetCursor{viewId: viewId, y: y, x: x})
+// move the cursor to the given text position, scroll as needed
+func (a *ar) ViewSetCursorPos(viewId int64, y, x int) {
+	d(viewSetCursorPos{viewId: viewId, y: y, x: x})
 }
 
 // mark the view "dirty" or not (ie: modified, unsaved)
@@ -320,12 +323,12 @@ func (a viewCopy) Run() {
 	}
 }
 
-type viewCurPos struct {
+type viewCursorCoords struct {
 	answer chan int
 	viewId int64
 }
 
-func (a viewCurPos) Run() {
+func (a viewCursorCoords) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		a.answer <- 0
@@ -334,6 +337,22 @@ func (a viewCurPos) Run() {
 	}
 	a.answer <- v.CurLine()
 	a.answer <- v.CurCol()
+}
+
+type viewCursorPos struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewCursorPos) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 0
+		a.answer <- 0
+		return
+	}
+	a.answer <- v.CurLine()
+	a.answer <- v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol())
 }
 
 type viewCursorMvmt struct {
@@ -436,20 +455,6 @@ func (a viewMoveCursor) Run() {
 	} else {
 		v.MoveCursor(a.y, a.x)
 	}
-}
-
-type viewMoveCursorTo struct {
-	viewId int64
-	y, x   int
-}
-
-func (a viewMoveCursorTo) Run() {
-	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return
-	}
-	y, x := v.CurLine(), v.CurCol()
-	v.MoveCursor(a.y-y, a.x-x)
 }
 
 type viewOpenSelection struct {
@@ -556,12 +561,12 @@ func (a viewSelectAll) Run() {
 	}
 }
 
-type viewSetCursor struct {
+type viewSetCursorPos struct {
 	viewId int64
 	y, x   int
 }
 
-func (a viewSetCursor) Run() {
+func (a viewSetCursorPos) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.MoveCursor(a.y-v.CurLine(), a.x-v.CurCol())
