@@ -57,15 +57,16 @@ func (r *GoedRpc) Open(args []interface{}, _ *struct{}) error {
 }
 
 func (r *GoedRpc) Edit(args []interface{}, _ *struct{}) error {
-	curView := actions.Ar.EdCurView()
+	prevView := actions.Ar.EdCurView()
 	vid := actions.Ar.EdOpen(args[1].(string), -1, args[0].(string), true)
 	actions.Ar.EdActivateView(vid)
 	actions.Ar.EdRender()
 	// Wait til file closed
 	for {
 		v := core.Ed.ViewById(vid)
-		if v.Terminated() {
-			actions.Ar.EdActivateView(curView)
+		if v == nil {
+			// switch back to the original view
+			actions.Ar.EdActivateView(prevView)
 			actions.Ar.EdRender()
 			return nil
 		}
