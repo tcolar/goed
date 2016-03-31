@@ -12,7 +12,7 @@ func RandString(n int) string {
 }
 
 func SyntaxHighlighting() bool {
-	if Ed != nil {
+	if Ed != nil && !Testing {
 		return Ed.Config().SyntaxHighlighting
 	}
 	return false
