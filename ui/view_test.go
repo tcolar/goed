@@ -25,7 +25,6 @@ func TestView(t *testing.T) {
 
 	assertCursor(t, v, 0, 0, 0, 0, "mc")
 	assert.True(t, strings.HasSuffix(v.backend.SrcLoc(), "/test_data/file1.txt"), fmt.Sprintf("srcloc %s", v.backend.SrcLoc()))
-	fmt.Println(v.workDir)
 	assert.True(t, strings.HasSuffix(v.workDir, "/test_data"), fmt.Sprintf("workdir %s", v.workDir))
 	assert.False(t, v.Dirty(), "dirty")
 	assert.Equal(t, v.Title(), "file1.txt")
@@ -53,7 +52,6 @@ func TestView(t *testing.T) {
 	assert.Equal(t, v.strSize("a\tb\tc"), 3+2*tabSize, "strSize2")
 	v.MoveCursor(0, 0)
 	assertCursor(t, v, 0, 0, 0, 0, "mc1")
-	//cursortextpos
 	v.MoveCursor(0, 5)
 	assertCursor(t, v, 0, 5, 0, 0, "mc2")
 	c, y, x = v.CurChar()
@@ -83,7 +81,6 @@ func TestView(t *testing.T) {
 	assertCursor(t, v, 1, 0, 0, 0, "mc11")
 	v.MoveCursorRoll(0, -2)
 	assertCursor(t, v, 0, 10, 0, 0, "mc11")
-
 }
 
 func assertCursor(t *testing.T, v *View, y, x, offsetY, offsetX int, msg string) {
@@ -215,42 +212,43 @@ func TestDelete(t *testing.T) {
 	v.slice = v.backend.Slice(v.offy, v.offx, v.offy+v.LastViewLine(), v.offx+v.LastViewCol())
 
 	v.Insert(0, 0, "ab\ncd\nef", true)
-	s := core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	s := core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "ab\ncd\nef")
 	// backspace edge cases
-	v.CursorX = 3
-	v.CursorY = 0
+	v.CursorX = 0
+	v.CursorY = 1
 	v.Backspace()
-	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	s = core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "abcd\nef")
 	v.CursorX = 0
 	v.CursorY = 0
 	v.Backspace()
-	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	s = core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "abcd\nef")
 	// delete edge cases
 	v.CursorX = 5
 	v.CursorY = 0
 	v.DeleteCur()
-	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	s = core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "abcdef")
 	v.CursorX = 7
 	v.CursorY = 0
 	v.DeleteCur()
-	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	s = core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "abcdef")
 	v.Delete(0, 0, 0, 5, true)
-	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	v.SyncSlice()
+	s = core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "")
 	v.DeleteCur() // check no panic
 	v.Backspace() // check no panic
-	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	s = core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "")
 
 	_, err = Ed.Open("../test_data/no_eol.txt", v.Id(), "", false)
 	assert.Nil(t, err, "open")
 	v.slice = v.backend.Slice(v.offy, v.offx, v.offy+v.LastViewLine(), v.offx+v.LastViewCol())
-	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	s = core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "abc\n123\nz")
 	v.MoveCursor(-100, -100)
 	assert.Equal(t, v.CurLine(), 0)
@@ -262,14 +260,13 @@ func TestDelete(t *testing.T) {
 	assert.Equal(t, v.CursorY, 2)
 	assert.Equal(t, v.CursorX, 1)
 	v.InsertCur("Z")
-	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	s = core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "abc\n123\nzZ")
 	v.MoveCursorRoll(0, -1)
 	v.InsertCur("A")
 	v.InsertCur("B")
-	s = core.RunesToString(*v.backend.Slice(0, 0, 10, 10).Text())
+	s = core.RunesToString(*v.slice.Text())
 	assert.Equal(t, s, "abc\n123\nzABZ")
-
 }
 
 func testChar(t *testing.T, v *View, y, x int, c rune) {

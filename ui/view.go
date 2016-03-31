@@ -248,8 +248,7 @@ func (v *View) MoveCursorRoll(y, x int) {
 		y--
 		x = v.lineCols(slice, curLine+y) - curCol
 	} else if curCol+x > ln {
-		ln = v.lineCols(slice, curLine+y)
-		if y == 0 && curLine+y <= lastLine {
+		if y == 0 && curLine+y < lastLine {
 			// moved (right) passed eol, wrap to beginning of next line
 			x = -curCol
 			y++
@@ -284,9 +283,11 @@ func (v *View) MoveCursor(y, x int) {
 		x = -curCol
 	}
 
-	// sync up slice with any vertical scrolling
-	v.slice = v.backend.Slice(v.CurLine()+y, 0, v.CurLine()+y+v.LastViewLine(), -1)
+	// slice for the area we will be in after scrolling
 	slice := v.slice
+	if v.CurLine()+y > slice.R2 || v.CurLine()+y < slice.R1 {
+		slice = v.backend.Slice(v.CurLine()+y, 0, v.CurLine()+y+v.LastViewLine(), -1)
+	}
 
 	ln := v.lineCols(slice, curLine+y)
 	if curCol+x > ln {
