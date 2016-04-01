@@ -19,7 +19,6 @@ type Editable interface {
 	// Render updates the whole editor UI
 	Render()
 	Resize(h, w int)
-	StartTermView(args []string) int64
 	// SetStatusErr displays an error message in the status bar
 	SetStatusErr(err string)
 	// SetStatusErr displays a message in the status bar
@@ -27,6 +26,8 @@ type Editable interface {
 	SetCursor(y, x int)
 	// SetCmdOn activates or desactives the CommandBar
 	SetCmdOn(v bool)
+	Size() (h, w int)
+	StartTermView(args []string) int64
 	SwapViews(v1, v2 int64)
 	Start(locs []string)
 	TermChar(y, x int, c rune)
