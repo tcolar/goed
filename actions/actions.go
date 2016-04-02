@@ -39,11 +39,11 @@ func Exec(action string, args []string) (res []string, err error) {
 	}
 	out := proto.f.Call(in)
 	for i, argType := range proto.outs {
-		str, err := valToStr(out[i], argType)
+		strs, err := valToStrs(out[i], argType)
 		if err != nil {
 			return res, err
 		}
-		res = append(res, str)
+		res = append(res, strs...)
 	}
 	return res, nil
 }
@@ -155,24 +155,30 @@ func argToVal(arg string, toType reflect.Type) (v reflect.Value, err error) {
 		}
 		return reflect.ValueOf(true), nil
 	default:
-		return v, fmt.Errorf("Unhandled type : %s !\n", t)
+		return v, fmt.Errorf("Unhandled type : %s !", t)
 	}
 }
 
-func valToStr(v reflect.Value, fromType reflect.Type) (s string, err error) {
+func valToStrs(v reflect.Value, fromType reflect.Type) (s []string, err error) {
 	t := fromType.String()
 	switch t {
 	case "string":
-		return v.Interface().(string), nil
+		return []string{v.Interface().(string)}, nil
 	case "int64":
-		return fmt.Sprintf("%d", v.Interface().(int64)), nil
+		return []string{fmt.Sprintf("%d", v.Interface().(int64))}, nil
 	case "int":
-		return fmt.Sprintf("%d", v.Interface().(int)), nil
+		return []string{fmt.Sprintf("%d", v.Interface().(int))}, nil
 	case "bool":
-		return fmt.Sprintf("%t", v.Interface().(bool)), nil
+		return []string{fmt.Sprintf("%t", v.Interface().(bool))}, nil
 	case "error":
-		return fmt.Sprintf("%s", v.Interface().(error).Error()), nil
+		return []string{fmt.Sprintf("%s", v.Interface().(error).Error())}, nil
+	case "[]int64":
+		array := []string{}
+		for _, i := range v.Interface().([]int64) {
+			array = append(array, fmt.Sprintf("%d", i))
+		}
+		return array, nil
 	default:
-		return s, fmt.Errorf("Unhandled type : %s !\n", t)
+		return s, fmt.Errorf("Unhandled type : %s !", t)
 	}
 }
