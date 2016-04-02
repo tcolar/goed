@@ -201,6 +201,13 @@ func (a *ar) ViewSyncSlice(viewId int64) {
 	d(viewSyncSlice{viewId: viewId})
 }
 
+// return the vew title
+func (a *ar) ViewTitle(viewId int64) string {
+	answer := make(chan string, 1)
+	d(viewTtile{viewId: viewId, answer: answer})
+	return <-answer
+}
+
 // undo
 func (a *ar) ViewUndo(viewId int64) {
 	d(viewUndo{viewId: viewId})
@@ -660,6 +667,20 @@ func (a viewSyncSlice) Run() {
 	if v != nil {
 		v.SyncSlice()
 	}
+}
+
+type viewTtile struct {
+	viewId int64
+	answer chan string
+}
+
+func (a viewTtile) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Id() == 0 {
+		a.answer <- ""
+		return
+	}
+	a.answer <- v.Title()
 }
 
 type viewUndo struct {
