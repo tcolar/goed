@@ -76,6 +76,13 @@ func (a *ar) EdSetStatusErr(status string) {
 	d(edSetStatus{status: status, err: true})
 }
 
+// Retuns the editor overall size (in row, cols)
+func (a *ar) EdSize() (rows, cols int) {
+	answer := make(chan (int))
+	d(edSize{answer: answer})
+	return <-answer, <-answer
+}
+
 // swap two views (their position in the UI)
 func (a *ar) EdSwapViews(view1Id, view2Id int64) {
 	d(edSwapViews{view1Id: view1Id, view2Id: view2Id})
@@ -108,16 +115,27 @@ func (a *ar) EdViewAt(y, x int) (vid int64, vy, vx int) {
 	return <-answer, int(<-answer), int(<-answer)
 }
 
+// return the index of the view in the UI (row,col 0 indexed).
+func (a *ar) EdViewIndex(viewId int64) (row, col int) {
+	answer := make(chan (int), 2)
+	d(edViewIndex{viewId: viewId, answer: answer})
+	return <-answer, <-answer
+}
+
 // navigate between UI views given the CursorMvmt value (left,right,top,down)
 func (a *ar) EdViewNavigate(mvmt core.CursorMvmt) {
 	d(edViewNavigate{mvmt})
 }
 
-// return a space separated list of currently opened views (viewids)
-func (a *ar) EdViews() string {
-	answer := make(chan (string), 1)
+// return a list of currently opened views (viewids)
+func (a *ar) EdViews() []int64 {
+	answer := make(chan int64)
 	d(edViews{answer: answer})
-	return <-answer
+	results := []int64{}
+	for i := range answer {
+		results = append(results, i)
+	}
+	return results
 }
 
 // ########  Impl ......
@@ -180,6 +198,8 @@ func (a edOpen) Run() {
 	if err != nil {
 		core.Ed.SetStatusErr(fmt.Sprintf("EdOpen error : %s\n", err.Error()))
 	}
+	Ar.EdActivateView(vid)
+	Ar.EdRender()
 }
 
 type edOpenTerm struct {
@@ -229,6 +249,16 @@ func (a edSetStatus) Run() {
 	} else {
 		core.Ed.SetStatus(a.status)
 	}
+}
+
+type edSize struct {
+	answer chan int
+}
+
+func (a edSize) Run() {
+	r, c := core.Ed.Size()
+	a.answer <- r
+	a.answer <- c
 }
 
 type edSwapViews struct {
@@ -281,6 +311,17 @@ func (a edViewByLoc) Run() {
 	a.vid <- vid
 }
 
+type edViewIndex struct {
+	viewId int64
+	answer chan int
+}
+
+func (a edViewIndex) Run() {
+	r, c := core.Ed.ViewIndex(a.viewId)
+	a.answer <- r
+	a.answer <- c
+}
+
 type edViewMove struct {
 	viewId         int64
 	y1, x1, y2, x2 int
@@ -305,15 +346,12 @@ func (a edViewNavigate) Run() {
 }
 
 type edViews struct {
-	answer chan string
+	answer chan int64
 }
 
 func (a edViews) Run() {
-	answer := ""
-	space := ""
 	for _, v := range core.Ed.Views() {
-		answer = fmt.Sprintf("%s%s%d", space, answer, v)
-		space = " "
+		a.answer <- v
 	}
-	a.answer <- answer
+	close(a.answer)
 }

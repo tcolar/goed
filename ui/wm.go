@@ -99,6 +99,11 @@ type Renderer interface {
 	MouseEvent(e *Editor, ev *termbox.Event)
 }
 
+func (e *Editor) Size() (rows, cols int) {
+	_, _, rows, cols = e.Statusbar.Bounds()
+	return rows + 1, cols + 1
+}
+
 // TODO: optimize, for example might only need to resize a single column
 func (e *Editor) Resize(height, width int) {
 	e.Cmdbar.SetBounds(0, 0, 0, width-1)
@@ -153,9 +158,8 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 	c1 := e.ViewColumn(v1.Id())
 	c2 := e.ViewColumn(v2.Id())
 	c1i := e.ColIndex(c1)
-	v1i := e.ViewIndex(c1, v1.Id())
-	v2i := e.ViewIndex(c2, v2.Id())
-	c2i := e.ColIndex(c2)
+	v1i, _ := e.ViewIndex(v1.Id())
+	v2i, c2i := e.ViewIndex(v2.Id())
 	onSep := x2 == v2.x1 // dropped on a column "scrollbar"
 	if x1 == x2 && y1 == y2 {
 		// noop
@@ -246,14 +250,16 @@ func (e *Editor) ViewColumn(vid int64) *Col {
 	return nil
 }
 
-// ViewIndex returns the index of a view in the column
-func (e *Editor) ViewIndex(col *Col, vid int64) int {
-	for i, v := range col.Views {
-		if v == vid {
-			return i
+// ViewIndex returns the index of a view in the ui (row,col index)
+func (e *Editor) ViewIndex(vid int64) (row int, col int) {
+	for ci, c := range e.Cols {
+		for ri, view := range c.Views {
+			if vid == view {
+				return ri, ci
+			}
 		}
 	}
-	return -1
+	return -1, -1
 }
 
 // Narrowest column
@@ -287,8 +293,7 @@ func (e *Editor) ViewNavigate(mvmt core.CursorMvmt) {
 	if c == nil {
 		return
 	}
-	col := e.ColIndex(c)
-	view := e.ViewIndex(e.Cols[col], v.Id())
+	view, col := e.ViewIndex(v.Id())
 	if col < 0 || view < 0 {
 		return
 	}
@@ -484,7 +489,8 @@ func (e *Editor) InsertView(view, toView *View, ratio float64) {
 	toView.HeightRatio = r - (r * ratio)
 	col := e.ViewColumn(toView.Id())
 	// Insert it at after toView
-	i := e.ViewIndex(col, toView.Id()) + 1
+	i, _ := e.ViewIndex(toView.Id())
+	i++
 	col.Views = append(col.Views, 0)
 	copy(col.Views[i+1:], col.Views[i:])
 	col.Views[i] = view.Id()
@@ -498,7 +504,7 @@ func (e *Editor) ReplaceView(oldView, newView *View) {
 	newView.y2 = oldView.y2
 	newView.HeightRatio = oldView.HeightRatio
 	col := e.ViewColumn(oldView.Id())
-	i := e.ViewIndex(col, oldView.Id())
+	i, _ := e.ViewIndex(oldView.Id())
 	col.Views[i] = newView.Id()
 	e.TerminateView(oldView.Id())
 }
@@ -670,9 +676,9 @@ func (e *Editor) SwapViews(vv1, vv2 int64) {
 		return
 	}
 	c1 := e.ViewColumn(v1.Id())
-	i1 := e.ViewIndex(c1, v1.Id())
+	i1, _ := e.ViewIndex(v1.Id())
 	c2 := e.ViewColumn(v2.Id())
-	i2 := e.ViewIndex(c2, v2.Id())
+	i2, _ := e.ViewIndex(v2.Id())
 	c1.Views[i1], c2.Views[i2] = vv2, vv1
 	v1.HeightRatio, v2.HeightRatio = v2.HeightRatio, v1.HeightRatio
 	v1.y1, v1.x1, v2.y1, v2.x1 = v2.y1, v2.x1, v1.y1, v1.x1
@@ -680,8 +686,10 @@ func (e *Editor) SwapViews(vv1, vv2 int64) {
 }
 
 func (e *Editor) Views() (views []int64) {
-	for vid, _ := range e.views {
-		views = append(views, vid)
+	for _, col := range e.Cols {
+		for _, view := range col.Views {
+			views = append(views, view)
+		}
 	}
 	return views
 }

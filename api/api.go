@@ -63,8 +63,8 @@ func (r *GoedRpc) Edit(args []interface{}, _ *struct{}) error {
 	actions.Ar.EdRender()
 	// Wait til file closed
 	for {
-		v := core.Ed.ViewById(vid)
-		if v == nil {
+		idx, _ := actions.Ar.EdViewIndex(vid)
+		if idx == -1 { // view no longer prsent
 			// switch back to the original view
 			actions.Ar.EdActivateView(prevView)
 			actions.Ar.EdRender()

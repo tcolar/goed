@@ -4,7 +4,6 @@ package core
 type Editable interface {
 	CmdbarToggle()
 	Config() Config
-	CurColIndex() int
 	CurViewId() int64
 	DelColByIndex(col int, check bool)
 	DelView(viewId int64, terminate bool)
@@ -42,6 +41,7 @@ type Editable interface {
 	// ViewByLoc finds if there is an existing view for the given file (loc)
 	ViewByLoc(loc string) int64
 	ViewById(id int64) Viewable
+	ViewIndex(id int64) (row, col int) // column, row **index** in the editor UI
 	// Move a view
 	ViewMove(y1, x1, y2, x2 int)
 	// Navigate from a view to another
