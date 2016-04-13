@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/atotto/clipboard"
+	"github.com/kr/pretty"
 	"github.com/tcolar/goed/core"
 )
 
@@ -153,7 +154,9 @@ func isWordRune(r rune) bool {
 
 func (v *View) SelectAll() {
 	lastLn := v.LineCount() - 1
+	fmt.Printf("lln: %d\n", lastLn)
 	s := core.NewSelection(0, 0, lastLn, v.LineLen(v.slice, lastLn)-1)
+	pretty.Println(s)
 	v.selections = []core.Selection{
 		*s,
 	}

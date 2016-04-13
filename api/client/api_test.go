@@ -25,7 +25,7 @@ func init() {
 	apiServer := api.Api{}
 	apiServer.Start()
 	go core.Bus.Start()
-	core.Ed.Start([]string{"../test_data/file1.txt"})
+	core.Ed.Start([]string{"../../test_data/file1.txt"})
 }
 
 func vidStr(vid int64) string {

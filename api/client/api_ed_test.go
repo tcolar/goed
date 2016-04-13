@@ -84,7 +84,7 @@ func TestEdOpen(t *testing.T) {
 	assert.Equal(t, prevId, res[0])
 	assert.Equal(t, actions.Ar.ViewTitle(vid), "testopen.txt")
 
-	loc, _ := filepath.Abs("./test_data/theme.toml") // should no longer be found
+	loc, _ := filepath.Abs("../test_data/theme.toml") // should no longer be found
 	assert.Equal(t, actions.Ar.EdViewByLoc(loc), int64(-1))
 
 	actions.Ar.EdDelView(actions.Ar.EdCurView(), true)

@@ -148,6 +148,15 @@ func (a *ar) ViewSelectAll(viewId int64) {
 	d(viewSelectAll{viewId: viewId})
 }
 
+// Return a list of view selctions (one per line), ie:
+// 2 0 2 6
+// 3 2 4 7
+func (a *ar) ViewSelections(viewId int64) []core.Selection {
+	answer := make(chan []core.Selection, 1)
+	d(viewSelections{answer: answer, viewId: viewId})
+	return <-answer
+}
+
 // move the cursor to the given text position, scroll as needed
 func (a *ar) ViewSetCursorPos(viewId int64, y, x int) {
 	d(viewSetCursorPos{viewId: viewId, y: y, x: x})
@@ -204,7 +213,7 @@ func (a *ar) ViewSyncSlice(viewId int64) {
 // return the vew title
 func (a *ar) ViewTitle(viewId int64) string {
 	answer := make(chan string, 1)
-	d(viewTtile{viewId: viewId, answer: answer})
+	d(viewTitle{viewId: viewId, answer: answer})
 	return <-answer
 }
 
@@ -566,6 +575,20 @@ func (a viewSelectAll) Run() {
 	}
 }
 
+type viewSelections struct {
+	answer chan []core.Selection
+	viewId int64
+}
+
+func (a viewSelections) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- []core.Selection{}
+		return
+	}
+	a.answer <- *v.Selections()
+}
+
 type viewSetCursorPos struct {
 	viewId int64
 	y, x   int
@@ -669,12 +692,12 @@ func (a viewSyncSlice) Run() {
 	}
 }
 
-type viewTtile struct {
+type viewTitle struct {
 	viewId int64
 	answer chan string
 }
 
-func (a viewTtile) Run() {
+func (a viewTitle) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil || v.Id() == 0 {
 		a.answer <- ""
