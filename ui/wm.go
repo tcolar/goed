@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"runtime"
 
 	"github.com/tcolar/goed/actions"
@@ -660,6 +661,7 @@ func (e *Editor) ViewByLoc(loc string) int64 {
 	if len(loc) == 0 {
 		return -1
 	}
+	loc, _ = filepath.Abs(loc)
 	for _, v := range e.views {
 		if v != nil && v.backend != nil && v.backend.SrcLoc() == loc {
 			return v.Id()
