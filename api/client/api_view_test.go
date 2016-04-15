@@ -42,16 +42,15 @@ func TestViewClearSelection(t *testing.T) {
 	assert.Equal(t, len(actions.Ar.ViewSelections(vid)), 0)
 }
 
-/*func TestViewSelectAll(t *testing.T) {
+func TestViewSelectAll(t *testing.T) {
 	vid := file1(t)
 	res, err := Action(id, []string{"view_select_all", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Equal(t, len(res), 0)
-	fmt.Println(vid)
 	s := actions.Ar.ViewSelections(vid)
 	assert.Equal(t, len(s), 1)
 	assert.Equal(t, s[0], *core.NewSelection(1, 1, 12, 36))
-}*/
+}
 
 func TestViewSelections(t *testing.T) {
 	vid := file1(t)

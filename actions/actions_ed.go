@@ -290,16 +290,16 @@ type edViewAt struct {
 func (a edViewAt) Run() {
 	vid := core.Ed.ViewAt(a.y-1, a.x-1)
 	a.answer <- vid
-	y, x := 0, 0
+	y, x := -1, -1
 	if vid >= 0 {
 		v := core.Ed.ViewById(vid)
 		l1, c1, _, _ := v.Bounds()
 		scrollLn, scrollCol := v.ScrollPos()
-		y = a.y - l1 + scrollLn - 2
-		x = a.x - c1 + scrollCol - 2
+		y = a.y - l1 + scrollLn - 2 + 1
+		x = a.x - c1 + scrollCol - 2 + 1
 	}
-	a.answer <- int64(y) + 1
-	a.answer <- int64(x) + 1
+	a.answer <- int64(y)
+	a.answer <- int64(x)
 }
 
 type edViewByLoc struct {

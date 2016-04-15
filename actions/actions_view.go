@@ -197,7 +197,7 @@ func (a *ar) ViewSrcLoc(viewId int64) string {
 	return <-answer
 }
 
-// return the current scrolling position (0,0 is top, left)
+// return the current scrolling position (1,1 is top, left)
 func (a *ar) ViewScrollPos(viewId int64) (ln, col int) {
 	answer := make(chan int, 2)
 	d(viewScrollPos{viewId: viewId, answer: answer})
@@ -231,8 +231,14 @@ type viewAddSelection struct {
 
 func (a viewAddSelection) Run() {
 	v := core.Ed.ViewById(a.viewId)
+	if a.l2 != -1 {
+		a.l2--
+	}
+	if a.c2 != -1 {
+		a.c2--
+	}
 	if v != nil {
-		s := core.NewSelection(a.l1-1, a.c1-1, a.l2-1, a.c2-1)
+		s := core.NewSelection(a.l1-1, a.c1-1, a.l2, a.c2)
 		selections := v.Selections()
 		*selections = append(*selections, *s)
 	}
@@ -399,7 +405,13 @@ type viewDeleteAction struct {
 func (a viewDeleteAction) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		v.Delete(a.row1-1, a.col1-1, a.row2-1, a.col2-1, a.undoable)
+		if a.row2 != -1 {
+			a.row2--
+		}
+		if a.col2 != -1 {
+			a.col2--
+		}
+		v.Delete(a.row1-1, a.col1-1, a.row2, a.col2, a.undoable)
 	}
 }
 
@@ -560,8 +572,8 @@ func (a viewScrollPos) Run() {
 		return
 	}
 	y, x := v.ScrollPos()
-	a.answer <- y
-	a.answer <- x
+	a.answer <- y + 1
+	a.answer <- x + 1
 }
 
 type viewSelectAll struct {
@@ -588,8 +600,16 @@ func (a viewSelections) Run() {
 		return
 	}
 	for _, s := range *v.Selections() {
+		ct := 1
+		lt := 1
+		if s.ColTo == -1 {
+			ct = 0
+		}
+		if s.LineTo == -1 {
+			lt = 0
+		}
 		result = append(result, *core.NewSelection(s.LineFrom+1, s.ColFrom+1,
-			s.LineTo+1, s.ColTo+1))
+			s.LineTo+lt, s.ColTo+ct))
 	}
 	a.answer <- result
 }
