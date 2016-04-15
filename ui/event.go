@@ -430,10 +430,10 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			actions.Ar.ViewClearSelections(vid)
 			actions.Ar.ViewAddSelection(
 				vid,
-				y1,
-				v.LineRunesTo(v.slice, y1, x1),
-				y2,
-				v.LineRunesTo(v.slice, y2, x2))
+				y1+1,
+				v.LineRunesTo(v.slice, y1, x1)+1,
+				y2+1,
+				v.LineRunesTo(v.slice, y2, x2)+1)
 
 			// Handling scrolling while dragging
 			if ln < v.offy { // scroll up
