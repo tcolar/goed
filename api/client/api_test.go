@@ -50,7 +50,7 @@ func TestEdit(t *testing.T) {
 	vid := int64(-1)
 	// view should open up and stay open until the view is closed
 	// at which time the open action should be completed
-	loc, _ := filepath.Abs("./test_data/fooedit")
+	loc, _ := filepath.Abs("test_data/fooedit")
 	for vid == -1 {
 		vid = actions.Ar.EdViewByLoc(loc)
 		time.Sleep(100 * time.Millisecond)

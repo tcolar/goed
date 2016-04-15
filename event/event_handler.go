@@ -38,7 +38,7 @@ func handleEvent(es *EventState) bool {
 	y, x := actions.Ar.ViewCursorCoords(curView)
 
 	if es.hasMouse() {
-		curView, y, x = actions.Ar.EdViewAt(es.MouseY, es.MouseX)
+		curView, y, x = actions.Ar.EdViewAt(es.MouseY+1, es.MouseX+1)
 	}
 
 	if curView < 0 {

@@ -2,7 +2,7 @@ package actions
 
 import "github.com/tcolar/goed/core"
 
-// Add a text selection to the view. from l1,c1 to l2,c2
+// Add a text selection to the view. from l1,c1 to l2,c2 (1 indexed)
 func (a *ar) ViewAddSelection(viewId int64, l1, c1, l2, c2 int) {
 	d(viewAddSelection{viewId: viewId, l1: l1, c1: c1, l2: l2, c2: c2})
 }
@@ -17,7 +17,7 @@ func (a *ar) ViewBackspace(viewId int64) {
 	d(viewBackspace{viewId: viewId})
 }
 
-// return the current view location in the ui
+// return the current view location in the ui (1 indexed)
 func (a *ar) ViewBounds(viewId int64) (ln, col, ln2, col2 int) {
 	answer := make(chan int, 4)
 	d(viewBounds{viewId: viewId, answer: answer})
@@ -51,14 +51,14 @@ func (a *ar) ViewCut(viewId int64) {
 	d(viewCut{viewId: viewId})
 }
 
-// return the current cursor UI position in the view
+// return the current cursor UI position in the view (1 indexed)
 func (a *ar) ViewCursorCoords(viewId int64) (y, x int) {
 	answer := make(chan int, 2)
 	d(viewCursorCoords{viewId: viewId, answer: answer})
 	return <-answer, <-answer
 }
 
-// return the current cursor text position in the view
+// return the current cursor text position in the view (1 indexed)
 func (a *ar) ViewCursorPos(viewId int64) (y, x int) {
 	answer := make(chan int, 2)
 	d(viewCursorPos{viewId: viewId, answer: answer})
@@ -70,7 +70,7 @@ func (a *ar) ViewCursorMvmt(viewId int64, mvmt core.CursorMvmt) {
 	d(viewCursorMvmt{viewId: viewId, mvmt: mvmt})
 }
 
-// delete text from the view (from row1,col1 to row2,col2)
+// delete text from the view (from row1,col1 to row2,col2). 1 indexed
 func (a *ar) ViewDelete(viewId int64, row1, col1, row2, col2 int, undoable bool) {
 	d(viewDeleteAction{viewId: viewId, row1: row1, col1: col1, row2: row2, col2: col2, undoable: undoable})
 }
@@ -80,7 +80,7 @@ func (a *ar) ViewDeleteCur(viewId int64) {
 	d(viewDeleteCur{viewId: viewId})
 }
 
-// insert text into the view at the row,col location
+// insert text into the view at the row,col location. 1 indexed
 func (a *ar) ViewInsert(viewId int64, row, col int, text string, undoable bool) {
 	d(viewInsertAction{viewId: viewId, row: row, col: col, text: text, undoable: undoable})
 }
@@ -148,8 +148,8 @@ func (a *ar) ViewSelectAll(viewId int64) {
 	d(viewSelectAll{viewId: viewId})
 }
 
-// Return a list of view selctions (one per line), ie:
-// 2 0 2 6
+// Return a list of view selctions (one per line), 1 indexed, ie:
+// 2 1 2 6
 // 3 2 4 7
 func (a *ar) ViewSelections(viewId int64) []core.Selection {
 	answer := make(chan []core.Selection, 1)
@@ -157,7 +157,7 @@ func (a *ar) ViewSelections(viewId int64) []core.Selection {
 	return <-answer
 }
 
-// move the cursor to the given text position, scroll as needed
+// move the cursor to the given text position(1 indexed), scroll as needed
 func (a *ar) ViewSetCursorPos(viewId int64, y, x int) {
 	d(viewSetCursorPos{viewId: viewId, y: y, x: x})
 }
@@ -178,7 +178,7 @@ func (a *ar) ViewSetVtCols(viewId int64, cols int) {
 	d(viewSetVtCols{viewId: viewId, cols: cols})
 }
 
-// extends the current text selection toward the given location
+// extends the current text selection toward the given location(1 indexed)
 // this maybe in any direction
 func (a *ar) ViewStretchSelection(viewId int64, prevLn, prevCol int) {
 	d(viewStretchSelection{viewId: viewId, prevLn: prevLn, prevCol: prevCol})
@@ -232,7 +232,7 @@ type viewAddSelection struct {
 func (a viewAddSelection) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		s := core.NewSelection(a.l1, a.c1, a.l2, a.c2)
+		s := core.NewSelection(a.l1-1, a.c1-1, a.l2-1, a.c2-1)
 		selections := v.Selections()
 		*selections = append(*selections, *s)
 	}
@@ -277,10 +277,10 @@ func (a viewBounds) Run() {
 		return
 	}
 	l1, c1, l2, c2 := v.Bounds()
-	a.answer <- l1
-	a.answer <- c1
-	a.answer <- l2
-	a.answer <- c2
+	a.answer <- l1 + 1
+	a.answer <- c1 + 1
+	a.answer <- l2 + 1
+	a.answer <- c2 + 1
 }
 
 type viewClearSelections struct {
@@ -347,8 +347,8 @@ func (a viewCursorCoords) Run() {
 		a.answer <- 0
 		return
 	}
-	a.answer <- v.CurLine()
-	a.answer <- v.CurCol()
+	a.answer <- v.CurLine() + 1
+	a.answer <- v.CurCol() + 1
 }
 
 type viewCursorPos struct {
@@ -363,8 +363,8 @@ func (a viewCursorPos) Run() {
 		a.answer <- 0
 		return
 	}
-	a.answer <- v.CurLine()
-	a.answer <- v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol())
+	a.answer <- v.CurLine() + 1
+	a.answer <- v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()) + 1
 }
 
 type viewCursorMvmt struct {
@@ -399,7 +399,7 @@ type viewDeleteAction struct {
 func (a viewDeleteAction) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		v.Delete(a.row1, a.col1, a.row2, a.col2, a.undoable)
+		v.Delete(a.row1-1, a.col1-1, a.row2-1, a.col2-1, a.undoable)
 	}
 }
 
@@ -424,7 +424,7 @@ type viewInsertAction struct {
 func (a viewInsertAction) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		v.Insert(a.row, a.col, a.text, a.undoable)
+		v.Insert(a.row-1, a.col-1, a.text, a.undoable)
 	}
 }
 
@@ -582,11 +582,16 @@ type viewSelections struct {
 
 func (a viewSelections) Run() {
 	v := core.Ed.ViewById(a.viewId)
+	result := []core.Selection{}
 	if v == nil {
-		a.answer <- []core.Selection{}
+		a.answer <- result
 		return
 	}
-	a.answer <- *v.Selections()
+	for _, s := range *v.Selections() {
+		result = append(result, *core.NewSelection(s.LineFrom+1, s.ColFrom+1,
+			s.LineTo+1, s.ColTo+1))
+	}
+	a.answer <- result
 }
 
 type viewSetCursorPos struct {
@@ -597,7 +602,7 @@ type viewSetCursorPos struct {
 func (a viewSetCursorPos) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		v.MoveCursor(a.y-v.CurLine(), a.x-v.CurCol())
+		v.MoveCursor(a.y-v.CurLine()-1, a.x-v.CurCol()-1)
 	}
 }
 
@@ -674,7 +679,7 @@ func (a viewStretchSelection) Run() {
 	if v != nil {
 		v.StretchSelection(
 			a.prevLn,
-			v.LineRunesTo(v.Slice(), a.prevLn, a.prevCol),
+			v.LineRunesTo(v.Slice(), a.prevLn-1, a.prevCol-1),
 			ln,
 			v.LineRunesTo(v.Slice(), ln, col),
 		)
@@ -717,9 +722,11 @@ func (a viewUndo) Run() {
 }
 
 func NewViewInsertAction(viewId int64, row, col int, text string, undoable bool) core.Action {
-	return viewInsertAction{viewId: viewId, row: row, col: col, text: text, undoable: undoable}
+	return viewInsertAction{viewId: viewId, row: row + 1, col: col + 1,
+		text: text, undoable: undoable}
 }
 
 func NewViewDeleteAction(viewId int64, row1, col1, row2, col2 int, undoable bool) core.Action {
-	return viewDeleteAction{viewId: viewId, row1: row1, col1: col1, row2: row2, col2: col2, undoable: undoable}
+	return viewDeleteAction{viewId: viewId, row1: row1 + 1, col1: col1 + 1,
+		row2: row2 + 1, col2: col2 + 1, undoable: undoable}
 }

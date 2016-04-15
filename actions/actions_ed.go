@@ -18,7 +18,7 @@ func (a *ar) EdCurView() int64 {
 	return <-vid
 }
 
-// delete the given column (by index)
+// delete the given column (by index). First column is index 1
 // if 'check' is true it will check if dirty first, in which case it will do nothing
 // unless called twice in a row.
 func (a *ar) EdDelCol(colIndex int, check bool) {
@@ -101,12 +101,12 @@ func (a *ar) EdViewByLoc(loc string) int64 {
 	return <-vid
 }
 
-// move a view to the new coordinates (UI position)
+// move a view to the new coordinates (UI position, 1 indexed)
 func (a *ar) EdViewMove(viewId int64, y1, x1, y2, x2 int) {
 	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
 }
 
-// For a given UI position (in characters) returns
+// For a given UI position (in characters, 1 indexed) returns
 // - The view at that position. -1 if not within any view bounds.
 // - y,x coordinates within that view.
 func (a *ar) EdViewAt(y, x int) (vid int64, vy, vx int) {
@@ -115,7 +115,8 @@ func (a *ar) EdViewAt(y, x int) (vid int64, vy, vx int) {
 	return <-answer, int(<-answer), int(<-answer)
 }
 
-// return the index of the view in the UI (row,col 0 indexed).
+// Return the index of the view in the UI (row,col 1 indexed).
+// Returns -1, -1 if not found
 func (a *ar) EdViewIndex(viewId int64) (row, col int) {
 	answer := make(chan (int), 2)
 	d(edViewIndex{viewId: viewId, answer: answer})
@@ -165,7 +166,7 @@ type edDelCol struct {
 }
 
 func (a edDelCol) Run() {
-	core.Ed.DelColByIndex(a.colIndex, a.check)
+	core.Ed.DelColByIndex(a.colIndex-1, a.check)
 }
 
 type edDelView struct {
@@ -287,7 +288,7 @@ type edViewAt struct {
 }
 
 func (a edViewAt) Run() {
-	vid := core.Ed.ViewAt(a.y, a.x)
+	vid := core.Ed.ViewAt(a.y-1, a.x-1)
 	a.answer <- vid
 	y, x := 0, 0
 	if vid >= 0 {
@@ -297,8 +298,8 @@ func (a edViewAt) Run() {
 		y = a.y - l1 + scrollLn - 2
 		x = a.x - c1 + scrollCol - 2
 	}
-	a.answer <- int64(y)
-	a.answer <- int64(x)
+	a.answer <- int64(y) + 1
+	a.answer <- int64(x) + 1
 }
 
 type edViewByLoc struct {
@@ -318,6 +319,12 @@ type edViewIndex struct {
 
 func (a edViewIndex) Run() {
 	r, c := core.Ed.ViewIndex(a.viewId)
+	if r != -1 {
+		r++
+	}
+	if c != -1 {
+		c++
+	}
 	a.answer <- r
 	a.answer <- c
 }
@@ -333,7 +340,7 @@ func (a edViewMove) Run() {
 	}
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		core.Ed.ViewMove(a.y1, a.x1, a.y2, a.x2)
+		core.Ed.ViewMove(a.y1-1, a.x1-1, a.y2-1, a.x2-1)
 	}
 }
 

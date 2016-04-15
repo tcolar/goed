@@ -11,6 +11,19 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+func dbg() {
+	views := actions.Ar.EdViews()
+	fmt.Println("---")
+	cv := actions.Ar.EdCurView()
+	for _, v := range views {
+		if cv == v {
+			fmt.Print("* ")
+		}
+		a, b, c, d := actions.Ar.ViewBounds(v)
+		fmt.Printf("%d %d %d %d %s\n", a, b, c, d, actions.Ar.ViewTitle(v))
+	}
+}
+
 func TestEdActivateView(t *testing.T) {
 	views := actions.Ar.EdViews()
 	assert.True(t, len(views) >= 2)
@@ -32,19 +45,20 @@ func TestEdCurView(t *testing.T) {
 }
 
 func TestEdDelCol(t *testing.T) {
+	v1 := actions.Ar.EdCurView()
+	_, c1 := actions.Ar.EdViewIndex(v1)
 	err := Open(id, "test_data", "delcol.txt")
 	vid := actions.Ar.EdCurView()
-	_, c0 := actions.Ar.EdViewIndex(vid)
 	l, c, _, _ := actions.Ar.ViewBounds(vid)
-	actions.Ar.EdViewMove(vid, l, c, 1, c+5) // force view to it's own column
+	actions.Ar.EdViewMove(vid, l, c, 2, c+5) // force view to it's own column, if not already
 	_, col := actions.Ar.EdViewIndex(vid)
-	assert.NotEqual(t, col, c0)
+	assert.NotEqual(t, col, c1)
 	res, err := Action(id, []string{"ed_del_col", strconv.Itoa(col), "true"})
 	assert.Nil(t, err)
 	assert.Equal(t, len(res), 0)
 	vid = actions.Ar.EdCurView()
-	_, c1 := actions.Ar.EdViewIndex(vid)
-	assert.Equal(t, c1, c0)
+	_, c2 := actions.Ar.EdViewIndex(vid)
+	assert.NotEqual(t, col, c2)
 }
 
 func TestEdDelView(t *testing.T) {
@@ -53,7 +67,7 @@ func TestEdDelView(t *testing.T) {
 	v1 := actions.Ar.EdCurView()
 	assert.NotEqual(t, v0, v1)
 	actions.Ar.ViewSetDirty(v1, true)
-	// view is dirty so frst try should do nothing
+	// view is dirty so first try should do nothing
 	res, err := Action(id, []string{"ed_del_view", fmt.Sprintf("%d", v1), "true"})
 	assert.Nil(t, err)
 	assert.Equal(t, len(res), 0)
@@ -131,6 +145,8 @@ func TestEdSwapViews(t *testing.T) {
 	boundStr := func(y1, x1, y2, x2 int) string {
 		return fmt.Sprintf("%d %d %d %d", y1, x1, y2, x2)
 	}
+	err := Open(id, "test_data", "swapview.txt")
+	assert.Nil(t, err)
 	views := actions.Ar.EdViews()
 	assert.True(t, len(views) >= 2)
 	vid := views[0]
@@ -165,11 +181,15 @@ func TestEdViewAt(t *testing.T) {
 }
 
 func TestEdViewNavigate(t *testing.T) {
+	err := Open(id, "test_data", "viewnav.txt")
+	assert.Nil(t, err)
 	views := actions.Ar.EdViews()
 	assert.True(t, len(views) >= 2)
 	vid := views[0]
+	res, err := Action(id, []string{"ed_activate_view", vidStr(vid)})
+	assert.Nil(t, err)
 	actions.Ar.EdActivateView(vid)
-	res, err := Action(id, []string{"ed_view_navigate", strconv.Itoa(int(core.CursorMvmtRight))})
+	res, err = Action(id, []string{"ed_view_navigate", strconv.Itoa(int(core.CursorMvmtRight))})
 	assert.Nil(t, err)
 	assert.NotEqual(t, vid, actions.Ar.EdCurView())
 	res, err = Action(id, []string{"ed_view_navigate", strconv.Itoa(int(core.CursorMvmtLeft))})

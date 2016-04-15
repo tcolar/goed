@@ -392,7 +392,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 		// end view move
 		if e.evtState.MovingView && isMouseUp(ev) {
 			e.evtState.MovingView = false
-			actions.Ar.EdViewMove(vid, e.evtState.LastClickY, e.evtState.LastClickX, ev.MouseY, ev.MouseX)
+			actions.Ar.EdViewMove(vid, e.evtState.LastClickY+1, e.evtState.LastClickX+1, ev.MouseY+1, ev.MouseX+1)
 			actions.Ar.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
 			return
 		}
@@ -418,7 +418,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			if !e.evtState.InDrag {
 				e.evtState.InDrag = true
 				actions.Ar.ViewClearSelections(vid)
-				actions.Ar.ViewSetCursorPos(vid, e.evtState.DragLn, e.evtState.DragCol)
+				actions.Ar.ViewSetCursorPos(vid, e.evtState.DragLn+1, e.evtState.DragCol+1)
 				actions.Ar.EdActivateView(vid)
 			}
 			// continued drag
@@ -455,7 +455,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			}
 			if !e.evtState.InDrag {
 				actions.Ar.ViewClearSelections(vid)
-				actions.Ar.ViewSetCursorPos(vid, ln, col)
+				actions.Ar.ViewSetCursorPos(vid, ln+1, col+1)
 				actions.Ar.EdActivateView(vid)
 				e.evtState.LastLeftClick = time.Now().Unix()
 				e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
