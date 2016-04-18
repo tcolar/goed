@@ -224,15 +224,9 @@ func (f *FileBackend) Slice(line1, col, line2, col2 int) *core.Slice {
 	if line1 < 0 || col < 0 {
 		return slice
 	}
-	if line2 != -1 && line1 > line2 {
-		line1, line2 = line2, line1
-	}
-	if col2 != -1 && col > col2 {
-		col, col2 = col2, col
-	}
-	l := line1
-	for ; line2 == -1 || l <= line2; l++ {
-		err := f.seek(l, col)
+	l := slice.R1
+	for ; slice.R2 == -1 || l <= slice.R2; l++ {
+		err := f.seek(l, slice.C1)
 		if err != nil {
 			if err != io.EOF {
 				core.Ed.SetStatusErr(err.Error())
@@ -240,7 +234,7 @@ func (f *FileBackend) Slice(line1, col, line2, col2 int) *core.Slice {
 			}
 		}
 		ln := []rune{}
-		for col2 == -1 || f.col <= col2 {
+		for slice.C2 == -1 || f.col <= slice.C2 {
 			rune, _, err := f.readRune()
 			if err != nil {
 				if err == io.EOF && len(ln) > 0 {

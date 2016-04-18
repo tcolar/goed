@@ -49,10 +49,11 @@ type Viewable interface {
 	SetWorkDir(dir string)
 	SetTitle(title string)
 	SetVtCols(cols int)
-	// Slice returns a view's text subset (matrix)
+	// Slice returns a view's text subset (rectangle)
 	Slice() *Slice
 	StretchSelection(prevl, prevc, ln, c int)
 	SyncSlice()
 	Title() string
+	Text(ln1, col1, ln2, col2 int) [][]rune
 	WorkDir() string
 }

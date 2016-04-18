@@ -235,24 +235,18 @@ func (b *MemBackend) Remove(row1, col1, row2, col2 int) error {
 func (b *MemBackend) sliceNoLock(row, col, row2, col2 int) *core.Slice {
 	slice := core.NewSlice(row, col, row2, col2, [][]rune{})
 	text := slice.Text()
-	if row2 != -1 && row > row2 {
-		row, row2 = row2, row
-	}
-	if col2 != -1 && col > col2 {
-		col, col2 = col2, col
-	}
 	if row < 0 || col < 0 {
 		return slice
 	}
-	r := row
-	for ; row2 == -1 || r <= row2; r++ {
+	r := slice.R1
+	for ; slice.R2 == -1 || r <= slice.R2; r++ {
 		if r >= len(b.text) {
 			break
 		}
-		if col2 == -1 {
+		if slice.C2 == -1 {
 			*text = append(*text, b.text[r])
 		} else {
-			c, c2, l := col, col2+1, len(b.text[r])
+			c, c2, l := slice.C1, slice.C2+1, len(b.text[r])
 			if c > l {
 				c = l
 			}

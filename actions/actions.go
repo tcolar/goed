@@ -184,6 +184,12 @@ func valToStrs(v reflect.Value, fromType reflect.Type) (s []string, err error) {
 			array = append(array, s.String())
 		}
 		return array, nil
+	case "[]string":
+		array := []string{}
+		for _, s := range v.Interface().([]string) {
+			array = append(array, s)
+		}
+		return array, nil
 	default:
 		return s, fmt.Errorf("Unhandled type : %s !", t)
 	}

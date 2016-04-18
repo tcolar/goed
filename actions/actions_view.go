@@ -204,10 +204,18 @@ func (a *ar) ViewScrollPos(viewId int64) (ln, col int) {
 	return <-answer, <-answer
 }
 
-// this force sync of the in memory slice representing the part of the content
+// this forces a sync of the in memory slice representing the part of the content
 // that is currently visible in the view (performance optimization)
 func (a *ar) ViewSyncSlice(viewId int64) {
 	d(viewSyncSlice{viewId: viewId})
+}
+
+// returns a slice of the buffer text from ln1,col1 to ln2,col2 (inclusive). 1 indexed
+// note: col2==-1 means to end of line; ln2==-1 means to last line
+func (a *ar) ViewText(viewId int64, ln1, col1, ln2, col2 int) []string {
+	answer := make(chan []string, 1)
+	d(viewText{viewId: viewId, ln1: ln1, col1: col1, ln2: ln2, col2: col2, answer: answer})
+	return <-answer
 }
 
 // return the vew title
@@ -715,6 +723,32 @@ func (a viewSyncSlice) Run() {
 	if v != nil {
 		v.SyncSlice()
 	}
+}
+
+type viewText struct {
+	viewId               int64
+	ln1, col1, ln2, col2 int
+	answer               chan []string
+}
+
+func (a viewText) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Backend() == nil || a.col2 == 0 || a.col1 == 0 || a.ln1 == 0 || a.ln2 == 0 {
+		a.answer <- []string{}
+		return
+	}
+	if a.col2 > 0 {
+		a.col2--
+	}
+	if a.ln2 > 0 {
+		a.ln2--
+	}
+	strs := []string{}
+	text := v.Text(a.ln1-1, a.col1-1, a.ln2, a.col2)
+	for _, s := range text {
+		strs = append(strs, string(s))
+	}
+	a.answer <- strs
 }
 
 type viewTitle struct {

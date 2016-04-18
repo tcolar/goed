@@ -505,3 +505,7 @@ func (v *View) SetVtCols(cols int) {
 func (v *View) ScrollPos() (ln, col int) {
 	return v.offy, v.offx
 }
+
+func (v *View) Text(ln1, col1, ln2, col2 int) [][]rune {
+	return v.SelectionText(core.NewSelection(ln1, col1, ln2, col2))
+}

@@ -11,19 +11,6 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-func dbg() {
-	views := actions.Ar.EdViews()
-	fmt.Println("---")
-	cv := actions.Ar.EdCurView()
-	for _, v := range views {
-		if cv == v {
-			fmt.Print("* ")
-		}
-		a, b, c, d := actions.Ar.ViewBounds(v)
-		fmt.Printf("%d %d %d %d %s\n", a, b, c, d, actions.Ar.ViewTitle(v))
-	}
-}
-
 func TestEdActivateView(t *testing.T) {
 	views := actions.Ar.EdViews()
 	assert.True(t, len(views) >= 2)

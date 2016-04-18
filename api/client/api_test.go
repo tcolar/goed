@@ -26,6 +26,7 @@ func init() {
 	apiServer.Start()
 	go core.Bus.Start()
 	core.Ed.Start([]string{"../../test_data/file1.txt"})
+	time.Sleep(time.Second)
 }
 
 func vidStr(vid int64) string {

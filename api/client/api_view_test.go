@@ -1,12 +1,26 @@
 package client
 
 import (
+	"bytes"
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
+
+var ftext []string
+
+func init() {
+	b, _ := ioutil.ReadFile("../../test_data/file1.txt")
+	for _, s := range bytes.Split(b, []byte{'\n'}) {
+		ftext = append(ftext, string(s))
+	}
+	if len(ftext[len(ftext)-1]) == 0 {
+		ftext = ftext[:len(ftext)-1]
+	}
+}
 
 func file1(t *testing.T) int64 {
 	vid := actions.Ar.EdViewByLoc("../../test_data/file1.txt")
@@ -69,6 +83,58 @@ func TestViewSelections(t *testing.T) {
 	assert.Equal(t, len(res), 2)
 	assert.Equal(t, "1 2 3 4", res[0])
 	assert.Equal(t, "5 6 7 8", res[1]) // Normalized
+}
+
+func TestViewText(t *testing.T) {
+	vid := file1(t)
+	// "out of bounds" shoud return no text and not panic
+	res, err := Action(id, []string{"view_text", vidStr(vid), "0", "0", "0", "0"})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 0)
+	res, err = Action(id, []string{"view_text", vidStr(vid), "100", "100", "200", "200"})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 0)
+	// "all" text
+	res, err = Action(id, []string{"view_text", vidStr(vid), "1", "1", "-1", "-1"})
+	assert.Nil(t, err)
+	assert.Equal(t, res, ftext)
+	// single char
+	res, err = Action(id, []string{"view_text", vidStr(vid), "1", "1", "1", "1"})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 1)
+	assert.Equal(t, res[0], "1")
+	// with tabs involved
+	res, err = Action(id, []string{"view_text", vidStr(vid), "10", "3", "10", "4"})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 1)
+	assert.Equal(t, res[0], "ab")
+	res, err = Action(id, []string{"view_text", vidStr(vid), "10", "3", "10", "-1"})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 1)
+	assert.Equal(t, res[0], "abc")
+	// multiline selection
+	res, err = Action(id, []string{"view_text", vidStr(vid), "10", "5", "11", "2"})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 2)
+	assert.Equal(t, res[0], "c")
+	assert.Equal(t, res[1], "aa")
+	res, err = Action(id, []string{"view_text", vidStr(vid), "7", "3", "10", "4"})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 4)
+	assert.Equal(t, res[0], "ξδεφγηιςκλμνοπθρστυωωχψζ")
+	assert.Equal(t, res[1], "ΑΒΞΔΕΦΓΗΙςΚΛΜΝΟΠΘΡΣΤΥΩΩΧΨΖ")
+	assert.Equal(t, res[2], "")
+	assert.Equal(t, res[3], "		ab")
+	// "backward" selection
+	res, err = Action(id, []string{"view_text", vidStr(vid), "1", "6", "1", "2"})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 1)
+	assert.Equal(t, res[0], "23456")
+	res, err = Action(id, []string{"view_text", vidStr(vid), "4", "2", "3", "25"})
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), 2)
+	assert.Equal(t, res[0], "yz")
+	assert.Equal(t, res[1], "AB")
 }
 
 /*

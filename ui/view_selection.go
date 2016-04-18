@@ -23,6 +23,9 @@ func (v *View) SelectionText(s *core.Selection) [][]rune {
 	ct := s.ColTo
 	lt := s.LineTo
 	lf := s.LineFrom
+	if lt == -1 {
+		lt = v.LineCount() - 1
+	}
 	if lf == lt {
 		return *v.backend.Slice(lf, cf, lt, ct).Text()
 	}
