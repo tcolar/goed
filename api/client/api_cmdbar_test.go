@@ -1,35 +1,30 @@
 package client
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 	"github.com/tcolar/goed/actions"
+	. "gopkg.in/check.v1"
 )
 
-func TestCmdBarEnable(t *testing.T) {
-	res, err := Action(id, []string{"foobar"})
-	assert.NotNil(t, err)
+func (s *ApiSuite) TestCmdBarEnable(c *C) {
+	res, err := Action(s.id, []string{"cmdbar_enable", "true"})
+	c.Assert(err, IsNil)
+	c.Assert(actions.Ar.CmdbarEnabled(), Equals, true)
 
-	res, err = Action(id, []string{"cmdbar_enable", "true"})
-	assert.Nil(t, err)
-	assert.True(t, actions.Ar.CmdbarEnabled())
+	res, err = Action(s.id, []string{"cmdbar_enable", "false"})
+	c.Assert(err, IsNil)
+	c.Assert(actions.Ar.CmdbarEnabled(), Equals, false)
 
-	res, err = Action(id, []string{"cmdbar_enable", "false"})
-	assert.Nil(t, err)
-	assert.False(t, actions.Ar.CmdbarEnabled())
-
-	assert.Equal(t, len(res), 0)
+	c.Assert(len(res), Equals, 0)
 }
 
-func TestCmdBarToggle(t *testing.T) {
-	res, err := Action(id, []string{"cmdbar_toggle"})
-	assert.Nil(t, err)
-	assert.True(t, actions.Ar.CmdbarEnabled())
+func (s *ApiSuite) TestCmdBarToggle(c *C) {
+	res, err := Action(s.id, []string{"cmdbar_toggle"})
+	c.Assert(err, IsNil)
+	c.Assert(actions.Ar.CmdbarEnabled(), Equals, true)
 
-	res, err = Action(id, []string{"cmdbar_toggle"})
-	assert.Nil(t, err)
-	assert.False(t, actions.Ar.CmdbarEnabled())
+	res, err = Action(s.id, []string{"cmdbar_toggle"})
+	c.Assert(err, IsNil)
+	c.Assert(actions.Ar.CmdbarEnabled(), Equals, false)
 
-	assert.Equal(t, len(res), 0)
+	c.Assert(len(res), Equals, 0)
 }

@@ -13,6 +13,8 @@ func init() {
 	go core.Bus.Start()
 }
 
+// Note: Most actions are tested/exercised via the api tests in api/client
+
 func TestUndo(t *testing.T) {
 	b := core.Bus
 	i := 7

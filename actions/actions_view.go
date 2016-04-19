@@ -167,6 +167,11 @@ func (a *ar) ViewSetDirty(viewId int64, on bool) {
 	d(viewSetDirty{viewId: viewId, on: on})
 }
 
+// set scrolling offsets (1 indexed)
+func (a *ar) ViewSetScrollPos(viewId int64, ln, col int) {
+	d(viewSetScrollPos{viewId: viewId, ln: ln, col: col})
+}
+
 // se the view title (typically file path)
 func (a *ar) ViewSetTitle(viewId int64, title string) {
 	d(viewSetTitle{viewId: viewId, title: title})
@@ -631,6 +636,18 @@ func (a viewSetCursorPos) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.MoveCursor(a.y-v.CurLine()-1, a.x-v.CurCol()-1)
+	}
+}
+
+type viewSetScrollPos struct {
+	viewId  int64
+	ln, col int
+}
+
+func (a viewSetScrollPos) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.SetScrollPos(a.ln-1, a.col-1)
 	}
 }
 

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"log"
 	"path"
 	"path/filepath"
@@ -306,16 +307,20 @@ func (v *View) MoveCursor(y, x int) {
 	}
 
 	if curCol+x < v.offx {
+		fmt.Println("scroll1")
 		v.offx = curCol + x
 		v.CursorX = 0
 	} else if curCol+x >= v.offx+v.LastViewCol() {
+		fmt.Println("scroll2")
 		v.offx = curCol + x - v.LastViewCol()
 		v.CursorX = v.LastViewCol()
 	}
 	if curLine+y < v.offy && curLine+y >= 0 {
+		fmt.Println("scroll3")
 		v.offy = curLine + y
 		v.CursorY = 0
 	} else if curLine+y > v.offy+v.LastViewLine() {
+		fmt.Println("scroll4")
 		v.offy = curLine + y - v.LastViewLine()
 		v.CursorY = v.LastViewLine()
 	}
@@ -504,6 +509,10 @@ func (v *View) SetVtCols(cols int) {
 
 func (v *View) ScrollPos() (ln, col int) {
 	return v.offy, v.offx
+}
+
+func (v *View) SetScrollPos(ln, col int) {
+	v.offy, v.offx = ln, col
 }
 
 func (v *View) Text(ln1, col1, ln2, col2 int) [][]rune {
