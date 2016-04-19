@@ -2,29 +2,30 @@ package client
 
 import (
 	"github.com/tcolar/goed/actions"
+	"github.com/tcolar/goed/assert"
 	. "gopkg.in/check.v1"
 )
 
 func (s *ApiSuite) TestCmdBarEnable(c *C) {
 	res, err := Action(s.id, []string{"cmdbar_enable", "true"})
-	c.Assert(err, IsNil)
-	c.Assert(actions.Ar.CmdbarEnabled(), Equals, true)
+	assert.Nil(c, err)
+	assert.True(c, actions.Ar.CmdbarEnabled())
 
 	res, err = Action(s.id, []string{"cmdbar_enable", "false"})
-	c.Assert(err, IsNil)
-	c.Assert(actions.Ar.CmdbarEnabled(), Equals, false)
+	assert.Nil(c, err)
+	assert.False(c, actions.Ar.CmdbarEnabled())
 
-	c.Assert(len(res), Equals, 0)
+	assert.Eq(c, len(res), 0)
 }
 
 func (s *ApiSuite) TestCmdBarToggle(c *C) {
 	res, err := Action(s.id, []string{"cmdbar_toggle"})
-	c.Assert(err, IsNil)
-	c.Assert(actions.Ar.CmdbarEnabled(), Equals, true)
+	assert.Nil(c, err)
+	assert.True(c, actions.Ar.CmdbarEnabled())
 
 	res, err = Action(s.id, []string{"cmdbar_toggle"})
-	c.Assert(err, IsNil)
-	c.Assert(actions.Ar.CmdbarEnabled(), Equals, false)
+	assert.Nil(c, err)
+	assert.False(c, actions.Ar.CmdbarEnabled())
 
-	c.Assert(len(res), Equals, 0)
+	assert.Eq(c, len(res), 0)
 }

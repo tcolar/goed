@@ -10,6 +10,7 @@ import (
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/api"
+	"github.com/tcolar/goed/assert"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/ui"
 	. "gopkg.in/check.v1"
@@ -61,7 +62,7 @@ func (s *ApiSuite) SetUpTest(c *C) {
 			actions.Ar.EdDelView(v, true)
 		}
 	}
-	c.Assert(len(actions.Ar.EdViews()), Equals, 1)
+	assert.Eq(c, len(actions.Ar.EdViews()), 1)
 	actions.Ar.ViewReload(s.dirView)
 	actions.Ar.ViewClearSelections(s.dirView)
 	actions.Ar.ViewSetScrollPos(s.dirView, 1, 1)
@@ -70,8 +71,8 @@ func (s *ApiSuite) SetUpTest(c *C) {
 
 func (s *ApiSuite) TestNoSuchAction(c *C) {
 	res, err := Action(s.id, []string{"foobar"})
-	c.Assert(err, NotNil)
-	c.Assert(len(res), Equals, 0)
+	assert.NotNil(c, err)
+	assert.Eq(c, len(res), 0)
 }
 
 func (s *ApiSuite) TestEdit(c *C) {
@@ -80,7 +81,7 @@ func (s *ApiSuite) TestEdit(c *C) {
 	go func() {
 		err := Edit(s.id, "test_data", "fooedit")
 		done = true
-		c.Assert(err, IsNil)
+		assert.Nil(c, err)
 		close(completed)
 	}()
 	vid := int64(-1)
@@ -91,7 +92,7 @@ func (s *ApiSuite) TestEdit(c *C) {
 		vid = actions.Ar.EdViewByLoc(loc)
 		time.Sleep(100 * time.Millisecond)
 	}
-	c.Assert(done, Equals, false)
+	assert.False(c, done)
 	actions.Ar.EdDelView(vid, true)
 	select {
 	case <-time.After(5 * time.Second):
@@ -102,15 +103,15 @@ func (s *ApiSuite) TestEdit(c *C) {
 
 func (s *ApiSuite) TestOpen(c *C) {
 	err := Open(s.id, "test_data", "empty.txt")
-	c.Assert(err, IsNil)
+	assert.Nil(c, err)
 	loc, _ := filepath.Abs("./test_data/empty.txt")
 	vid := actions.Ar.EdViewByLoc(loc)
-	c.Assert(vid, Not(Equals), "-1")
+	assert.NotEq(c, vid, "-1")
 	actions.Ar.EdDelView(vid, true)
 }
 
 func (s *ApiSuite) openFile1(c *C) int64 {
 	vid := actions.Ar.EdOpen(refFile, -1, "", false)
-	c.Assert(vid, Not(Equals), int64(-1))
+	assert.NotEq(c, vid, int64(-1))
 	return vid
 }
