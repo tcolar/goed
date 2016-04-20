@@ -33,12 +33,12 @@ func handleEvent(es *EventState) bool {
 	et := es.Type
 
 	curView := actions.Ar.EdCurView()
-	actions.Ar.ViewAutoScroll(curView, 0, 0, false)
+	actions.Ar.ViewAutoScroll(curView, 0, 0)
 
 	y, x := actions.Ar.ViewCursorCoords(curView)
 
 	if es.hasMouse() {
-		curView, y, x = actions.Ar.EdViewAt(es.MouseY+1, es.MouseX+1)
+		curView, y, x = actions.Ar.EdViewAt(es.MouseY, es.MouseX)
 	}
 
 	if curView < 0 {
@@ -50,13 +50,13 @@ func handleEvent(es *EventState) bool {
 
 	dirty := false
 
-	if et != Evt_None {
-		fmt.Printf("%s %s ln:%d col:%d(%d) my:%d mx:%d - %v\n",
-			et, es.String(), y, x, col, es.MouseY, es.MouseX, es.inDrag)
-	}
+	//	if et != Evt_None {
+	fmt.Printf("%s %s ln:%d col:%d(%d) my:%d mx:%d - %v\n",
+		et, es.String(), y, x, col, es.MouseY, es.MouseX, es.inDrag)
+	//	}
 
 	// TODO : common/termonly//cmdbar/view only
-	// TODO: couldn't cmdbar e a view ?
+	// TODO: couldn't cmdbar be a view ?
 
 	// TODO : right click select/open still broken
 	// TODO : dbl click
@@ -181,6 +181,9 @@ func handleEvent(es *EventState) bool {
 		actions.Ar.ViewStretchSelection(curView, y, x)
 		cs = false
 	case EvtSetCursor:
+		if x == 1 && y == 1 {
+			break
+		}
 		actions.Ar.ViewSetCursorPos(curView, y, x)
 		actions.Ar.EdActivateView(curView)
 	case EvtTab:

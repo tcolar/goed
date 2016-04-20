@@ -118,7 +118,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	dirty := false
 	es := false //expand selection
 	vid := v.Id()
-	actions.Ar.ViewAutoScroll(vid, 0, 0, false)
+	actions.Ar.ViewAutoScroll(vid, 0, 0)
 	ln, col := actions.Ar.ViewCursorCoords(vid)
 	e.evtState.InDrag = false
 
@@ -255,7 +255,7 @@ func (v *View) viewCommonEvent(e *Editor, ev *termbox.Event) bool {
 // Events for terminal/command views
 func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
 	vid := v.Id()
-	actions.Ar.ViewAutoScroll(vid, 0, 0, false)
+	actions.Ar.ViewAutoScroll(vid, 0, 0)
 	e.evtState.InDrag = false
 	bc := v.backend.(*backend.BackendCmd)
 	es := false
@@ -437,13 +437,13 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 
 			// Handling scrolling while dragging
 			if ln < v.offy { // scroll up
-				actions.Ar.ViewAutoScroll(vid, -v.LineCount()/10, 0, true)
+				actions.Ar.ViewAutoScroll(vid, -v.LineCount()/10, 0)
 			} else if ln >= v.offy+(v.y2-v.y1)-2 { // scroll down
-				actions.Ar.ViewAutoScroll(vid, v.LineCount()/10, 0, true)
+				actions.Ar.ViewAutoScroll(vid, v.LineCount()/10, 0)
 			} else if col < v.offx { //scroll left
-				actions.Ar.ViewAutoScroll(vid, 0, -5, true)
+				actions.Ar.ViewAutoScroll(vid, 0, -5)
 			} else if col >= v.offx+(v.x2-v.x1)-3 { // scroll right
-				actions.Ar.ViewAutoScroll(vid, 0, 5, true)
+				actions.Ar.ViewAutoScroll(vid, 0, 5)
 			}
 			return
 		}

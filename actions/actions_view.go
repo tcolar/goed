@@ -7,9 +7,10 @@ func (a *ar) ViewAddSelection(viewId int64, l1, c1, l2, c2 int) {
 	d(viewAddSelection{viewId: viewId, l1: l1, c1: c1, l2: l2, c2: c2})
 }
 
-// Enable/disable a view autoscrolling (by y,x increments)
-func (a *ar) ViewAutoScroll(viewId int64, y, x int, on bool) {
-	d(viewAutoScroll{viewId: viewId, x: x, y: y, on: on})
+// Enable/disable a view autoscrolling, while selecting (dragged selection + scrolling)
+// By y,x increments. 0,0 means off
+func (a *ar) ViewAutoScroll(viewId int64, y, x int) {
+	d(viewAutoScroll{viewId: viewId, x: x, y: y, on: y != 0 || x != 0})
 }
 
 // send 'backspace' to the view

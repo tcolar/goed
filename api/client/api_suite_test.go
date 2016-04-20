@@ -63,7 +63,6 @@ func (s *ApiSuite) SetUpTest(c *C) {
 		}
 	}
 	assert.Eq(c, len(actions.Ar.EdViews()), 1)
-	actions.Ar.ViewReload(s.dirView)
 	actions.Ar.ViewClearSelections(s.dirView)
 	actions.Ar.ViewSetScrollPos(s.dirView, 1, 1)
 	actions.Ar.ViewSetCursorPos(s.dirView, 1, 1)

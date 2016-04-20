@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/assert"
@@ -24,6 +25,31 @@ func (as *ApiSuite) TestViewAddSelection(t *C) {
 	assert.Eq(t, len(s), 2)
 	assert.Eq(t, s[0], *core.NewSelection(1, 2, 3, 4))
 	assert.Eq(t, s[1], *core.NewSelection(4, 5, 6, 7)) // Normalized
+}
+
+func (as *ApiSuite) TestViewAutoScroll(t *C) {
+	vid := as.openFile1(t)
+	actions.Ar.ViewInsert(vid, 1, 1, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nxx", true)
+	actions.Ar.ViewSetCursorPos(vid, 1, 1)
+	ln, col := actions.Ar.ViewScrollPos(vid)
+	assert.Eq(t, ln, 1)
+	assert.Eq(t, col, 1)
+	actions.Ar.ViewAddSelection(vid, 1, 1, -1, -1)
+	res, err := Action(as.id, []string{"view_auto_scroll", vidStr(vid), "5", "5"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	time.Sleep(300 * time.Millisecond)
+	ln, col = actions.Ar.ViewScrollPos(vid)
+	assert.True(t, ln > 1) // scrolled down some
+	res, err = Action(as.id, []string{"view_auto_scroll", vidStr(vid), "-10", "-10"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	time.Sleep(300 * time.Millisecond)
+	ln, col = actions.Ar.ViewScrollPos(vid)
+	assert.Eq(t, ln, 1) // scrolled back to top
+	res, err = Action(as.id, []string{"view_auto_scroll", vidStr(vid), "0", "0"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
 }
 
 func (as *ApiSuite) TestViewClearSelection(t *C) {
@@ -168,7 +194,7 @@ func (as *ApiSuite) TestViewCursorCoords(t *C) {
 }
 
 /*
-view_backspace(int64)
+view_autoscroll
 view_bounds(int64) int, int, int, int
 view_cmd_stop(int64)
 view_cols(int64) int
@@ -204,5 +230,5 @@ view_text(int64, int, int,int, int) string
 view_undo(int64)
 */
 
-// view_lock
-// view_unlock ?? (to protect while editing) ?
+// view_lock ?? (to protect while editing) ? -> with timeout ?
+// view_unlock
