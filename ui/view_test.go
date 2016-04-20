@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/assert"
 	"github.com/tcolar/goed/core"
@@ -121,10 +120,8 @@ func (us *UiSuite) TestViewSelections(t *C) {
 	b, sel = v.Selected(2, 2)
 	assert.True(t, b)
 	assert.Eq(t, sel.String(), s.String())
-	oldcb, _ := clipboard.ReadAll()
 	v.SelectionCopy(s)
-	cb, _ := clipboard.ReadAll()
-	defer clipboard.WriteAll(oldcb) // restore the clipbaord after tests
+	cb, _ := core.Ed.Clipboard.ReadAll()
 	assert.Eq(t, cb, "bcdefghijklmnopqrstuvwxyz\nABCDEFGH")
 	s = v.ExpandSelectionPath(0, 2)
 	assert.Eq(t, core.RunesToString(v.SelectionText(s)), "1234567890")

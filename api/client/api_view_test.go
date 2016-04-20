@@ -158,6 +158,27 @@ func (as *ApiSuite) TestViewCols(t *C) {
 	assert.Eq(t, res[0], "46")
 }
 
+func (as *ApiSuite) TestViewCopy(t *C) {
+	vid := as.openFile1(t)
+	// copy line
+	res, err := Action(as.id, []string{"view_copy", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	core.Bus.Flush()
+	cb, _ := core.ClipboardRead()
+	assert.Eq(t, cb, "1234567890")
+	// copy selection
+	actions.Ar.ViewClearSelections(vid)
+	actions.Ar.ViewAddSelection(vid, 10, 2, 11, 10)
+	actions.Ar.ViewSetCursorPos(vid, 11, 10)
+	res, err = Action(as.id, []string{"view_copy", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	core.Bus.Flush()
+	cb, _ = core.ClipboardRead()
+	assert.Eq(t, cb, "	abc\naaa aaa.go")
+}
+
 func (as *ApiSuite) TestViewCursorCoords(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_cursor_coords", vidStr(vid)})
@@ -255,8 +276,6 @@ func (as *ApiSuite) TestViewText(t *C) {
 }
 
 /*
-view_cols(int64) int
-view_copy(int64)
 view_cursor_coords(int64) int, int
 view_cursor_mvmt(int64, core.CursorMvmt)
 view_cursor_pos(int64) int, int

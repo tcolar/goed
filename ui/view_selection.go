@@ -8,7 +8,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/atotto/clipboard"
 	"github.com/tcolar/goed/core"
 )
 
@@ -81,7 +80,7 @@ func (v *View) SelectionCopy(s *core.Selection) {
 		return
 	}
 	core.Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
-	clipboard.WriteAll(text)
+	core.ClipboardWrite(text)
 }
 
 func (v *View) SelectionDelete(s *core.Selection) {
@@ -89,7 +88,7 @@ func (v *View) SelectionDelete(s *core.Selection) {
 }
 
 func (v *View) Paste() {
-	text, err := clipboard.ReadAll()
+	text, err := core.ClipboardRead()
 	if err != nil {
 		core.Ed.SetStatusErr(err.Error())
 		return
