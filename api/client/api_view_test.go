@@ -132,6 +132,32 @@ func (as *ApiSuite) TestViewCmdStop(t *C) {
 	assert.False(t, strings.Contains(string(out), "sleep "+marker))
 }
 
+func (as *ApiSuite) TestViewCols(t *C) {
+	views := actions.Ar.EdViews()
+	assert.Eq(t, len(views), 1)
+	res, err := Action(as.id, []string{"view_cols", vidStr(views[0])})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "46") //49 - 1 - 1(scrollar) -2(left/right padding)
+	// add new view and move to new column
+	vid := as.openFile1(t)
+	l, c2, _, _ := actions.Ar.ViewBounds(vid)
+	actions.Ar.EdViewMove(vid, l, c2, 2, c2+20) // force view to it's own column
+	res, err = Action(as.id, []string{"view_cols", vidStr(views[0])})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "16") // 20-4
+	res, err = Action(as.id, []string{"view_cols", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "26") // 30-4
+	actions.Ar.EdDelView(vid, true)
+	res, err = Action(as.id, []string{"view_cols", vidStr(views[0])})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "46")
+}
+
 func (as *ApiSuite) TestViewCursorCoords(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_cursor_coords", vidStr(vid)})
