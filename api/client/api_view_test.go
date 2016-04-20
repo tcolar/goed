@@ -1,7 +1,7 @@
 package client
 
 import (
-	"fmt"
+	"strings"
 	"time"
 
 	"github.com/tcolar/goed/actions"
@@ -52,6 +52,57 @@ func (as *ApiSuite) TestViewAutoScroll(t *C) {
 	assert.Eq(t, len(res), 0)
 }
 
+func (as *ApiSuite) TestViewBackspace(t *C) {
+	vid := as.openFile1(t)
+	actions.Ar.ViewSetCursorPos(vid, 1, 3)
+	res, err := Action(as.id, []string{"view_backspace", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "134567890")
+	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "34567890")
+	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "34567890")
+	// nothing left to backspace (@ 1,1)
+	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	// backspace with line wrap
+	actions.Ar.ViewSetCursorPos(vid, 4, 1)
+	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	// backspace selection
+	actions.Ar.ViewAddSelection(vid, 7, 3, 9, 1)
+	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 7, 1, 7, -1)[0], "ΑΒ	abc")
+}
+
+func (as *ApiSuite) TestViewBounds(t *C) {
+	views := actions.Ar.EdViews()
+	assert.Eq(t, len(views), 1)
+	res, err := Action(as.id, []string{"view_bounds", vidStr(views[0])})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 4)
+	assert.Eq(t, strings.Join(res, " "), "2 1 24 50") // whole editor
+	vid := as.openFile1(t)
+	res, err = Action(as.id, []string{"view_bounds", vidStr(views[0])})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 4)
+	assert.Eq(t, strings.Join(res, " "), "2 1 12 50") //top half
+	res, err = Action(as.id, []string{"view_bounds", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 4)
+	assert.Eq(t, strings.Join(res, " "), "13 1 24 50") //bottom half
+}
+
 func (as *ApiSuite) TestViewClearSelection(t *C) {
 	vid := as.openFile1(t)
 	actions.Ar.ViewAddSelection(vid, 1, 2, 3, 4)
@@ -63,12 +114,26 @@ func (as *ApiSuite) TestViewClearSelection(t *C) {
 	assert.Eq(t, len(actions.Ar.ViewSelections(vid)), 0)
 }
 
+func (as *ApiSuite) TestViewCursorCoords(t *C) {
+	vid := as.openFile1(t)
+	res, err := Action(as.id, []string{"view_cursor_coords", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "1")
+	assert.Eq(t, res[1], "1")
+	actions.Ar.ViewMoveCursorRoll(vid, 3, 2)
+	res, err = Action(as.id, []string{"view_cursor_coords", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "4")
+	assert.Eq(t, res[1], "3")
+}
+
 func (as *ApiSuite) TestViewSelectAll(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_select_all", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
-	fmt.Println(vid)
 	s := actions.Ar.ViewSelections(vid)
 	assert.Eq(t, len(s), 1)
 	assert.Eq(t, s[0], *core.NewSelection(1, 1, 12, 36))
@@ -145,57 +210,7 @@ func (as *ApiSuite) TestViewText(t *C) {
 	assert.Eq(t, res[1], "AB")
 }
 
-func (as *ApiSuite) TestViewBackspace(t *C) {
-	vid := as.openFile1(t)
-	actions.Ar.ViewSetCursorPos(vid, 1, 3)
-	res, err := Action(as.id, []string{"view_backspace", vidStr(vid)})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "134567890")
-	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "34567890")
-	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "34567890")
-	// nothing left to backspace (@ 1,1)
-	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	// backspace with line wrap
-	actions.Ar.ViewSetCursorPos(vid, 4, 1)
-	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	// backspace selection
-	actions.Ar.ViewAddSelection(vid, 7, 3, 9, 1)
-	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewText(vid, 7, 1, 7, -1)[0], "ΑΒ	abc")
-}
-
-func (as *ApiSuite) TestViewCursorCoords(t *C) {
-	vid := as.openFile1(t)
-	res, err := Action(as.id, []string{"view_cursor_coords", vidStr(vid)})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 2)
-	assert.Eq(t, res[0], "1")
-	assert.Eq(t, res[1], "1")
-	actions.Ar.ViewMoveCursorRoll(vid, 3, 2)
-	res, err = Action(as.id, []string{"view_cursor_coords", vidStr(vid)})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 2)
-	assert.Eq(t, res[0], "4")
-	assert.Eq(t, res[1], "3")
-}
-
 /*
-view_autoscroll
-view_bounds(int64) int, int, int, int
 view_cmd_stop(int64)
 view_cols(int64) int
 view_copy(int64)
