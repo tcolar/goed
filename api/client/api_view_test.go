@@ -1,6 +1,7 @@
 package client
 
 import (
+	"os/exec"
 	"strings"
 	"time"
 
@@ -114,6 +115,23 @@ func (as *ApiSuite) TestViewClearSelection(t *C) {
 	assert.Eq(t, len(actions.Ar.ViewSelections(vid)), 0)
 }
 
+func (as *ApiSuite) TestViewCmdStop(t *C) {
+	marker := "4224"
+	vid := actions.Ar.EdOpenTerm([]string{"sleep", marker})
+	// "sleep" command should be running a while
+	out, err := exec.Command("ps", "-ax").CombinedOutput()
+	assert.Nil(t, err)
+	assert.True(t, strings.Contains(string(out), "sleep "+marker))
+	// This should stop it
+	res, err := Action(as.id, []string{"view_cmd_stop", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	// check it's gone
+	out, err = exec.Command("ps", "-ax").CombinedOutput()
+	assert.Nil(t, err)
+	assert.False(t, strings.Contains(string(out), "sleep "+marker))
+}
+
 func (as *ApiSuite) TestViewCursorCoords(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_cursor_coords", vidStr(vid)})
@@ -211,7 +229,6 @@ func (as *ApiSuite) TestViewText(t *C) {
 }
 
 /*
-view_cmd_stop(int64)
 view_cols(int64) int
 view_copy(int64)
 view_cursor_coords(int64) int, int
