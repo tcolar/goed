@@ -251,6 +251,31 @@ func (as *ApiSuite) TestViewCursorPos(t *C) {
 	assert.Eq(t, res[1], "1")
 }
 
+func (as *ApiSuite) TestViewCut(t *C) {
+	vid := as.openFile1(t)
+	actions.Ar.ViewSetCursorPos(vid, 3, 1)
+	core.Bus.Flush()
+	// cut line
+	res, err := Action(as.id, []string{"view_cut", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	core.Bus.Flush()
+	cb, _ := core.ClipboardRead()
+	assert.Eq(t, cb, "abcdefghijklmnopqrstuvwxyz")
+	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	// cut selection
+	actions.Ar.ViewClearSelections(vid)
+	actions.Ar.ViewAddSelection(vid, 9, 2, 10, 10)
+	actions.Ar.ViewSetCursorPos(vid, 10, 10)
+	res, err = Action(as.id, []string{"view_cut", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	core.Bus.Flush()
+	cb, _ = core.ClipboardRead()
+	assert.Eq(t, cb, "	abc\naaa aaa.go")
+	assert.Eq(t, actions.Ar.ViewText(vid, 9, 1, 9, -1)[0], "	 /tmp/aaa.go aaa.go:23 /tmp/aaa.go:23:7")
+}
+
 func (as *ApiSuite) TestViewSelectAll(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_select_all", vidStr(vid)})
