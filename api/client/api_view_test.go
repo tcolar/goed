@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 	"time"
@@ -194,6 +195,39 @@ func (as *ApiSuite) TestViewCursorCoords(t *C) {
 	assert.Eq(t, res[1], "3")
 }
 
+func (as *ApiSuite) TestViewCursorMvmt(t *C) {
+	vid := as.openFile1(t)
+	actions.Ar.ViewSetCursorPos(vid, 3, 5)
+	ln, col := actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 3)
+	assert.Eq(t, col, 5)
+	as.checkMvmt(t, vid, core.CursorMvmtRight, 3, 6)
+	as.checkMvmt(t, vid, core.CursorMvmtLeft, 3, 5)
+	as.checkMvmt(t, vid, core.CursorMvmtDown, 4, 5)
+	as.checkMvmt(t, vid, core.CursorMvmtUp, 3, 5)
+	as.checkMvmt(t, vid, core.CursorMvmtHome, 3, 1)
+	as.checkMvmt(t, vid, core.CursorMvmtEnd, 3, 27)
+	actions.Ar.ViewSetCursorPos(vid, 1, 5) // view is 12 lines (= page size)
+	core.Bus.Flush()
+	as.checkMvmt(t, vid, core.CursorMvmtPgDown, 12, 5)
+	actions.Ar.ViewSetCursorPos(vid, 13, 5)
+	core.Bus.Flush()
+	as.checkMvmt(t, vid, core.CursorMvmtPgUp, 1, 5)
+	actions.Ar.ViewSetCursorPos(vid, 1, 7)
+	core.Bus.Flush()
+	as.checkMvmt(t, vid, core.CursorMvmtBottom, 12, 37)
+	as.checkMvmt(t, vid, core.CursorMvmtTop, 1, 1)
+}
+
+func (as *ApiSuite) checkMvmt(t *C, vid int64, mvmt core.CursorMvmt, eln, ecol int) {
+	res, err := Action(as.id, []string{"view_cursor_mvmt", vidStr(vid), fmt.Sprintf("%d", mvmt)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	ln, col := actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, eln)
+	assert.Eq(t, col, ecol)
+}
+
 func (as *ApiSuite) TestViewSelectAll(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_select_all", vidStr(vid)})
@@ -276,7 +310,6 @@ func (as *ApiSuite) TestViewText(t *C) {
 }
 
 /*
-view_cursor_coords(int64) int, int
 view_cursor_mvmt(int64, core.CursorMvmt)
 view_cursor_pos(int64) int, int
 view_cut(int64)
@@ -309,3 +342,5 @@ view_undo(int64)
 
 // view_lock ?? (to protect while editing) ? -> with timeout ?
 // view_unlock
+
+// TODO : review what api calls should be internal only
