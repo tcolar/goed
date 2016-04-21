@@ -213,8 +213,6 @@ func (as *ApiSuite) TestViewCursorMvmt(t *C) {
 	actions.Ar.ViewSetCursorPos(vid, 13, 5)
 	core.Bus.Flush()
 	as.checkMvmt(t, vid, core.CursorMvmtPgUp, 1, 5)
-	actions.Ar.ViewSetCursorPos(vid, 1, 7)
-	core.Bus.Flush()
 	as.checkMvmt(t, vid, core.CursorMvmtBottom, 12, 37)
 	as.checkMvmt(t, vid, core.CursorMvmtTop, 1, 1)
 }
@@ -226,6 +224,31 @@ func (as *ApiSuite) checkMvmt(t *C, vid int64, mvmt core.CursorMvmt, eln, ecol i
 	ln, col := actions.Ar.ViewCursorPos(vid)
 	assert.Eq(t, ln, eln)
 	assert.Eq(t, col, ecol)
+}
+
+func (as *ApiSuite) TestViewCursorPos(t *C) {
+	vid := as.openFile1(t)
+	actions.Ar.ViewSetCursorPos(vid, 3, 5)
+	core.Bus.Flush()
+	res, err := Action(as.id, []string{"view_cursor_pos", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "3")
+	assert.Eq(t, res[1], "5")
+	actions.Ar.ViewSetCursorPos(vid, 7, 999)
+	core.Bus.Flush()
+	res, err = Action(as.id, []string{"view_cursor_pos", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "7")
+	assert.Eq(t, res[1], "27") // 999 is passed EOL, so should be at EOL
+	actions.Ar.ViewSetCursorPos(vid, 0, 0)
+	core.Bus.Flush()
+	res, err = Action(as.id, []string{"view_cursor_pos", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "1") // 0,0 are invalid values, so should be at start of file (1,1)
+	assert.Eq(t, res[1], "1")
 }
 
 func (as *ApiSuite) TestViewSelectAll(t *C) {
@@ -310,8 +333,6 @@ func (as *ApiSuite) TestViewText(t *C) {
 }
 
 /*
-view_cursor_mvmt(int64, core.CursorMvmt)
-view_cursor_pos(int64) int, int
 view_cut(int64)
 view_delete(int64, int, int, int, int, bool)
 view_delete_cur(int64)
