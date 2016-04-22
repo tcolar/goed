@@ -208,18 +208,12 @@ func (as *ApiSuite) TestViewCursorMvmt(t *C) {
 	as.checkMvmt(t, vid, core.CursorMvmtUp, 3, 5)
 	as.checkMvmt(t, vid, core.CursorMvmtHome, 3, 1)
 	as.checkMvmt(t, vid, core.CursorMvmtEnd, 3, 27)
-	actions.Ar.ViewSetCursorPos(vid, 1, 5)
-	/*
-		TODO: currently when paginating the cursor col gets to 1 (beginning of line)
-		Probably should stay at the same column it's at.
-
-		debugViews()
-		as.checkMvmt(t, vid, core.CursorMvmtPgDown, 12, 5)
-		actions.Ar.ViewSetCursorPos(vid, 13, 5)
-		as.checkMvmt(t, vid, core.CursorMvmtPgUp, 1, 5)
-		as.checkMvmt(t, vid, core.CursorMvmtBottom, 12, 37)
-		as.checkMvmt(t, vid, core.CursorMvmtTop, 1, 1)
-	*/
+	actions.Ar.ViewSetCursorPos(vid, 3, 5)
+	as.checkMvmt(t, vid, core.CursorMvmtPgDown, 12, 5)
+	actions.Ar.ViewSetCursorPos(vid, 13, 5)
+	as.checkMvmt(t, vid, core.CursorMvmtPgUp, 3, 5)
+	as.checkMvmt(t, vid, core.CursorMvmtBottom, 12, 37)
+	as.checkMvmt(t, vid, core.CursorMvmtTop, 1, 1)
 }
 
 func (as *ApiSuite) checkMvmt(t *C, vid int64, mvmt core.CursorMvmt, eln, ecol int) {

@@ -392,6 +392,9 @@ func (v *View) canClose() bool {
 // Update the editor cursor to be this view current cursor
 func (v *View) updateCursor(slice *core.Slice) {
 	v.NormalizeCursor(slice)
+	if v.CursorY < slice.R1 || v.CursorY > slice.R2 {
+		v.SyncSlice()
+	}
 	core.Ed.SetCursor(v.y1+2+v.CursorY, v.x1+2+v.CursorX)
 }
 
@@ -493,7 +496,8 @@ func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
 	case core.CursorMvmtBottom:
 		c := 0
 		if v.LineCount() > 0 {
-			c = v.lineCols(v.slice, v.LineCount()-1) + 1 - col
+			slice := v.backend.Slice(v.LineCount()-1, 1, v.LineCount()-1, -1)
+			c = v.lineCols(slice, v.LineCount()-1) + 1 - col
 		}
 		v.MoveCursor(v.LineCount()-1-v.CurLine(), c)
 	}

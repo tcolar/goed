@@ -194,12 +194,7 @@ func (v View) LineRunesTo(s *core.Slice, lnIndex, column int) int {
 	if lnIndex >= v.LineCount() || lnIndex < 0 {
 		return 0
 	}
-	// in case it's aline that is currently not visible, get a proper slice
-	slice := s
-	if lnIndex > s.R2 || lnIndex < s.R1 {
-		slice = v.backend.Slice(lnIndex, 1, lnIndex, -1)
-	}
-	ln := v.Line(slice, lnIndex)
+	ln := v.Line(s, lnIndex)
 	for i := 0; i <= column && runes < len(ln); {
 		i += v.runeSize(ln[runes])
 		if i <= column {
