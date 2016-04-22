@@ -155,7 +155,11 @@ func (v *View) LineCount() int {
 }
 
 // Line return the line at the given index
-func (v *View) Line(s *core.Slice, lnIndex int) []rune {
+func (v *View) Line(slice *core.Slice, lnIndex int) []rune {
+	s := slice
+	if lnIndex < s.R1 || lnIndex > s.R2 {
+		s = v.backend.Slice(lnIndex, 1, lnIndex, -1)
+	}
 	index := lnIndex - s.R1
 	if index < 0 || index >= len(*s.Text()) {
 		return []rune{}
@@ -163,14 +167,22 @@ func (v *View) Line(s *core.Slice, lnIndex int) []rune {
 	return (*s.Text())[index]
 }
 
-// LineLen returns the length of a line (raw runes length)
-func (v *View) LineLen(s *core.Slice, lnIndex int) int {
+// LineLen returns the length onf a line (raw runes length)
+func (v *View) LineLen(slice *core.Slice, lnIndex int) int {
+	s := slice
+	if lnIndex < s.R1 || lnIndex > s.R2 {
+		s = v.backend.Slice(lnIndex, 1, lnIndex, -1)
+	}
 	return len(v.Line(s, lnIndex))
 }
 
 // LineCol returns the number of columns used for the given lines
 // ie: a tab uses multiple columns
-func (v *View) lineCols(s *core.Slice, lnIndex int) int {
+func (v *View) lineCols(slice *core.Slice, lnIndex int) int {
+	s := slice
+	if lnIndex < s.R1 || lnIndex > s.R2 {
+		s = v.backend.Slice(lnIndex, 1, lnIndex, -1)
+	}
 	return v.lineColsTo(s, lnIndex, v.LineLen(s, lnIndex))
 }
 

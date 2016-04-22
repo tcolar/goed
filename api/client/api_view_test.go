@@ -458,7 +458,6 @@ func debugViews() {
 }
 
 /*
-view_insert_new_line(int64)
 view_move_cursor(int64, int, int)
 view_move_cursor_roll(int64, int, int)
 view_open_selection(int64, bool)
