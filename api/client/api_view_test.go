@@ -314,6 +314,54 @@ func (as *ApiSuite) TestViewDeleteCur(t *C) {
 	assert.Eq(t, actions.Ar.ViewText(vid, 7, 1, 7, -1)[0], "ΑΒ	abc")
 }
 
+func (as *ApiSuite) TestViewInsert(t *C) {
+	vid := as.openFile1(t)
+	res, err := Action(as.id, []string{"view_insert", vidStr(vid), "1", "1", "XYZ", "false"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "XYZ1234567890")
+	res, err = Action(as.id, []string{"view_insert", vidStr(vid), "3", "3", "	123\n456", "true"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "ab	123")
+	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "456cdefghijklmnopqrstuvwxyz")
+}
+
+func (as *ApiSuite) TestViewInsertCur(t *C) {
+	vid := as.openFile1(t)
+	actions.Ar.ViewSetCursorPos(vid, 1, 3)
+	res, err := Action(as.id, []string{"view_insert_cur", vidStr(vid), "X"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12X34567890")
+	res, err = Action(as.id, []string{"view_insert_cur", vidStr(vid), "Y"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12XY34567890")
+	// insert over selection
+	actions.Ar.ViewAddSelection(vid, 4, 3, 10, 1)
+	res, err = Action(as.id, []string{"view_insert_cur", vidStr(vid), "{\n}"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "AB{")
+	assert.Eq(t, actions.Ar.ViewText(vid, 5, 1, 5, -1)[0], "}	abc")
+}
+
+func (as *ApiSuite) TestViewInsertNewLine(t *C) {
+	vid := as.openFile1(t)
+	res, err := Action(as.id, []string{"view_insert_new_line", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "")
+	assert.Eq(t, actions.Ar.ViewText(vid, 2, 1, 2, -1)[0], "1234567890")
+	actions.Ar.ViewSetCursorPos(vid, 4, 3)
+	res, err = Action(as.id, []string{"view_insert_new_line", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "ab")
+	assert.Eq(t, actions.Ar.ViewText(vid, 5, 1, 5, -1)[0], "cdefghijklmnopqrstuvwxyz")
+}
+
 func (as *ApiSuite) TestViewSelectAll(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_select_all", vidStr(vid)})
@@ -410,8 +458,6 @@ func debugViews() {
 }
 
 /*
-view_insert(int64, int, int, string, bool)
-view_insert_cur(int64, string)
 view_insert_new_line(int64)
 view_move_cursor(int64, int, int)
 view_move_cursor_roll(int64, int, int)
