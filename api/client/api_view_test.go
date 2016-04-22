@@ -283,6 +283,18 @@ func (as *ApiSuite) TestViewCut(t *C) {
 	assert.Eq(t, actions.Ar.ViewText(vid, 9, 1, 9, -1)[0], "	 /tmp/aaa.go aaa.go:23 /tmp/aaa.go:23:7")
 }
 
+func (as *ApiSuite) TestViewDelete(t *C) {
+	vid := as.openFile1(t)
+	res, err := Action(as.id, []string{"view_delete", vidStr(vid), "1", "1", "1", "5", "false"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "67890")
+	res, err = Action(as.id, []string{"view_delete", vidStr(vid), "10", "2", "11", "42", "true"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 10, 1, 10, -1)[0], "	go:23:7")
+}
+
 func (as *ApiSuite) TestViewDeleteCur(t *C) {
 	vid := as.openFile1(t)
 	actions.Ar.ViewSetCursorPos(vid, 1, 3)
@@ -404,8 +416,6 @@ func debugViews() {
 }
 
 /*
-view_delete(int64, int, int, int, int, bool)
-view_delete_cur(int64)
 view_insert(int64, int, int, string, bool)
 view_insert_cur(int64, string)
 view_insert_new_line(int64)
