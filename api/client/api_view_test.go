@@ -250,6 +250,13 @@ func (as *ApiSuite) TestViewCursorPos(t *C) {
 	assert.Eq(t, len(res), 2)
 	assert.Eq(t, res[0], "7") // 0,0 are invalid values, so should not have moved
 	assert.Eq(t, res[1], "27")
+	// with some scrolling involved
+	actions.Ar.ViewSetCursorPos(vid, 12, 35)
+	res, err = Action(as.id, []string{"view_cursor_pos", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "12")
+	assert.Eq(t, res[1], "35")
 }
 
 func (as *ApiSuite) TestViewCut(t *C) {
@@ -287,19 +294,13 @@ func (as *ApiSuite) TestViewDeleteCur(t *C) {
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
 	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12567890")
-	// nothing left to delete (@ 13,1)
-	//	actions.Ar.ViewSetCursorPos(vid, 12, 37)
-	//	res, err = Action(as.id, []string{"view_delete_cur", vidStr(vid)})
-	//	assert.Nil(t, err)
-	//	assert.Eq(t, len(res), 0)
-	//	assert.Eq(t, actions.Ar.ViewText(vid, 12, 1, 12, -1)[0], "// TODO: \"wide\" runes support / test")
 	// delete with line wrap
 	actions.Ar.ViewSetCursorPos(vid, 3, 27)
 	res, err = Action(as.id, []string{"view_delete_cur", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
 	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	// backspace selection
+	// delete selection
 	actions.Ar.ViewAddSelection(vid, 7, 3, 9, 1)
 	res, err = Action(as.id, []string{"view_delete_cur", vidStr(vid)})
 	assert.Nil(t, err)
