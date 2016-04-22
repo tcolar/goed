@@ -320,22 +320,23 @@ func (v *View) MoveCursor(y, x int) {
 		v.CursorY = v.LastViewLine()
 	}
 
-	v.updateCursor()
+	v.updateCursor(slice)
 }
 
-func (v *View) NormalizeCursor() {
+func (v *View) NormalizeCursor(slice *core.Slice) {
 	lastLine := v.LineCount()
 	if v.CursorY < 0 {
 		v.CursorY = 0
 		v.CursorX = 0
 		return
 	}
-	if v.offy+v.CursorY > lastLine {
+	ln := v.offy + v.CursorY
+	if ln > lastLine {
 		v.CursorY = lastLine - v.offy
-		v.CursorX = v.lineCols(v.Slice(), v.offy+v.CursorY)
+		v.CursorX = v.lineCols(slice, v.offy+v.CursorY)
 		return
 	}
-	lc := v.lineCols(v.Slice(), v.offy+v.CursorY)
+	lc := v.lineCols(slice, ln)
 	if v.CursorX < 0 {
 		v.CursorX = 0
 		return
@@ -389,8 +390,8 @@ func (v *View) canClose() bool {
 }
 
 // Update the editor cursor to be this view current cursor
-func (v *View) updateCursor() {
-	v.NormalizeCursor()
+func (v *View) updateCursor(slice *core.Slice) {
+	v.NormalizeCursor(slice)
 	core.Ed.SetCursor(v.y1+2+v.CursorY, v.x1+2+v.CursorX)
 }
 

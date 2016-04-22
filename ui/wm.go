@@ -642,7 +642,7 @@ func (e *Editor) ViewActivate(viewId int64) {
 	}
 	e.curViewId = viewId
 	e.CurCol = e.ViewColumn(e.curViewId)
-	v.updateCursor()
+	v.updateCursor(v.Slice())
 	e.SetStatus(fmt.Sprintf("%s [%d]", v.WorkDir(), viewId))
 }
 

@@ -121,7 +121,7 @@ func (us *UiSuite) TestViewSelections(t *C) {
 	assert.True(t, b)
 	assert.Eq(t, sel.String(), s.String())
 	v.SelectionCopy(s)
-	cb, _ := core.Ed.Clipboard.ReadAll()
+	cb, _ := core.ClipboardRead()
 	assert.Eq(t, cb, "bcdefghijklmnopqrstuvwxyz\nABCDEFGH")
 	s = v.ExpandSelectionPath(0, 2)
 	assert.Eq(t, core.RunesToString(v.SelectionText(s)), "1234567890")
@@ -347,10 +347,7 @@ func (us *UiSuite) TestUndo(t *C) {
 	states := []state{}
 	for i := 0; i != 15; i++ {
 		size := 1 + rand.Int63()%int64(15)
-		//ln := rand.Int63() % int64(v.LineCount())
-		//col := rand.Int63() % (1 + int64(v.LineLen(v.slice, int(ln))))
 		txt := core.RandString(int(size))
-		//v.Insert(int(ln), int(col), txt, false)
 		v.InsertCur(txt)
 		s := state{
 			txt: core.RunesToString(*v.Slice().Text()),

@@ -117,6 +117,7 @@ func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
 	}
 	v.Render()
 	core.Ed.TermFlush()
+	// restore cursor (for undos)
 	offx := v.lineColsTo(v.Slice(), line1, col1)
 	v.MoveCursor(line1-v.CurLine(), offx-v.CurCol())
 }
@@ -190,10 +191,15 @@ func (v *View) lineColsTo(s *core.Slice, lnIndex, to int) int {
 // LineRunesTo returns the number of raw runes to the given line column
 func (v View) LineRunesTo(s *core.Slice, lnIndex, column int) int {
 	runes := 0
-	if len(*s.Text()) == 0 || lnIndex >= v.LineCount() || lnIndex < 0 {
+	if lnIndex >= v.LineCount() || lnIndex < 0 {
 		return 0
 	}
-	ln := v.Line(s, lnIndex)
+	// in case it's aline that is currently not visible, get a proper slice
+	slice := s
+	if lnIndex > s.R2 || lnIndex < s.R1 {
+		slice = v.backend.Slice(lnIndex, 1, lnIndex, -1)
+	}
+	ln := v.Line(slice, lnIndex)
 	for i := 0; i <= column && runes < len(ln); {
 		i += v.runeSize(ln[runes])
 		if i <= column {
