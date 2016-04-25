@@ -423,6 +423,28 @@ func (as *ApiSuite) TestViewSelections(t *C) {
 	assert.Eq(t, "5 6 7 8", res[1]) // Normalized
 }
 
+func (as *ApiSuite) TestViewSetCursorPos(t *C) {
+	vid := as.openFile1(t)
+	res, err := Action(as.id, []string{"view_set_cursor_pos", vidStr(vid), "3", "5"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	ln, col := actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 3)
+	assert.Eq(t, col, 5)
+	res, err = Action(as.id, []string{"view_set_cursor_pos", vidStr(vid), "10", "3"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 10)
+	assert.Eq(t, col, 3)
+	res, err = Action(as.id, []string{"view_set_cursor_pos", vidStr(vid), "1", "99999"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 1)
+	assert.Eq(t, col, 11)
+}
+
 func (as *ApiSuite) TestViewSetDirty(t *C) {
 	vid := as.openFile1(t)
 	assert.False(t, actions.Ar.ViewDirty(vid))
