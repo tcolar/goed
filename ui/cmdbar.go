@@ -100,7 +100,7 @@ func (c *Cmdbar) line(args []string) {
 	}
 	v := ed.ViewById(ed.CurViewId())
 	if v != nil {
-		actions.Ar.ViewMoveCursor(ed.CurViewId(), l-v.CurLine()-1, 0)
+		actions.Ar.ViewMoveCursor(ed.CurViewId(), l-v.CurLine()-1, 0, false)
 	}
 }
 

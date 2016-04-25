@@ -104,13 +104,9 @@ func (a *ar) ViewInsertNewLine(viewId int64) {
 }
 
 // move the cursor by ln, col runes (relative), scroll as needed
-func (a *ar) ViewMoveCursor(viewId int64, y, x int) {
-	d(viewMoveCursor{viewId: viewId, x: x, y: y})
-}
-
-// move the cursor by y,x runes (relative) but also "roll" to rev/next line as needed.
-func (a *ar) ViewMoveCursorRoll(viewId int64, y, x int) {
-	d(viewMoveCursor{viewId: viewId, x: x, y: y, roll: true})
+// roll means "roll" to prev/next line on column overflow
+func (a *ar) ViewMoveCursor(viewId int64, y, x int, roll bool) {
+	d(viewMoveCursor{viewId: viewId, x: x, y: y, roll: roll})
 }
 
 // paste text into the view at the curent location

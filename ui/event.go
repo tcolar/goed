@@ -373,10 +373,10 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 		}
 		return
 	case termbox.MouseScrollUp:
-		actions.Ar.ViewMoveCursor(vid, -1, 0)
+		actions.Ar.ViewMoveCursor(vid, -1, 0, false)
 		return
 	case termbox.MouseScrollDown:
-		actions.Ar.ViewMoveCursor(vid, 1, 0)
+		actions.Ar.ViewMoveCursor(vid, 1, 0, false)
 		return
 	case termbox.MouseRight:
 		if isMouseUp(ev) {
@@ -384,7 +384,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
 			e.evtState.LastRightClick = time.Now().Unix()
 			actions.Ar.ViewClearSelections(vid)
-			actions.Ar.ViewMoveCursor(vid, ev.MouseY-v.y1-2-v.CursorY, ev.MouseX-v.x1-2-v.CursorX)
+			actions.Ar.ViewMoveCursor(vid, ev.MouseY-v.y1-2-v.CursorY, ev.MouseX-v.x1-2-v.CursorX, false)
 			actions.Ar.ViewOpenSelection(vid, true)
 		}
 		return
