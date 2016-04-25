@@ -55,7 +55,7 @@ func (s *ApiSuite) TestEdDelView(t *C) {
 	v1 := actions.Ar.EdCurView()
 	assert.NotEq(t, v0, v1)
 	actions.Ar.ViewSetDirty(v1, true)
-	// view is dirty so frst try should do nothing
+	// view is dirty so first try should do nothing
 	res, err := Action(s.id, []string{"ed_del_view", fmt.Sprintf("%d", v1), "true"})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)

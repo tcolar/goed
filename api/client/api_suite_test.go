@@ -59,7 +59,7 @@ func (s *ApiSuite) SetUpTest(c *C) {
 	// Put the editor back into known state (only dir view open)
 	for _, v := range actions.Ar.EdViews() {
 		if v != s.dirView {
-			actions.Ar.EdDelView(v, true)
+			actions.Ar.EdDelView(v, false)
 		}
 	}
 	assert.Eq(c, len(actions.Ar.EdViews()), 1)

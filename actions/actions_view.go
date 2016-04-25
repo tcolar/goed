@@ -81,6 +81,13 @@ func (a *ar) ViewDeleteCur(viewId int64) {
 	d(viewDeleteCur{viewId: viewId})
 }
 
+// is the view dirty or not ?
+func (a *ar) ViewDirty(viewId int64) bool {
+	answer := make(chan bool, 1)
+	d(viewDirty{answer: answer, viewId: viewId})
+	return <-answer
+}
+
 // insert text into the view at the row,col location. 1 indexed
 func (a *ar) ViewInsert(viewId int64, row, col int, text string, undoable bool) {
 	d(viewInsertAction{viewId: viewId, row: row, col: col, text: text, undoable: undoable})
@@ -438,6 +445,19 @@ func (a viewDeleteCur) Run() {
 	if v != nil {
 		v.DeleteCur()
 	}
+}
+
+type viewDirty struct {
+	viewId int64
+	answer chan bool
+}
+
+func (a viewDirty) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		a.answer <- v.Dirty()
+	}
+	a.answer <- false
 }
 
 type viewInsertAction struct {

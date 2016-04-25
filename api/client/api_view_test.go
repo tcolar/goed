@@ -314,6 +314,25 @@ func (as *ApiSuite) TestViewDeleteCur(t *C) {
 	assert.Eq(t, actions.Ar.ViewText(vid, 7, 1, 7, -1)[0], "ΑΒ	abc")
 }
 
+func (as *ApiSuite) TestViewDirty(t *C) {
+	vid := as.openFile1(t)
+	assert.False(t, actions.Ar.ViewDirty(vid))
+	res, err := Action(as.id, []string{"view_dirty", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "false")
+	actions.Ar.ViewInsert(vid, 1, 1, "ZZ", false)
+	res, err = Action(as.id, []string{"view_dirty", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "true")
+	actions.Ar.ViewSetDirty(vid, false)
+	res, err = Action(as.id, []string{"view_dirty", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "false")
+}
+
 func (as *ApiSuite) TestViewInsert(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_insert", vidStr(vid), "1", "1", "XYZ", "false"})
@@ -362,6 +381,19 @@ func (as *ApiSuite) TestViewInsertNewLine(t *C) {
 	assert.Eq(t, actions.Ar.ViewText(vid, 5, 1, 5, -1)[0], "cdefghijklmnopqrstuvwxyz")
 }
 
+/*
+view_move_cursor(int64, int, int)
+view_move_cursor_roll(int64, int, int)
+view_open_selection(int64, bool)
+view_paste(int64)
+view_redo(int64)
+view_reload(int64)
+view_render(int64)
+view_rows(int64) int
+view_save(int64)
+view_scroll_pos(int64) int, int
+*/
+
 func (as *ApiSuite) TestViewSelectAll(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_select_all", vidStr(vid)})
@@ -390,6 +422,24 @@ func (as *ApiSuite) TestViewSelections(t *C) {
 	assert.Eq(t, "1 2 3 4", res[0])
 	assert.Eq(t, "5 6 7 8", res[1]) // Normalized
 }
+
+func (as *ApiSuite) TestViewSetDirty(t *C) {
+	vid := as.openFile1(t)
+	assert.False(t, actions.Ar.ViewDirty(vid))
+	res, err := Action(as.id, []string{"view_set_dirty", vidStr(vid), "true"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.True(t, actions.Ar.ViewDirty(vid))
+}
+
+/*
+view_set_title(int64, string)
+view_set_vt_cols(int64, int)
+view_set_workdir(int64, string)
+view_stretch_selection(int64, int, int)
+view_src_loc(int64) string
+view_sync_slice(int64)
+*/
 
 func (as *ApiSuite) TestViewText(t *C) {
 	vid := as.openFile1(t)
@@ -443,6 +493,10 @@ func (as *ApiSuite) TestViewText(t *C) {
 	assert.Eq(t, res[1], "AB")
 }
 
+/*
+view_undo(int64)
+*/
+
 func debugViews() {
 	cv := actions.Ar.EdCurView()
 	for _, v := range actions.Ar.EdViews() {
@@ -456,29 +510,6 @@ func debugViews() {
 			v, actions.Ar.ViewTitle(v), a, b, c, d, ln, col)
 	}
 }
-
-/*
-view_move_cursor(int64, int, int)
-view_move_cursor_roll(int64, int, int)
-view_open_selection(int64, bool)
-view_paste(int64)
-view_redo(int64)
-view_reload(int64)
-view_render(int64)
-view_rows(int64) int
-view_save(int64)
-view_scroll_pos(int64) int, int
-view_set_cursor_pos(int64, int, int)
-view_set_dirty(int64, bool)
-view_set_title(int64, string)
-view_set_vt_cols(int64, int)
-view_set_workdir(int64, string)
-view_stretch_selection(int64, int, int)
-view_src_loc(int64) string
-view_sync_slice(int64)
-view_text(int64, int, int,int, int) string
-view_undo(int64)
-*/
 
 // view_lock ?? (to protect while editing) ? -> with timeout ?
 // view_unlock
