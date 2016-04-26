@@ -171,7 +171,7 @@ func (as *ApiSuite) TestViewCopy(t *C) {
 	assert.Eq(t, len(res), 0)
 	core.Bus.Flush()
 	cb, _ := core.ClipboardRead()
-	assert.Eq(t, cb, "1234567890")
+	assert.Eq(t, cb, "1234567890\n")
 	// copy selection
 	actions.Ar.ViewClearSelections(vid)
 	actions.Ar.ViewAddSelection(vid, 10, 2, 11, 10)
@@ -264,7 +264,7 @@ func (as *ApiSuite) TestViewCut(t *C) {
 	assert.Eq(t, len(res), 0)
 	core.Bus.Flush()
 	cb, _ := core.ClipboardRead()
-	assert.Eq(t, cb, "abcdefghijklmnopqrstuvwxyz")
+	assert.Eq(t, cb, "abcdefghijklmnopqrstuvwxyz\n")
 	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	// cut selection
 	actions.Ar.ViewClearSelections(vid)
@@ -464,9 +464,44 @@ func (as *ApiSuite) TestViewMoveCursor(t *C) {
 	assert.Eq(t, col, 3)
 }
 
+func (as *ApiSuite) TestViewOpenSelection(t *C) {
+	vid := as.openFile1(t)
+	assert.Eq(t, len(actions.Ar.EdViews()), 2)
+	res, err := Action(as.id, []string{"view_open_selection", vidStr(vid), "true"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, len(actions.Ar.EdViews()), 2)
+	actions.Ar.ViewSetCursorPos(vid, 1, 5)
+	actions.Ar.ViewInsert(vid, 1, 1, "empty.txt ", false)
+	res, err = Action(as.id, []string{"view_open_selection", vidStr(vid), "true"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, len(actions.Ar.EdViews()), 3)
+}
+
+func (as *ApiSuite) TestViewPaste(t *C) {
+	vid := as.openFile1(t)
+	actions.Ar.ViewSetCursorPos(vid, 1, 3)
+	core.ClipboardWrite("FUZZ")
+	res, err := Action(as.id, []string{"view_paste", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12FUZZ34567890")
+	actions.Ar.ViewAddSelection(vid, 1, 12, 1, 13)
+	res, err = Action(as.id, []string{"view_paste", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12FUZZ34567FUZZ0")
+	actions.Ar.ViewSetCursorPos(vid, 3, 4)
+	core.ClipboardWrite("123\n	456")
+	res, err = Action(as.id, []string{"view_paste", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abc123")
+	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "	456defghijklmnopqrstuvwxyz")
+}
+
 /*
-view_open_selection(int64, bool)
-view_paste(int64)
 view_redo(int64)
 view_reload(int64)
 view_render(int64)

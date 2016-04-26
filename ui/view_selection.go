@@ -79,12 +79,20 @@ func (v *View) SelectionCopy(s *core.Selection) {
 	if len(text) == 0 {
 		return
 	}
+	// when copying full lines, add a "\n" at the end of the copy
+	if s.ColTo == -1 {
+		text += "\n"
+	}
 	core.Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
 	core.ClipboardWrite(text)
 }
 
 func (v *View) SelectionDelete(s *core.Selection) {
-	v.Delete(s.LineFrom, s.ColFrom, s.LineTo, s.ColTo, true)
+	colTo := s.ColTo
+	if colTo == -1 {
+		colTo = v.LineLen(v.slice, s.LineTo)
+	}
+	v.Delete(s.LineFrom, s.ColFrom, s.LineTo, colTo, true)
 }
 
 func (v *View) Paste() {
@@ -164,7 +172,7 @@ func (v *View) SelectAll() {
 
 // Select the whole given line
 func (v *View) SelectLine(line int) {
-	s := core.NewSelection(line, 0, line, v.LineLen(v.slice, line))
+	s := core.NewSelection(line, 0, line, -1)
 	v.selections = []core.Selection{
 		*s,
 	}

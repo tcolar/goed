@@ -91,7 +91,6 @@ func (v *View) Reload() {
 		core.Ed.SetStatusErr(err.Error())
 	}
 	actions.UndoClear(v.Id())
-	v.SetDirty(false)
 	v.Render()
 	core.Ed.TermFlush()
 }
