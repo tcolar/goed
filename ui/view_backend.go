@@ -33,6 +33,7 @@ func (v *View) InsertCur(s string) {
 
 // Insert inserts text at the given text location
 func (v *View) Insert(line, col int, s string, undoable bool) {
+	v.SetDirty(true)
 	e := core.Ed
 	if s == "\n" {
 		if col >= v.LineLen(v.slice, line) {
@@ -90,12 +91,14 @@ func (v *View) Reload() {
 		core.Ed.SetStatusErr(err.Error())
 	}
 	actions.UndoClear(v.Id())
+	v.SetDirty(false)
 	v.Render()
 	core.Ed.TermFlush()
 }
 
 // Delete removes characters at the given text location
 func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
+	v.SetDirty(true)
 	s := core.NewSelection(line1, col1, line2, col2)
 	text := core.RunesToString(v.SelectionText(s))
 	err := v.backend.Remove(line1, col1, line2, col2)
