@@ -344,8 +344,8 @@ func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
 
 func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 	vid := v.Id()
-	col := ev.MouseX - v.x1 + v.offx - 2
-	ln := ev.MouseY - v.y1 + v.offy - 2
+	_, y, x := actions.Ar.EdViewAt(ev.MouseY+1, ev.MouseX+1)
+	ln, col := actions.Ar.ViewTextPos(vid, y, x)
 	if isMouseUp(ev) && ev.MouseX == e.evtState.LastClickX &&
 		ev.MouseY == e.evtState.LastClickY &&
 		time.Now().Unix()-e.evtState.LastLeftClick <= 2 {
@@ -384,7 +384,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
 			e.evtState.LastRightClick = time.Now().Unix()
 			actions.Ar.ViewClearSelections(vid)
-			actions.Ar.ViewMoveCursor(vid, ev.MouseY-v.y1-2-v.CursorY, ev.MouseX-v.x1-2-v.CursorX, false)
+			actions.Ar.ViewSetCursorPos(vid, ln, col)
 			actions.Ar.ViewOpenSelection(vid, true)
 		}
 		return
@@ -424,15 +424,15 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			// continued drag
 			x1 := e.evtState.DragCol
 			y1 := e.evtState.DragLn
-			x2 := col
-			y2 := ln
+			x2 := col - 1
+			y2 := ln - 1
 
 			actions.Ar.ViewClearSelections(vid)
 			actions.Ar.ViewAddSelection(
 				vid,
-				y1+1,
+				y1,
 				v.LineRunesTo(v.slice, y1, x1)+1,
-				y2+1,
+				y2,
 				v.LineRunesTo(v.slice, y2, x2)+1)
 
 			// Handling scrolling while dragging
@@ -455,11 +455,11 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			}
 			if !e.evtState.InDrag {
 				actions.Ar.ViewClearSelections(vid)
-				actions.Ar.ViewSetCursorPos(vid, ln+1, col+1)
+				actions.Ar.ViewSetCursorPos(vid, ln, col)
 				actions.Ar.EdActivateView(vid)
 				e.evtState.LastLeftClick = time.Now().Unix()
 				e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
-				actions.Ar.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
+				actions.Ar.EdSetStatus(fmt.Sprintf("%s  [%d] %d:%d %d:%d", v.WorkDir(), vid, y, x, ln, col))
 			}
 		}
 		e.evtState.InDrag = false

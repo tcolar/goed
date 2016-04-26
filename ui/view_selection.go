@@ -234,7 +234,7 @@ func (v *View) OpenSelection(newView bool) {
 		vv := ed.ViewById(vid)
 		if vv != nil {
 			// Already open
-			vv.MoveCursor(line-vv.CurLine(), col-vv.CurCol())
+			vv.SetCursorPos(line, col)
 			ed.ViewActivate(vv.Id())
 			return
 		}
@@ -253,6 +253,6 @@ func (v *View) OpenSelection(newView bool) {
 	} else {
 		ed.ReplaceView(v, v2)
 	}
-	v2.MoveCursor(line-v2.CurLine(), col-v2.CurCol())
+	v2.SetCursorPos(line, col)
 	ed.ViewActivate(v2.Id())
 }

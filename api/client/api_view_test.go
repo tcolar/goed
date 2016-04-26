@@ -60,6 +60,9 @@ func (as *ApiSuite) TestViewBackspace(t *C) {
 	res, err := Action(as.id, []string{"view_backspace", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
+	ln, col := actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 1)
+	assert.Eq(t, col, 2)
 	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "134567890")
 	res, err = Action(as.id, []string{"view_backspace", vidStr(vid)})
 	assert.Nil(t, err)
@@ -210,7 +213,6 @@ func (as *ApiSuite) TestViewCursorMvmt(t *C) {
 	as.checkMvmt(t, vid, core.CursorMvmtEnd, 3, 27)
 	actions.Ar.ViewSetCursorPos(vid, 3, 5)
 	as.checkMvmt(t, vid, core.CursorMvmtPgDown, 12, 5)
-	actions.Ar.ViewSetCursorPos(vid, 13, 5)
 	as.checkMvmt(t, vid, core.CursorMvmtPgUp, 3, 5)
 	as.checkMvmt(t, vid, core.CursorMvmtBottom, 12, 37)
 	as.checkMvmt(t, vid, core.CursorMvmtTop, 1, 1)
@@ -295,6 +297,9 @@ func (as *ApiSuite) TestViewDeleteCur(t *C) {
 	res, err := Action(as.id, []string{"view_delete_cur", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
+	ln, col := actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 1)
+	assert.Eq(t, col, 3)
 	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "124567890")
 	res, err = Action(as.id, []string{"view_delete_cur", vidStr(vid)})
 	assert.Nil(t, err)
@@ -353,10 +358,23 @@ func (as *ApiSuite) TestViewInsertCur(t *C) {
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
 	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12X34567890")
+	ln, col := actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 1)
+	assert.Eq(t, col, 4)
 	res, err = Action(as.id, []string{"view_insert_cur", vidStr(vid), "Y"})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
 	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12XY34567890")
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 1)
+	assert.Eq(t, col, 5)
+	res, err = Action(as.id, []string{"view_insert_cur", vidStr(vid), "	"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12XY	34567890")
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 1)
+	assert.Eq(t, col, 6)
 	// insert over selection
 	actions.Ar.ViewAddSelection(vid, 4, 3, 10, 1)
 	res, err = Action(as.id, []string{"view_insert_cur", vidStr(vid), "{\n}"})
@@ -364,6 +382,9 @@ func (as *ApiSuite) TestViewInsertCur(t *C) {
 	assert.Eq(t, len(res), 0)
 	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "AB{")
 	assert.Eq(t, actions.Ar.ViewText(vid, 5, 1, 5, -1)[0], "}	abc")
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 5)
+	assert.Eq(t, col, 2)
 }
 
 func (as *ApiSuite) TestViewInsertNewLine(t *C) {
@@ -379,6 +400,9 @@ func (as *ApiSuite) TestViewInsertNewLine(t *C) {
 	assert.Eq(t, len(res), 0)
 	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "ab")
 	assert.Eq(t, actions.Ar.ViewText(vid, 5, 1, 5, -1)[0], "cdefghijklmnopqrstuvwxyz")
+	ln, col := actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 5)
+	assert.Eq(t, col, 1)
 }
 
 func (as *ApiSuite) TestViewMoveCursor(t *C) {
@@ -419,7 +443,7 @@ func (as *ApiSuite) TestViewMoveCursor(t *C) {
 	assert.Eq(t, col, 11)
 	// tab
 	actions.Ar.ViewSetCursorPos(vid, 10, 2)
-	res, err = Action(as.id, []string{"view_move_cursor", vidStr(vid), "0", "1", "true"})
+	res, err = Action(as.id, []string{"view_move_cursor", vidStr(vid), "0", "1", "false"})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
 	ln, col = actions.Ar.ViewCursorPos(vid)
@@ -431,7 +455,7 @@ func (as *ApiSuite) TestViewMoveCursor(t *C) {
 	assert.Eq(t, len(res), 0)
 	ln, col = actions.Ar.ViewCursorPos(vid)
 	assert.Eq(t, ln, 12)
-	assert.Eq(t, col, 5)
+	assert.Eq(t, col, 6)
 	res, err = Action(as.id, []string{"view_move_cursor", vidStr(vid), "-2", "-3", "false"})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
@@ -570,6 +594,51 @@ func (as *ApiSuite) TestViewText(t *C) {
 	assert.Eq(t, len(res), 2)
 	assert.Eq(t, res[0], "yz")
 	assert.Eq(t, res[1], "AB")
+}
+
+func (as *ApiSuite) TestViewTextPos(t *C) {
+	vid := as.openFile1(t)
+	// 1,1 is on the title bar, no text there, so will return 1,1
+	res, err := Action(as.id, []string{"view_text_pos", vidStr(vid), "1", "1"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "1")
+	assert.Eq(t, res[1], "1")
+	// top left corner of actual text
+	res, err = Action(as.id, []string{"view_text_pos", vidStr(vid), "3", "3"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "1")
+	assert.Eq(t, res[1], "1")
+	// passed EOL
+	res, err = Action(as.id, []string{"view_text_pos", vidStr(vid), "3", "333"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "1")
+	assert.Eq(t, res[1], "11")
+	// before start of line
+	res, err = Action(as.id, []string{"view_text_pos", vidStr(vid), "6", "1"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "4")
+	assert.Eq(t, res[1], "1")
+	// passed EOF
+	res, err = Action(as.id, []string{"view_text_pos", vidStr(vid), "100", "100"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "12")
+	assert.Eq(t, res[1], "37")
+	// tab
+	res, err = Action(as.id, []string{"view_text_pos", vidStr(vid), "12", "5"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "10")
+	assert.Eq(t, res[1], "1") // still in first tab
+	res, err = Action(as.id, []string{"view_text_pos", vidStr(vid), "12", "11"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "10")
+	assert.Eq(t, res[1], "3") // frst etter ater 2 tabs
 }
 
 /*

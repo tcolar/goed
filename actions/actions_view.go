@@ -227,6 +227,15 @@ func (a *ar) ViewText(viewId int64, ln1, col1, ln2, col2 int) []string {
 	return <-answer
 }
 
+// return the text position(1 indexed) for the given y,x cursor coordinates (0 indexed)
+// if the given coordinates are not on text, return the closest text position.
+// typically would be passed coordinates gotten from EdViewAt.
+func (a *ar) ViewTextPos(viewId int64, y, x int) (ln, col int) {
+	answer := make(chan int, 2)
+	d(viewTextPos{viewId: viewId, answer: answer, y: y, x: x})
+	return <-answer, <-answer
+}
+
 // return the vew title
 func (a *ar) ViewTitle(viewId int64) string {
 	answer := make(chan string, 1)
@@ -652,7 +661,7 @@ type viewSetCursorPos struct {
 func (a viewSetCursorPos) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
-		v.MoveCursor(a.y-v.CurLine()-1, a.x-v.CurCol()-1)
+		v.SetCursorPos(a.y-1, a.x-1)
 	}
 }
 
@@ -783,6 +792,35 @@ func (a viewText) Run() {
 		strs = append(strs, string(s))
 	}
 	a.answer <- strs
+}
+
+type viewTextPos struct {
+	viewId int64
+	y, x   int
+	answer chan int
+}
+
+func (a viewTextPos) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 1
+		a.answer <- 1
+		return
+	}
+	sy, sx := v.ScrollPos()
+	ln := a.y - 2 + sy
+	if ln < 1 {
+		ln = 1
+	} else if ln > v.LineCount() {
+		ln = v.LineCount()
+	}
+	to := a.x - 2 + sx - 1
+	if to < 0 {
+		to = 0
+	}
+	col := v.LineRunesTo(v.Slice(), ln-1, to) + 1
+	a.answer <- ln
+	a.answer <- col
 }
 
 type viewTitle struct {

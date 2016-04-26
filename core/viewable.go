@@ -43,6 +43,7 @@ type Viewable interface {
 	// SetAutoScroll is used to make the view scroll contonuously in y,x increments
 	// keeps scrolling until x and y are set to 0.
 	SetAutoScroll(y, x int, isSelect bool)
+	SetCursorPos(y, x int)
 	SetScrollPos(y, x int)
 	SetTitle(title string)
 	SetViewType(t ViewType)

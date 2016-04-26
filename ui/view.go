@@ -237,23 +237,25 @@ func (v *View) LastViewCol() int {
 // Same as MoveCursor but with "rolling" to next/prev line if overflowed.
 func (v *View) MoveCursorRoll(y, x int) {
 	slice := v.slice
-	curCol := v.CurCol()
 	curLine := v.CurLine()
 	lastLine := v.LineCount() - 1
-	ln := v.lineCols(slice, curLine+y)
 
-	if curCol+x < 0 {
+	if v.CurCol()+x < 0 {
 		// wrap to after end of previous line
 		y--
-		x = v.lineCols(slice, curLine+y) - curCol
-	} else if curCol+x > ln {
+		v.MoveCursor(y, 0)
+		v.MoveCursor(0, v.lineCols(slice, curLine+y)-v.CurCol())
+		return
+	} else if v.CurCol()+x > v.lineCols(slice, curLine+y) {
 		if y == 0 && curLine+y < lastLine {
 			// moved (right) passed eol, wrap to beginning of next line
-			x = -curCol
 			y++
+			v.MoveCursor(y, 0)
+			v.MoveCursor(0, -v.CurCol())
+			return
 		} else {
 			// when movin up/down, don't go passed eol
-			x = ln - curCol
+			x = v.lineCols(slice, curLine+y) - v.CurCol()
 		}
 	}
 	v.MoveCursor(y, x)
@@ -264,63 +266,73 @@ func (v *View) SyncSlice() {
 }
 
 // MoveCursor : Move the cursor from it's current position by the y, x offsets (**in runes**)
-// This makes all the checks to make sure it's in a valid location
-// as well as scrolling the view as needed.
 func (v *View) MoveCursor(y, x int) {
-	curCol := v.CurCol()
-	curLine := v.CurLine()
+	ln, col := v.CurTextPos()
+	v.SetCursorPos(ln+y, col+x)
+}
 
-	lastLine := v.LineCount() - 1
-
-	// check for overflows
-	if curLine+y < 0 {
-		y = -curLine
-	} else if curLine+y > lastLine {
-		y = lastLine - curLine
-	}
-	if curCol+x < 0 {
-		x = -curCol
+// SetCursor : Set the cursor text position
+// This makes all the checks to make sure it's in a valid location,
+// as well as scrolling the view as needed.
+func (v *View) SetCursorPos(y, x int) {
+	lastLine := v.LineCount()
+	ln := y
+	if ln < 0 {
+		ln = 0
+	} else if ln >= lastLine {
+		ln = lastLine - 1
 	}
 
 	// slice for the area we will be in after scrolling
 	slice := v.slice
-	if v.CurLine()+y > slice.R2 || v.CurLine()+y < slice.R1 {
-		slice = v.backend.Slice(v.CurLine()+y, 0, v.CurLine()+y+v.LastViewLine(), -1)
+	if ln > slice.R2 || ln < slice.R1 {
+		slice = v.backend.Slice(ln, 0, ln, -1)
 	}
 
-	ln := v.lineCols(slice, curLine+y)
-	if curCol+x > ln {
-		x = ln - curCol // put at EOL
+	col := v.lineColsTo(slice, ln, x)
+	// check for col overflow
+	cols := v.lineCols(slice, ln)
+	if col < 0 {
+		col = 0
+	} else if col > cols {
+		col = cols // put at EOL
 	}
 
-	v.CursorX += x
-	v.CursorY += y
-
-	// Special handling for tabs
-	c, textY, textX := v.CurChar()
-	if c != nil && *c == '\t' {
-		from := v.CursorX
-		// align cursor with beginning of tab
-		v.CursorX = v.lineColsTo(slice, textY, textX) - v.offx
-		x -= v.CursorX - from
+	// scroll vertically if needed
+	if ln < v.offy && ln >= 0 {
+		v.offy = ln
+	} else if ln > v.offy+v.LastViewLine() {
+		v.offy = ln - v.LastViewLine()
+		if v.offy < 0 {
+			v.offy = 0
+		} else if v.offy > lastLine {
+			v.offy = lastLine
+		}
 	}
 
-	if curCol+x < v.offx {
-		v.offx = curCol + x
-		v.CursorX = 0
-	} else if curCol+x >= v.offx+v.LastViewCol() {
-		v.offx = curCol + x - v.LastViewCol()
-		v.CursorX = v.LastViewCol()
+	// scroll horizontally if needed
+	if col < v.offx && col >= 0 {
+		v.offx = col
+	} else if col >= v.offx+v.LastViewCol() {
+		v.offx = col - v.LastViewCol()
+		if v.offx < 0 {
+			v.offx = 0
+		}
 	}
-	if curLine+y < v.offy && curLine+y >= 0 {
-		v.offy = curLine + y
-		v.CursorY = 0
-	} else if curLine+y > v.offy+v.LastViewLine() {
-		v.offy = curLine + y - v.LastViewLine()
-		v.CursorY = v.LastViewLine()
-	}
+
+	v.CursorY = ln - v.offy
+	v.CursorX = col - v.offx
 
 	v.updateCursor(slice)
+}
+
+// Update the editor cursor to be this view current cursor
+func (v *View) updateCursor(slice *core.Slice) {
+	v.NormalizeCursor(slice)
+	if v.CursorY < slice.R1 || v.CursorY > slice.R2 {
+		v.SyncSlice()
+	}
+	core.Ed.SetCursor(v.y1+2+v.CursorY, v.x1+2+v.CursorX)
 }
 
 func (v *View) NormalizeCursor(slice *core.Slice) {
@@ -389,15 +401,6 @@ func (v *View) canClose() bool {
 	return true
 }
 
-// Update the editor cursor to be this view current cursor
-func (v *View) updateCursor(slice *core.Slice) {
-	v.NormalizeCursor(slice)
-	if v.CursorY < slice.R1 || v.CursorY > slice.R2 {
-		v.SyncSlice()
-	}
-	core.Ed.SetCursor(v.y1+2+v.CursorY, v.x1+2+v.CursorX)
-}
-
 func (v *View) Backend() core.Backend {
 	return v.backend
 }
@@ -458,19 +461,9 @@ func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
 	ln, col := v.CurLine(), v.CurCol()
 	switch mvmt {
 	case core.CursorMvmtRight:
-		offset := 1
-		c, _, _ := v.CurChar()
-		if c != nil {
-			offset = v.runeSize(*c)
-		}
-		v.MoveCursorRoll(0, offset)
+		v.MoveCursorRoll(0, 1)
 	case core.CursorMvmtLeft:
-		offset := 1
-		c, _, _ := v.CursorChar(v.slice, ln, col-1)
-		if c != nil {
-			offset = v.runeSize(*c)
-		}
-		v.MoveCursorRoll(0, -offset)
+		v.MoveCursorRoll(0, -1)
 	case core.CursorMvmtUp:
 		v.MoveCursor(-1, 0)
 	case core.CursorMvmtDown:

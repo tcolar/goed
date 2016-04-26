@@ -106,12 +106,12 @@ func (a *ar) EdViewMove(viewId int64, y1, x1, y2, x2 int) {
 	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
 }
 
-// For a given UI position (in characters, 1 indexed) returns
+// For a given Editor UI position (in characters, 1 indexed) returns
 // - The view at that position. -1 if not within any view bounds.
-// - y,x coordinates within that view.
-func (a *ar) EdViewAt(y, x int) (vid int64, vy, vx int) {
+// - y,x : 1 indexed coordinates within that view UI
+func (a *ar) EdViewAt(ey, ex int) (vid int64, vy, vx int) {
 	answer := make(chan (int64), 3)
-	d(edViewAt{y: y, x: x, answer: answer})
+	d(edViewAt{y: ey, x: ex, answer: answer})
 	return <-answer, int(<-answer), int(<-answer)
 }
 
@@ -294,9 +294,8 @@ func (a edViewAt) Run() {
 	if vid >= 0 {
 		v := core.Ed.ViewById(vid)
 		l1, c1, _, _ := v.Bounds()
-		scrollLn, scrollCol := v.ScrollPos()
-		y = a.y - l1 + scrollLn - 2 + 1
-		x = a.x - c1 + scrollCol - 2 + 1
+		y = a.y - l1
+		x = a.x - c1
 	}
 	a.answer <- int64(y)
 	a.answer <- int64(x)
