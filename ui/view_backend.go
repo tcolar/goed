@@ -33,7 +33,8 @@ func (v *View) InsertCur(s string) {
 
 // Insert inserts text at the given text location
 func (v *View) Insert(line, col int, s string, undoable bool) {
-	ln, col := v.CurTextPos()
+	selections := v.Selections()
+	cl, cc := v.CurTextPos()
 	v.SetDirty(true)
 	e := core.Ed
 	if s == "\n" {
@@ -61,10 +62,11 @@ func (v *View) Insert(line, col int, s string, undoable bool) {
 			v.Id(),
 			[]core.Action{
 				actions.NewViewInsertAction(v.Id(), line, col, s, false),
-				actions.NewSetCursorAction(v.Id(), endLn+1, endCol+1)},
-			[]core.Action{
+				actions.NewSetCursorAction(v.Id(), endLn, endCol)},
+			append([]core.Action{
 				actions.NewViewDeleteAction(v.Id(), line, col, endLn, endCol-1, false),
-				actions.NewSetCursorAction(v.Id(), ln+1, col+1)},
+				actions.NewSetCursorAction(v.Id(), cl, cc)},
+				actions.NewSetSelectionsActions(v.Id(), selections)...),
 		)
 	}
 	v.Render()
@@ -103,7 +105,8 @@ func (v *View) Reload() {
 
 // Delete removes characters at the given text location
 func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
-	ln, col := v.CurTextPos()
+	cl, cc := v.CurTextPos()
+	selections := v.Selections()
 	v.SetDirty(true)
 	s := core.NewSelection(line1, col1, line2, col2)
 	text := core.RunesToString(v.SelectionText(s))
@@ -113,20 +116,19 @@ func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
 		return
 	}
 	if undoable {
-		ln2, col2 := v.CurTextPos()
 		actions.UndoAdd(
 			v.Id(),
 			[]core.Action{
 				actions.NewViewDeleteAction(v.Id(), line1, col1, line2, col2, false),
-				actions.NewSetCursorAction(v.Id(), ln2+1, col2+1),
-			},
-			[]core.Action{
+				actions.NewSetCursorAction(v.Id(), line1, col1)},
+			append([]core.Action{
 				actions.NewViewInsertAction(v.Id(), line1, col1, text, false),
-				actions.NewSetCursorAction(v.Id(), ln+1, col+1)})
+				actions.NewSetCursorAction(v.Id(), cl, cc)},
+				actions.NewSetSelectionsActions(v.Id(), selections)...),
+		)
 	}
 	v.Render()
 	core.Ed.TermFlush()
-	// restore cursor (for undos)
 	v.SetCursorPos(line1, col1)
 }
 

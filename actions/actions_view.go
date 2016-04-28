@@ -762,6 +762,7 @@ func (a viewStretchSelection) Run() {
 			col,
 		)
 	}
+	v.SetCursorPos(ln, col)
 }
 
 type viewSyncSlice struct {
@@ -879,5 +880,15 @@ func NewViewDeleteAction(viewId int64, row1, col1, row2, col2 int, undoable bool
 }
 
 func NewSetCursorAction(viewId int64, ln, col int) core.Action {
-	return viewSetCursorPos{viewId: viewId, y: ln, x: col}
+	return viewSetCursorPos{viewId: viewId, y: ln + 1, x: col + 1}
+}
+
+func NewSetSelectionsActions(viewId int64, selections *[]core.Selection) []core.Action {
+	a := []core.Action{
+		viewClearSelections{viewId: viewId},
+	}
+	for _, s := range *selections {
+		a = append(a, viewAddSelection{viewId: viewId, l1: s.LineFrom + 1, c1: s.ColFrom + 1, l2: s.LineTo + 1, c2: s.ColTo + 1})
+	}
+	return a
 }

@@ -64,6 +64,7 @@ func (v *View) Cut() {
 	}
 	v.SelectionCopy(&v.selections[0])
 	v.SelectionDelete(&v.selections[0])
+	v.ClearSelections()
 }
 
 func (v *View) Copy() {

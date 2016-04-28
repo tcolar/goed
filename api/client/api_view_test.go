@@ -832,31 +832,31 @@ func (as *ApiSuite) TestViewUndoRedo(t *C) {
 	actions.Ar.ViewUndo(vid)
 	// cut
 	actions.Ar.ViewClearSelections(vid)
-	actions.Ar.ViewSetCursorPos(vid, 3, 24)
 	actions.Ar.ViewAddSelection(vid, 3, 24, 4, 3)
+	actions.Ar.ViewSetCursorPos(vid, 4, 3)
 	actions.Ar.ViewCut(vid)
 	ln, col = actions.Ar.ViewCursorPos(vid)
 	assert.Eq(t, ln, 3)
 	assert.Eq(t, col, 24)
+	assert.Eq(t, len(actions.Ar.ViewSelections(vid)), 0)
 	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwDEFGHIJKLMNOPQRSTUVWXYZ")
 	res, err = Action(as.id, []string{"view_undo", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
+	assert.Eq(t, len(actions.Ar.ViewSelections(vid)), 1)
 	ln, col = actions.Ar.ViewCursorPos(vid)
-	assert.Eq(t, ln, 3)
-	assert.Eq(t, col, 24)
+	assert.Eq(t, ln, 4)
+	assert.Eq(t, col, 3)
 	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwxyz")
 	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	// TODO : undo/redo should restore selection ??
 	res, err = Action(as.id, []string{"view_redo", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
+	assert.Eq(t, len(actions.Ar.ViewSelections(vid)), 1)
 	ln, col = actions.Ar.ViewCursorPos(vid)
 	assert.Eq(t, ln, 3)
 	assert.Eq(t, col, 24)
 	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwDEFGHIJKLMNOPQRSTUVWXYZ")
-	// TODO : paste over selection
-	// TODO : undo/redo sequence (ie, more than 2 in a row)
 }
 
 func (as *ApiSuite) TestWorkdir(t *C) {
