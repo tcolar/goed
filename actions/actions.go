@@ -30,12 +30,18 @@ func Exec(action string, args []string) (res []string, err error) {
 			action, len(args), len(proto.ins))
 	}
 	in := []reflect.Value{reflect.ValueOf(Ar)}
-	for i, argType := range proto.ins {
-		val, err := argToVal(args[i], argType)
+	for i := 0; i < len(proto.ins); {
+		argType := proto.ins[i]
+		end := i + 1
+		if strings.HasPrefix(argType.String(), "[]") {
+			end = len(proto.ins)
+		}
+		val, err := argToVal(args[i:end], argType)
 		if err != nil {
 			return res, err
 		}
 		in = append(in, val)
+		i = end
 	}
 	out := proto.f.Call(in)
 	for i, argType := range proto.outs {
@@ -126,34 +132,40 @@ func toCamel(s string) string {
 	return string(ns)
 }
 
-func argToVal(arg string, toType reflect.Type) (v reflect.Value, err error) {
+func argToVal(args []string, toType reflect.Type) (v reflect.Value, err error) {
 	t := toType.String()
 	switch t {
 	case "string":
-		return reflect.ValueOf(arg), nil
+		return reflect.ValueOf(args[0]), nil
 	case "core.CursorMvmt":
-		i, err := strconv.Atoi(arg)
+		i, err := strconv.Atoi(args[0])
 		if err != nil {
 			return v, err
 		}
 		return reflect.ValueOf(core.CursorMvmt(i)), nil
 	case "int":
-		i, err := strconv.Atoi(arg)
+		i, err := strconv.Atoi(args[0])
 		if err != nil {
 			return v, err
 		}
 		return reflect.ValueOf(i), nil
 	case "int64":
-		i, err := strconv.ParseInt(arg, 10, 64)
+		i, err := strconv.ParseInt(args[0], 10, 64)
 		if err != nil {
 			return v, err
 		}
 		return reflect.ValueOf(i), nil
 	case "bool":
-		if strings.ToLower(arg) == "false" || arg == "0" {
+		if strings.ToLower(args[0]) == "false" || args[0] == "0" {
 			return reflect.ValueOf(false), nil
 		}
 		return reflect.ValueOf(true), nil
+	case "[]string":
+		arr := []string{}
+		for _, arg := range args {
+			arr = append(arr, arg)
+		}
+		return reflect.ValueOf(arr), nil
 	default:
 		return v, fmt.Errorf("Unhandled type : %s !", t)
 	}

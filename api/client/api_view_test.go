@@ -2,7 +2,10 @@ package client
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -169,7 +172,7 @@ func (as *ApiSuite) TestViewCopy(t *C) {
 	res, err := Action(as.id, []string{"view_copy", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
-	core.Bus.Flush()
+	actions.Ar.EdActionBusFlush()
 	cb, _ := core.ClipboardRead()
 	assert.Eq(t, cb, "1234567890\n")
 	// copy selection
@@ -179,7 +182,7 @@ func (as *ApiSuite) TestViewCopy(t *C) {
 	res, err = Action(as.id, []string{"view_copy", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
-	core.Bus.Flush()
+	actions.Ar.EdActionBusFlush()
 	cb, _ = core.ClipboardRead()
 	assert.Eq(t, cb, "	abc\naaa aaa.go")
 }
@@ -262,7 +265,7 @@ func (as *ApiSuite) TestViewCut(t *C) {
 	res, err := Action(as.id, []string{"view_cut", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
-	core.Bus.Flush()
+	actions.Ar.EdActionBusFlush()
 	cb, _ := core.ClipboardRead()
 	assert.Eq(t, cb, "abcdefghijklmnopqrstuvwxyz\n")
 	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -273,7 +276,7 @@ func (as *ApiSuite) TestViewCut(t *C) {
 	res, err = Action(as.id, []string{"view_cut", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
-	core.Bus.Flush()
+	actions.Ar.EdActionBusFlush()
 	cb, _ = core.ClipboardRead()
 	assert.Eq(t, cb, "	abc\naaa aaa.go")
 	assert.Eq(t, actions.Ar.ViewText(vid, 9, 1, 9, -1)[0], "	 /tmp/aaa.go aaa.go:23 /tmp/aaa.go:23:7")
@@ -501,15 +504,6 @@ func (as *ApiSuite) TestViewPaste(t *C) {
 	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "	456defghijklmnopqrstuvwxyz")
 }
 
-/*
-view_redo(int64)
-view_reload(int64)
-view_render(int64)
-view_rows(int64) int
-view_save(int64)
-view_scroll_pos(int64) int, int
-*/
-
 func (as *ApiSuite) TestViewSelectAll(t *C) {
 	vid := as.openFile1(t)
 	res, err := Action(as.id, []string{"view_select_all", vidStr(vid)})
@@ -568,16 +562,132 @@ func (as *ApiSuite) TestViewSetDirty(t *C) {
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
 	assert.True(t, actions.Ar.ViewDirty(vid))
+	res, err = Action(as.id, []string{"view_set_dirty", vidStr(vid), "false"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.False(t, actions.Ar.ViewDirty(vid))
 }
 
-/*
-view_set_title(int64, string)
-view_set_vt_cols(int64, int)
-view_set_workdir(int64, string)
-view_stretch_selection(int64, int, int)
-view_src_loc(int64) string
-view_sync_slice(int64)
-*/
+func (as *ApiSuite) TestViewReload(t *C) {
+	vid := as.openFile1(t)
+	assert.Eq(t, len(actions.Ar.EdViews()), 2)
+	assert.False(t, actions.Ar.ViewDirty(vid))
+	actions.Ar.ViewInsert(vid, 1, 1, "FOO", true)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "FOO1234567890")
+	res, err := Action(as.id, []string{"view_reload", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "1234567890")
+	assert.False(t, actions.Ar.ViewDirty(vid))
+	assert.Eq(t, len(actions.Ar.EdViews()), 2)
+}
+
+func (as *ApiSuite) TestViewRows(t *C) {
+	views := actions.Ar.EdViews()
+	assert.Eq(t, len(views), 1)
+	res, err := Action(as.id, []string{"view_rows", vidStr(views[0])})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "19")
+	// add new view
+	vid := as.openFile1(t)
+	res, err = Action(as.id, []string{"view_rows", vidStr(views[0])})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "7")
+	res, err = Action(as.id, []string{"view_rows", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "8")
+	actions.Ar.EdDelView(vid, true)
+	res, err = Action(as.id, []string{"view_rows", vidStr(views[0])})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "19")
+}
+
+func (as *ApiSuite) TestViewSave(t *C) {
+	f, _ := ioutil.TempFile("", "goedtest")
+	defer os.Remove(f.Name())
+	vid := actions.Ar.EdOpen(f.Name(), -1, "", false)
+	assert.NotEq(t, vid, int64(-1))
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "")
+	actions.Ar.ViewInsert(vid, 1, 1, "FOO", true)
+	res, err := Action(as.id, []string{"view_save", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	actions.Ar.EdActionBusFlush()
+	str, _ := ioutil.ReadFile(f.Name())
+	assert.Eq(t, string(str), "FOO")
+	actions.Ar.ViewInsert(vid, 1, 4, "BAR", true)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "FOOBAR")
+	res, err = Action(as.id, []string{"view_save", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	actions.Ar.EdActionBusFlush()
+	str, _ = ioutil.ReadFile(f.Name())
+	assert.Eq(t, string(str), "FOOBAR")
+	actions.Ar.ViewInsert(vid, 1, 1, "FUZZ", true) //not saving this one
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "FUZZFOOBAR")
+	actions.Ar.EdActionBusFlush()
+	str, _ = ioutil.ReadFile(f.Name())
+	assert.Eq(t, string(str), "FOOBAR")
+	actions.Ar.ViewReload(vid)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "FOOBAR")
+}
+
+func (as *ApiSuite) TestViewScrollPos(t *C) {
+	vid := as.openFile1(t)
+	actions.Ar.ViewInsert(vid, 1, 1, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nxx", true)
+	actions.Ar.ViewSetCursorPos(vid, 1, 1)
+	res, err := Action(as.id, []string{"view_scroll_pos", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "1")
+	assert.Eq(t, res[1], "1")
+	actions.Ar.ViewSetCursorPos(vid, 12, 1)
+	res, err = Action(as.id, []string{"view_scroll_pos", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 2)
+	assert.Eq(t, res[0], "4")
+	assert.Eq(t, res[1], "1")
+}
+
+func (as *ApiSuite) TestViewSrcLoc(t *C) {
+	vid := as.openFile1(t)
+	loc := actions.Ar.ViewSrcLoc(vid)
+	expected, _ := filepath.Abs(refFile)
+	assert.Eq(t, loc, expected)
+	res, err := Action(as.id, []string{"view_src_loc", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], expected)
+}
+
+func (as *ApiSuite) TestViewStretchSelection(t *C) {
+	vid := as.openFile1(t)
+	actions.Ar.ViewSetCursorPos(vid, 3, 5)
+	res, err := Action(as.id, []string{"view_stretch_selection", vidStr(vid), "3", "8"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "3 5 3 8")
+	res, err = Action(as.id, []string{"view_stretch_selection", vidStr(vid), "3", "6"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "3 5 3 6")
+	res, err = Action(as.id, []string{"view_stretch_selection", vidStr(vid), "3", "1"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "3 1 3 5")
+	res, err = Action(as.id, []string{"view_stretch_selection", vidStr(vid), "1", "2"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "1 2 3 5")
+	res, err = Action(as.id, []string{"view_stretch_selection", vidStr(vid), "10", "3"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "3 5 10 3")
+}
 
 func (as *ApiSuite) TestViewText(t *C) {
 	vid := as.openFile1(t)
@@ -673,12 +783,101 @@ func (as *ApiSuite) TestViewTextPos(t *C) {
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 2)
 	assert.Eq(t, res[0], "10")
-	assert.Eq(t, res[1], "3") // frst etter ater 2 tabs
+	assert.Eq(t, res[1], "3") // first letter ater 2 tabs
 }
 
-/*
-view_undo(int64)
-*/
+func (as *ApiSuite) TestViewTitle(t *C) {
+	vid := as.openFile1(t)
+	tt := actions.Ar.ViewTitle(vid)
+	assert.Eq(t, tt, "file1.txt")
+	res, err := Action(as.id, []string{"view_title", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "file1.txt")
+	res, err = Action(as.id, []string{"view_set_title", vidStr(vid), "foo.txt"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	res, err = Action(as.id, []string{"view_title", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "foo.txt")
+}
+
+func (as *ApiSuite) TestViewUndoRedo(t *C) {
+	// insert
+	vid := as.openFile1(t)
+	actions.Ar.ViewSetCursorPos(vid, 1, 3)
+	actions.Ar.ViewInsertCur(vid, "FOO\nBAR")
+	ln, col := actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 2)
+	assert.Eq(t, col, 4)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12FOO")
+	assert.Eq(t, actions.Ar.ViewText(vid, 2, 1, 2, -1)[0], "BAR34567890")
+	res, err := Action(as.id, []string{"view_undo", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 1)
+	assert.Eq(t, col, 3)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "1234567890")
+	assert.Eq(t, actions.Ar.ViewText(vid, 2, 1, 2, -1)[0], "")
+	res, err = Action(as.id, []string{"view_redo", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 2)
+	assert.Eq(t, col, 4)
+	assert.Eq(t, actions.Ar.ViewText(vid, 1, 1, 1, -1)[0], "12FOO")
+	assert.Eq(t, actions.Ar.ViewText(vid, 2, 1, 2, -1)[0], "BAR34567890")
+	actions.Ar.ViewUndo(vid)
+	// cut
+	actions.Ar.ViewClearSelections(vid)
+	actions.Ar.ViewSetCursorPos(vid, 3, 24)
+	actions.Ar.ViewAddSelection(vid, 3, 24, 4, 3)
+	actions.Ar.ViewCut(vid)
+	actions.Ar.EdActionBusFlush()
+	cb, _ := core.ClipboardRead()
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 3)
+	assert.Eq(t, col, 24)
+	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwDEFGHIJKLMNOPQRSTUVWXYZ")
+	res, err = Action(as.id, []string{"view_undo", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 3)
+	assert.Eq(t, col, 24)
+	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwxyz")
+	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	res, err = Action(as.id, []string{"view_redo", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	ln, col = actions.Ar.ViewCursorPos(vid)
+	assert.Eq(t, ln, 3)
+	assert.Eq(t, col, 24)
+	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvw")
+	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "DEFGHIJKLMNOPQRSTUVWXYZ")
+	// TODO : paste over selection
+	// TODO : undo/redo sequence (ie, more than 2 in a row)
+}
+
+func (as *ApiSuite) TestWorkdir(t *C) {
+	vid := as.openFile1(t)
+	loc := actions.Ar.ViewWorkDir(vid)
+	expected, _ := filepath.Abs(filepath.Dir(refFile))
+	assert.Eq(t, loc, expected)
+	res, err := Action(as.id, []string{"view_work_dir", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], expected)
+	res, err = Action(as.id, []string{"view_set_work_dir", vidStr(vid), "/tmp"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 0)
+	res, err = Action(as.id, []string{"view_work_dir", vidStr(vid)})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	assert.Eq(t, res[0], "/tmp")
+}
 
 func debugViews() {
 	cv := actions.Ar.EdCurView()
@@ -693,8 +892,3 @@ func debugViews() {
 			v, actions.Ar.ViewTitle(v), a, b, c, d, ln, col)
 	}
 }
-
-// view_lock ?? (to protect while editing) ? -> with timeout ?
-// view_unlock
-
-// TODO : review what api calls should be internal only

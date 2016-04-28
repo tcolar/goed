@@ -95,7 +95,7 @@ func (b *BackendCmd) Head() int { // for unit testing
 
 func (c *BackendCmd) Start(viewId int64) {
 	workDir, _ := filepath.Abs(c.dir)
-	actions.Ar.ViewSetWorkdir(viewId, workDir)
+	actions.Ar.ViewSetWorkDir(viewId, workDir)
 	c.runner.Dir = workDir
 	actions.Ar.ViewSetTitle(viewId, fmt.Sprintf("[RUNNING] %s", *c.title))
 	actions.Ar.ViewRender(viewId)
@@ -113,7 +113,7 @@ func (c *BackendCmd) Start(viewId int64) {
 	} else {
 		actions.Ar.ViewSetTitle(viewId, *c.title)
 	}
-	actions.Ar.ViewSetWorkdir(viewId, workDir) // might have changed
+	actions.Ar.ViewSetWorkDir(viewId, workDir) // might have changed
 	if c.scrollTop {
 		actions.Ar.ViewCursorMvmt(viewId, core.CursorMvmtTop)
 	}

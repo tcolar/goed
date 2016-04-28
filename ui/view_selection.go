@@ -209,12 +209,15 @@ func (v *View) SelectionToLoc(sel *core.Selection) (loc string, line, col int) {
 
 // Stretch a selection toward a new position
 func (v *View) StretchSelection(prevl, prevc, l, c int) {
-	s := &core.Selection{}
 	if len(v.selections) != 0 {
-		s = &v.selections[0]
+		s := &v.selections[0]
+		s.LineFrom, s.LineTo, s.ColFrom, s.ColTo = prevl, l, prevc, c
+		s.Normalize()
+	} else {
+		s := core.NewSelection(prevl, prevc, l, c)
+		s.Normalize()
+		v.selections = []core.Selection{*s}
 	}
-	s.LineFrom, s.LineTo, s.ColFrom, s.ColTo = prevl, l, prevc, c
-	s.Normalize()
 }
 
 // Open what's selected or under the cursor

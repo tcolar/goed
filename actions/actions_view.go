@@ -195,8 +195,8 @@ func (a *ar) ViewStretchSelection(viewId int64, prevLn, prevCol int) {
 
 // set the current working dir of the view, especially usefull for terminal views.
 // this is used when "opening" relative locations, among other things.
-func (a *ar) ViewSetWorkdir(viewId int64, workDir string) {
-	d(viewSetWorkdir{viewId: viewId, workDir: workDir})
+func (a *ar) ViewSetWorkDir(viewId int64, workDir string) {
+	d(viewSetWorkDir{viewId: viewId, workDir: workDir})
 }
 
 // return the absolute path of the file backing the view (if any)
@@ -246,6 +246,13 @@ func (a *ar) ViewTitle(viewId int64) string {
 // undo
 func (a *ar) ViewUndo(viewId int64) {
 	d(viewUndo{viewId: viewId})
+}
+
+// working directory
+func (a *ar) ViewWorkDir(viewId int64) string {
+	answer := make(chan string, 1)
+	d(viewWorkDir{viewId: viewId, answer: answer})
+	return <-answer
 }
 
 // ########  Impl ......
@@ -701,12 +708,12 @@ func (a viewSetTitle) Run() {
 	}
 }
 
-type viewSetWorkdir struct {
+type viewSetWorkDir struct {
 	viewId  int64
 	workDir string
 }
 
-func (a viewSetWorkdir) Run() {
+func (a viewSetWorkDir) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetWorkDir(a.workDir)
@@ -749,10 +756,10 @@ func (a viewStretchSelection) Run() {
 	ln, col := v.CurLine(), v.CurCol()
 	if v != nil {
 		v.StretchSelection(
-			a.prevLn,
-			v.LineRunesTo(v.Slice(), a.prevLn-1, a.prevCol-1),
+			a.prevLn-1,
+			a.prevCol-1,
 			ln,
-			v.LineRunesTo(v.Slice(), ln, col),
+			col,
 		)
 	}
 }
@@ -845,6 +852,20 @@ func (a viewUndo) Run() {
 	if viewExists(a.viewId) {
 		Undo(a.viewId)
 	}
+}
+
+type viewWorkDir struct {
+	viewId int64
+	answer chan string
+}
+
+func (a viewWorkDir) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Id() == 0 {
+		a.answer <- ""
+		return
+	}
+	a.answer <- v.WorkDir()
 }
 
 func NewViewInsertAction(viewId int64, row, col int, text string, undoable bool) core.Action {

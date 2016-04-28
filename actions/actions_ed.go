@@ -6,6 +6,11 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+// blocks until any previosuly submited action has completed
+func (a *ar) EdActionBusFlush() {
+	core.Bus.Flush()
+}
+
 // activate the given view, with the cursor at y,x
 func (a *ar) EdActivateView(viewId int64) {
 	d(edActivateView{viewId: viewId})

@@ -9,7 +9,7 @@ export PATH=$HOME/.goed/actions/:$HOME/.goed/default/actions/:$PATH
 function goed_cd() {
 	# cd into a directory, and notify goed of the new dir
 	builtin cd $@
-	goed_api view_set_workdir $GOED_INSTANCE $GOED_VIEW "`pwd`"
+	goed_api view_set_work_dir $GOED_INSTANCE $GOED_VIEW "`pwd`"
 } 
 
 function o() {

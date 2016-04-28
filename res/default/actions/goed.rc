@@ -19,7 +19,7 @@ fn goed_edit {
 fn cd {
 	# cd into a directory, and notify goed of the new dir
 	builtin cd $*
-	goed_api view_set_workdir $GOED_INSTANCE $GOED_VIEW `{pwd}
+	goed_api view_set_wor_kdir $GOED_INSTANCE $GOED_VIEW `{pwd}
 } 
 
 EDITOR=goed_edit # When within goed, $EDITOR is goed
