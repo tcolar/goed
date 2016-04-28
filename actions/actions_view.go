@@ -877,3 +877,7 @@ func NewViewDeleteAction(viewId int64, row1, col1, row2, col2 int, undoable bool
 	return viewDeleteAction{viewId: viewId, row1: row1 + 1, col1: col1 + 1,
 		row2: row2 + 1, col2: col2 + 1, undoable: undoable}
 }
+
+func NewSetCursorAction(viewId int64, ln, col int) core.Action {
+	return viewSetCursorPos{viewId: viewId, y: ln, x: col}
+}

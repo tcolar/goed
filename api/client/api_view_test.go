@@ -835,8 +835,6 @@ func (as *ApiSuite) TestViewUndoRedo(t *C) {
 	actions.Ar.ViewSetCursorPos(vid, 3, 24)
 	actions.Ar.ViewAddSelection(vid, 3, 24, 4, 3)
 	actions.Ar.ViewCut(vid)
-	actions.Ar.EdActionBusFlush()
-	cb, _ := core.ClipboardRead()
 	ln, col = actions.Ar.ViewCursorPos(vid)
 	assert.Eq(t, ln, 3)
 	assert.Eq(t, col, 24)
@@ -849,14 +847,14 @@ func (as *ApiSuite) TestViewUndoRedo(t *C) {
 	assert.Eq(t, col, 24)
 	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwxyz")
 	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	// TODO : undo/redo should restore selection ??
 	res, err = Action(as.id, []string{"view_redo", vidStr(vid)})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 0)
 	ln, col = actions.Ar.ViewCursorPos(vid)
 	assert.Eq(t, ln, 3)
 	assert.Eq(t, col, 24)
-	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvw")
-	assert.Eq(t, actions.Ar.ViewText(vid, 4, 1, 4, -1)[0], "DEFGHIJKLMNOPQRSTUVWXYZ")
+	assert.Eq(t, actions.Ar.ViewText(vid, 3, 1, 3, -1)[0], "abcdefghijklmnopqrstuvwDEFGHIJKLMNOPQRSTUVWXYZ")
 	// TODO : paste over selection
 	// TODO : undo/redo sequence (ie, more than 2 in a row)
 }

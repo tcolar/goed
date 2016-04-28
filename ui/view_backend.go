@@ -33,6 +33,7 @@ func (v *View) InsertCur(s string) {
 
 // Insert inserts text at the given text location
 func (v *View) Insert(line, col int, s string, undoable bool) {
+	ln, col := v.CurTextPos()
 	v.SetDirty(true)
 	e := core.Ed
 	if s == "\n" {
@@ -58,8 +59,13 @@ func (v *View) Insert(line, col int, s string, undoable bool) {
 	if undoable {
 		actions.UndoAdd(
 			v.Id(),
-			actions.NewViewInsertAction(v.Id(), line, col, s, false),
-			actions.NewViewDeleteAction(v.Id(), line, col, endLn, endCol-1, false))
+			[]core.Action{
+				actions.NewViewInsertAction(v.Id(), line, col, s, false),
+				actions.NewSetCursorAction(v.Id(), endLn+1, endCol+1)},
+			[]core.Action{
+				actions.NewViewDeleteAction(v.Id(), line, col, endLn, endCol-1, false),
+				actions.NewSetCursorAction(v.Id(), ln+1, col+1)},
+		)
 	}
 	v.Render()
 	e.TermFlush()
@@ -97,6 +103,7 @@ func (v *View) Reload() {
 
 // Delete removes characters at the given text location
 func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
+	ln, col := v.CurTextPos()
 	v.SetDirty(true)
 	s := core.NewSelection(line1, col1, line2, col2)
 	text := core.RunesToString(v.SelectionText(s))
@@ -106,10 +113,16 @@ func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
 		return
 	}
 	if undoable {
+		ln2, col2 := v.CurTextPos()
 		actions.UndoAdd(
 			v.Id(),
-			actions.NewViewDeleteAction(v.Id(), line1, col1, line2, col2, false),
-			actions.NewViewInsertAction(v.Id(), line1, col1, text, false))
+			[]core.Action{
+				actions.NewViewDeleteAction(v.Id(), line1, col1, line2, col2, false),
+				actions.NewSetCursorAction(v.Id(), ln2+1, col2+1),
+			},
+			[]core.Action{
+				actions.NewViewInsertAction(v.Id(), line1, col1, text, false),
+				actions.NewSetCursorAction(v.Id(), ln+1, col+1)})
 	}
 	v.Render()
 	core.Ed.TermFlush()
