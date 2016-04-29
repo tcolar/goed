@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -22,20 +23,28 @@ import (
 
 var palette = xtermPalette()
 
-// TODO: font config, provide a default ??
-var fontPath = "test_data/Hack-Regular.ttf"
-var fontSize = 12
+// TODO: font config
+var fontPath = "fonts/LiberationMono-Regular.ttf"
 
+// backup fonts
+var noto = parseFont("fonts/NotoSans-Regular.ttf")
+var notoSymbols = parseFont("fonts/NotoSansSymbols-Regular.ttf")
+
+var fontSize = 10
+var dpi = 96
+
+// GuiTerm is a very minimal text terminal emulation GUI.
 type GuiTerm struct {
-	w, h         int
-	text         [][]char
-	textLock     sync.Mutex
-	win          wde.Window
-	font         *truetype.Font
-	charW, charH int // size of characters
-	face         font.Face
-	ctx          *freetype.Context
-	rgba         *image.RGBA
+	w, h             int
+	text             [][]char
+	textLock         sync.Mutex
+	win              wde.Window
+	font             *truetype.Font
+	charW, charH     int // size of characters
+	face             font.Face
+	ctx              *freetype.Context
+	rgba             *image.RGBA
+	cursorX, cursorY int
 }
 
 type char struct {
@@ -66,22 +75,13 @@ func NewGuiTerm(h, w int) *GuiTerm {
 }
 
 func (t *GuiTerm) applyFont(fontPath string, fontSize int) {
-	fontBytes, err := ioutil.ReadFile(fontPath)
-	if err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
-	t.font, err = freetype.ParseFont(fontBytes)
-	if err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
+	t.font = parseFont(fontPath)
 	opts := truetype.Options{}
 	opts.Size = float64(fontSize)
 	t.face = truetype.NewFace(t.font, &opts)
 	bounds, _, _ := t.face.GlyphBounds('░')
-	t.charW = int((bounds.Max.X-bounds.Min.X)>>6) + 2
-	t.charH = int((bounds.Max.Y-bounds.Min.Y)>>6) + 2
+	t.charW = int((bounds.Max.X-bounds.Min.X)>>6) + dpi/32
+	t.charH = int((bounds.Max.Y-bounds.Min.Y)>>6) + dpi/16
 	ww, wh := t.win.Size()
 	t.w = ww / t.charW
 	t.h = wh / t.charH
@@ -89,13 +89,29 @@ func (t *GuiTerm) applyFont(fontPath string, fontSize int) {
 	t.rgba = image.NewRGBA(image.Rect(0, 0, ww, wh))
 
 	c := freetype.NewContext()
-	c.SetDPI(72)
+	c.SetDPI(float64(dpi))
 	c.SetFont(t.font)
 	c.SetFontSize(float64(fontSize))
 	c.SetClip(t.rgba.Bounds())
 	c.SetDst(t.rgba)
 	c.SetHinting(font.HintingFull)
 	t.ctx = c
+}
+
+func parseFont(fontPath string) *truetype.Font {
+	fontBytes, err := ioutil.ReadFile(fontPath)
+	if err != nil {
+		fmt.Println(err)
+		log.Println(err)
+		os.Exit(1)
+	}
+	font, err := freetype.ParseFont(fontBytes)
+	if err != nil {
+		fmt.Println(err)
+		log.Println(err)
+		os.Exit(1)
+	}
+	return font
 }
 
 func (t *GuiTerm) Init() error {
@@ -121,8 +137,11 @@ func (t *GuiTerm) Flush() {
 	t.paint()
 }
 
-func (t *GuiTerm) SetCursor(y, x int) {
+func (t *GuiTerm) SetCursor(x, y int) {
 	// todo : move cursor
+	t.cursorX = x
+	t.cursorY = y
+	t.paint()
 }
 
 func (t *GuiTerm) Char(y, x int, c rune, fg, bg core.Style) {
@@ -203,13 +222,17 @@ func (t *GuiTerm) paint() {
 	pt := freetype.Pt(1, t.charH-4)
 	for y, ln := range t.text {
 		for x, r := range ln {
-			if r.rune == 0 {
+			if r.rune < 32 {
 				r.rune = ' '
 				r.bg = core.Ed.Theme().Bg
 			}
 			// TODO: attributes (bold)
 			bg := image.NewUniform(palette[r.bg.Uint16()&255])
 			fg := image.NewUniform(palette[r.fg.Uint16()&255])
+			// curosor location gets inverted colors
+			if y == t.cursorY && x == t.cursorX {
+				bg, fg = fg, bg
+			}
 			c.SetSrc(fg)
 			//bounds, awidth, _ := t.face.GlyphBounds(r.rune)
 			//fmt.Printf("%s %v | %v\n",
@@ -220,7 +243,7 @@ func (t *GuiTerm) paint() {
 			ry := t.charH * y
 			rect := image.Rect(rx, ry, rx+t.charW, ry+t.charH)
 			draw.Draw(t.rgba, rect, bg, image.ZP, draw.Src)
-			c.DrawString(string(r.rune), pt)
+			t.drawRune(r.rune, pt)
 			pt.X += w
 		}
 		pt.X = 1
@@ -228,6 +251,29 @@ func (t *GuiTerm) paint() {
 	}
 	t.win.Screen().CopyRGBA(t.rgba, t.rgba.Bounds())
 	t.win.FlushImage()
+}
+
+// Draw the rune, if the user-picked font does not provide a glyph for the given
+// rune try to fallback to noto / notoSymbols
+func (t *GuiTerm) drawRune(r rune, pt fixed.Point26_6) {
+	if t.font.Index(r) != 0 {
+		t.ctx.DrawString(string(r), pt)
+		return
+	}
+	font := t.font
+	if font.Index(r) != 0 {
+	} else if noto.Index(r) != 0 {
+		t.ctx.SetFont(noto)
+		t.ctx.SetFontSize(float64(fontSize - 3)) // "fat" font
+
+	} else if notoSymbols.Index(r) != 0 {
+		t.ctx.SetFont(notoSymbols)
+		t.ctx.SetFontSize(float64(fontSize - 3))
+	}
+	t.ctx.DrawString(string(r), pt)
+	// restore font
+	t.ctx.SetFontSize(float64(fontSize))
+	t.ctx.SetFont(font)
 }
 
 // Palette based of what's used in gnome-terminal / xterm-256
