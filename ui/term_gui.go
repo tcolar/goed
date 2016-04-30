@@ -184,7 +184,7 @@ func (t *GuiTerm) SetExtendedColors(b bool) { // N/A
 }
 
 func (t *GuiTerm) listen() {
-	evtState := event.NewEventState()
+	evtState := event.NewEvent()
 	for ev := range t.win.EventChan() {
 		evtState.Type = event.Evt_None
 		evtState.Glyph = ""
@@ -211,7 +211,7 @@ func (t *GuiTerm) listen() {
 		default:
 			continue
 		}
-		event.Queue(*evtState)
+		event.Queue(evtState)
 	}
 }
 

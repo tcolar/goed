@@ -406,5 +406,8 @@ func widgetCast(w Renderer) *View {
 	if w == nil {
 		return nil
 	}
-	return w.(*View)
+	if v, ok := w.(*View); ok {
+		return v
+	}
+	return nil
 }

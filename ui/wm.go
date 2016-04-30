@@ -156,11 +156,16 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 	h, w := e.term.Size()
 	v1 := widgetCast(e.WidgetAt(y1, x1))
 	v2 := widgetCast(e.WidgetAt(y2, x2))
+	if v1 == nil || v2 == nil {
+		return
+	}
+
 	c1 := e.ViewColumn(v1.Id())
 	c2 := e.ViewColumn(v2.Id())
 	c1i := e.ColIndex(c1)
 	v1i, _ := e.ViewIndex(v1.Id())
 	v2i, c2i := e.ViewIndex(v2.Id())
+
 	onSep := x2 == v2.x1 // dropped on a column "scrollbar"
 	if x1 == x2 && y1 == y2 {
 		// noop

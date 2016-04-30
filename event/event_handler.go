@@ -3,18 +3,19 @@ package event
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
-var queue chan EventState = make(chan EventState)
+var queue chan *Event = make(chan *Event)
 
-func Queue(es EventState) {
-	if es.Type == Evt_None {
-		es.parseType()
+func Queue(e *Event) {
+	if e.Type == Evt_None {
+		e.parseType()
 	}
-	queue <- es
+	queue <- e
 }
 
 func Shutdown() {
@@ -22,38 +23,37 @@ func Shutdown() {
 }
 
 func Listen() {
-	for es := range queue {
-		if done := handleEvent(&es); done {
+	es := &eventState{}
+	for e := range queue {
+		if done := handleEvent(e, es); done {
 			return
 		}
 	}
 }
 
-func handleEvent(es *EventState) bool {
-	et := es.Type
-
+func handleEvent(e *Event, es *eventState) bool {
+	et := e.Type
 	curView := actions.Ar.EdCurView()
 	actions.Ar.ViewAutoScroll(curView, 0, 0)
 
 	y, x := actions.Ar.ViewCursorCoords(curView)
 
-	if es.hasMouse() {
-		curView, y, x = actions.Ar.EdViewAt(es.MouseY+1, es.MouseX+1)
+	if e.hasMouse() {
+		curView, y, x = actions.Ar.EdViewAt(e.MouseY+1, e.MouseX+1)
 	}
 
 	if curView < 0 {
 		return false
 	}
 
-	//	col := actions.Ar.ViewLineRunesTo(curView, y, x)
 	ln, col := actions.Ar.ViewTextPos(curView, y, x)
 
 	dirty := false
 
-	//	if et != Evt_None {
-	fmt.Printf("%s %s y:%d x:%d ln:%d col:%d my:%d mx:%d - %v\n",
-		et, es.String(), y, x, ln, col, es.MouseY, es.MouseX, es.inDrag)
-	//	}
+	if et != Evt_None {
+		fmt.Printf("%s %s y:%d x:%d ln:%d col:%d my:%d mx:%d - %v\n",
+			et, e.String(), y, x, ln, col, e.MouseY, e.MouseX, e.inDrag)
+	}
 
 	// TODO : common/termonly//cmdbar/view only
 	// TODO: couldn't cmdbar be a view ?
@@ -162,7 +162,7 @@ func handleEvent(es *EventState) bool {
 		cs = false
 	case EvtSelectMouse:
 		actions.Ar.ViewSetCursorPos(curView, ln, col)
-		actions.Ar.ViewStretchSelection(curView, es.dragLn, es.dragCol)
+		actions.Ar.ViewStretchSelection(curView, e.dragLn, e.dragCol)
 		cs = false
 	case EvtSelectPageDown:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtPgDown)
@@ -181,9 +181,31 @@ func handleEvent(es *EventState) bool {
 		actions.Ar.ViewStretchSelection(curView, ln, col)
 		cs = false
 	case EvtSetCursor:
-		if x == 1 && y == 1 {
-			break
+		dblClick := es.lastClickX == e.MouseX && es.lastClickY == e.MouseY &&
+			time.Now().Unix()-es.lastClick <= 1
+		if x == 1 && y == 1 { // view "handle"
+			if dblClick {
+				// view swap
+				es.movingView = false
+				cv := actions.Ar.EdCurView()
+				actions.Ar.EdSwapViews(cv, curView)
+				actions.Ar.EdActivateView(curView)
+				return false
+			} // else, view move start
+			es.movingView = true
+			es.lastClickX = e.MouseX
+			es.lastClickY = e.MouseY
+			es.lastClick = time.Now().Unix()
+			actions.Ar.EdSetStatusErr("Starting move, click new position or dbl click to swap")
+			return false
 		}
+		// Moving view to new position
+		if es.movingView && (x == 1 || y == 1) {
+			es.movingView = false
+			actions.Ar.EdViewMove(es.lastClickY+1, es.lastClickX+1, e.MouseY+1, e.MouseX+1)
+			return false
+		}
+		// Set cursor position
 		actions.Ar.ViewSetCursorPos(curView, ln, col)
 		actions.Ar.EdActivateView(curView)
 	case EvtTab:
@@ -199,8 +221,8 @@ func handleEvent(es *EventState) bool {
 	//case EvtWinResize:
 	//	actions.Ar.EdResize(ev.Height, ev.Width)
 	case Evt_None:
-		if len(es.Glyph) > 0 {
-			actions.Ar.ViewInsertCur(curView, es.Glyph)
+		if len(e.Glyph) > 0 {
+			actions.Ar.ViewInsertCur(curView, e.Glyph)
 			dirty = true
 		}
 	default:

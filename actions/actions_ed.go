@@ -107,8 +107,8 @@ func (a *ar) EdViewByLoc(loc string) int64 {
 }
 
 // move a view to the new coordinates (UI position, 1 indexed)
-func (a *ar) EdViewMove(viewId int64, y1, x1, y2, x2 int) {
-	d(edViewMove{viewId: viewId, y1: y1, x1: x1, y2: y2, x2: x2})
+func (a *ar) EdViewMove(y1, x1, y2, x2 int) {
+	d(edViewMove{y1: y1, x1: x1, y2: y2, x2: x2})
 }
 
 // For a given Editor UI position (in characters, 1 indexed) returns
@@ -334,18 +334,11 @@ func (a edViewIndex) Run() {
 }
 
 type edViewMove struct {
-	viewId         int64
 	y1, x1, y2, x2 int
 }
 
 func (a edViewMove) Run() {
-	if !viewExists(a.viewId) {
-		return
-	}
-	v := core.Ed.ViewById(a.viewId)
-	if v != nil {
-		core.Ed.ViewMove(a.y1-1, a.x1-1, a.y2-1, a.x2-1)
-	}
+	core.Ed.ViewMove(a.y1-1, a.x1-1, a.y2-1, a.x2-1)
 }
 
 type edViewNavigate struct {

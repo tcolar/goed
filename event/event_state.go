@@ -5,31 +5,33 @@ import (
 	"strings"
 )
 
-type EventState struct {
+type Event struct {
 	Type EventType
 	// current values
-	Glyph          string
-	Keys           []string
-	Combo          Combo
-	MouseBtns      map[int]bool
-	MouseY, MouseX int
-
-	// state
-	//movingView               bool
-	//lastLClickX, lastLClickY int
-	//lastLClick               int64 // timestamp
+	Glyph           string
+	Keys            []string
+	Combo           Combo
+	MouseBtns       map[int]bool
+	MouseY, MouseX  int
 	dragLn, dragCol int  // drag start point
 	inDrag          bool // mouse dragging
 }
 
-func NewEventState() *EventState {
-	return &EventState{
+type eventState struct {
+	// state
+	movingView             bool
+	lastClickX, lastClickY int
+	lastClick              int64 // timestamp
+}
+
+func NewEvent() *Event {
+	return &Event{
 		MouseBtns: map[int]bool{},
 		Keys:      []string{},
 	}
 }
 
-func (e *EventState) hasMouse() bool {
+func (e *Event) hasMouse() bool {
 	for _, on := range e.MouseBtns {
 		if on {
 			return true
@@ -38,7 +40,7 @@ func (e *EventState) hasMouse() bool {
 	return false
 }
 
-func (e *EventState) parseType() {
+func (e *Event) parseType() {
 	bestScore := 0
 	t := Evt_None
 	for chord, et := range standard {
@@ -51,22 +53,22 @@ func (e *EventState) parseType() {
 	e.Type = t
 }
 
-func (e *EventState) KeyDown(key string) {
+func (e *Event) KeyDown(key string) {
 	e.updKey(key, true)
 	e.inDrag = false
 }
 
-func (e *EventState) KeyUp(key string) {
+func (e *Event) KeyUp(key string) {
 	e.updKey(key, false)
 }
 
-func (e *EventState) MouseUp(button, y, x int) {
+func (e *Event) MouseUp(button, y, x int) {
 	e.MouseBtns[button] = false
 	e.inDrag = false
 	// TODO some sort of endDrag event ?
 }
 
-func (e *EventState) MouseDown(button, y, x int) {
+func (e *Event) MouseDown(button, y, x int) {
 	if e.MouseBtns[button] && (e.MouseX != x || e.MouseY != y) {
 		e.inDrag = true
 	}
@@ -77,7 +79,7 @@ func (e *EventState) MouseDown(button, y, x int) {
 	}
 }
 
-func (e *EventState) updKey(key string, isDown bool) {
+func (e *Event) updKey(key string, isDown bool) {
 	switch key {
 	case KeyLeftSuper:
 		e.Combo.LSuper = isDown
@@ -114,7 +116,7 @@ func (e *EventState) updKey(key string, isDown bool) {
 	}
 }
 
-func (e *EventState) hasKey(key string) bool {
+func (e *Event) hasKey(key string) bool {
 	for _, k := range e.Keys {
 		if k == key {
 			return true
@@ -123,7 +125,7 @@ func (e *EventState) hasKey(key string) bool {
 	return false
 }
 
-func (e *EventState) scoreMatch(s string) (score int) {
+func (e *Event) scoreMatch(s string) (score int) {
 outer:
 	for _, k := range strings.Split(s, "+") {
 		if k[0] == 'M' { // mouse
@@ -202,7 +204,7 @@ outer:
 	return score
 }
 
-func (e *EventState) String() string {
+func (e *Event) String() string {
 	s := []string{}
 	for btn, b := range e.MouseBtns {
 		if b {

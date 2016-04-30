@@ -392,7 +392,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 		// end view move
 		if e.evtState.MovingView && isMouseUp(ev) {
 			e.evtState.MovingView = false
-			actions.Ar.EdViewMove(vid, e.evtState.LastClickY+1, e.evtState.LastClickX+1, ev.MouseY+1, ev.MouseX+1)
+			actions.Ar.EdViewMove(e.evtState.LastClickY+1, e.evtState.LastClickX+1, ev.MouseY+1, ev.MouseX+1)
 			actions.Ar.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
 			return
 		}
