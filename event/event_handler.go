@@ -60,17 +60,14 @@ func handleEvent(e *Event, es *eventState) bool {
 
 	// TODO : right click select/open still broken
 	// TODO : dbl click
-	// TODO : swap view
-	// TODO : move view
 	// TODO : click to close view
 	// TODO : term Enter + VT100
 	// TODO : cmdbar
 	// TODO : shift selections
 	// TODO : mouse select / scroll / drag / drag + scroll
-	// TODO : down/pg_down slection seems buggy too (tabs ?)
+	// TODO : down/pg_down selection seems buggy too (tabs ?)
 	// TODO : window resize
 	// TODO : allow other acme like events such as drag selection / click on selection
-	// TODO : events & actions tests
 
 	cs := true // clear selections
 
@@ -183,27 +180,34 @@ func handleEvent(e *Event, es *eventState) bool {
 	case EvtSetCursor:
 		dblClick := es.lastClickX == e.MouseX && es.lastClickY == e.MouseY &&
 			time.Now().Unix()-es.lastClick <= 1
-		if x == 1 && y == 1 { // view "handle"
+		y1, _, _, x2 := actions.Ar.ViewBounds(curView)
+		// close button
+		if e.MouseX+1 == x2-1 && e.MouseY+1 == y1 {
+			actions.Ar.EdDelView(curView, true)
+			break
+		}
+		// view "handle" (top left corner)
+		if x == 1 && y == 1 {
 			if dblClick {
 				// view swap
 				es.movingView = false
 				cv := actions.Ar.EdCurView()
 				actions.Ar.EdSwapViews(cv, curView)
 				actions.Ar.EdActivateView(curView)
-				return false
+				break
 			} // else, view move start
 			es.movingView = true
 			es.lastClickX = e.MouseX
 			es.lastClickY = e.MouseY
 			es.lastClick = time.Now().Unix()
 			actions.Ar.EdSetStatusErr("Starting move, click new position or dbl click to swap")
-			return false
+			break
 		}
 		// Moving view to new position
 		if es.movingView && (x == 1 || y == 1) {
 			es.movingView = false
 			actions.Ar.EdViewMove(es.lastClickY+1, es.lastClickX+1, e.MouseY+1, e.MouseX+1)
-			return false
+			break
 		}
 		// Set cursor position
 		actions.Ar.ViewSetCursorPos(curView, ln, col)
