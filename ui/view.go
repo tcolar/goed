@@ -406,7 +406,7 @@ func (v *View) Backend() core.Backend {
 }
 
 func (v *View) Dirty() bool {
-	if v.viewType == core.ViewTypeInteractive {
+	if v.viewType == core.ViewTypeShell {
 		return false
 	}
 	return v.dirty
@@ -510,4 +510,8 @@ func (v *View) SetScrollPos(ln, col int) {
 
 func (v *View) Text(ln1, col1, ln2, col2 int) [][]rune {
 	return v.SelectionText(core.NewSelection(ln1, col1, ln2, col2))
+}
+
+func (v *View) Type() core.ViewType {
+	return v.viewType
 }

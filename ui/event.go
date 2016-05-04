@@ -50,7 +50,7 @@ func (e *Editor) EventLoop() {
 		case termbox.EventKey:
 			// Special case for terminal/command views, pass most keystrokes through
 			v := viewCast(e.CurView())
-			if v != nil && v.viewType == core.ViewTypeInteractive {
+			if v != nil && v.viewType == core.ViewTypeShell {
 				v.TermEvent(e, &ev)
 				break
 			}
@@ -119,7 +119,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	es := false //expand selection
 	vid := v.Id()
 	actions.Ar.ViewAutoScroll(vid, 0, 0)
-	ln, col := actions.Ar.ViewCursorCoords(vid)
+	//ln, col := actions.Ar.ViewCursorCoords(vid)
 	e.evtState.InDrag = false
 
 	if v.viewCommonEvent(e, ev) {
@@ -201,7 +201,7 @@ func (v *View) Event(e *Editor, ev *termbox.Event) {
 	}
 	// extend keyboard selection
 	if es && ev.Meta == termbox.Shift {
-		actions.Ar.ViewStretchSelection(vid, ln, col)
+		//		actions.Ar.ViewStretchSelection(vid, ln, col)
 	} else {
 		actions.Ar.ViewClearSelections(vid)
 	}
@@ -259,7 +259,7 @@ func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
 	e.evtState.InDrag = false
 	bc := v.backend.(*backend.BackendCmd)
 	es := false
-	ln, col := actions.Ar.ViewCursorCoords(vid)
+	//ln, col := actions.Ar.ViewCursorCoords(vid)
 
 	if v.viewCommonEvent(e, ev) {
 		return
@@ -336,7 +336,7 @@ func (v *View) TermEvent(e *Editor, ev *termbox.Event) {
 
 	// extend keyboard selection
 	if es && ev.Meta == termbox.Shift {
-		actions.Ar.ViewStretchSelection(vid, ln, col)
+		//		actions.Ar.ViewStretchSelection(vid, ln, col)
 	} else {
 		actions.Ar.ViewClearSelections(vid)
 	}

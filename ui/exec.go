@@ -14,7 +14,7 @@ func exec(args []string, interactive bool) int64 {
 	v := ed.AddViewSmart(nil)
 	v.highlighter = &TermHighlighter{}
 	if interactive {
-		v.SetViewType(core.ViewTypeInteractive)
+		v.SetViewType(core.ViewTypeShell)
 	}
 	b, err := backend.NewMemBackendCmd(args, workDir, v.Id(), nil, false)
 	b.MaxRows = core.Ed.Config().MaxCmdBufferLines

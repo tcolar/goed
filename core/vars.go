@@ -56,6 +56,6 @@ const (
 type ViewType int
 
 const (
-	ViewTypeStandard ViewType = iota
-	ViewTypeInteractive
+	ViewTypeStandard ViewType = 1
+	ViewTypeShell             = 2
 )

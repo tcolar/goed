@@ -294,6 +294,8 @@ func (b *MemBackend) Wipe() {
 	b.colors = [][]*color{[]*color{}}
 }
 
+func (m *MemBackend) SendBytes(data []byte) {}
+
 type color struct {
 	fg, bg core.Style
 }

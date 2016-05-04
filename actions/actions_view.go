@@ -187,12 +187,6 @@ func (a *ar) ViewSetVtCols(viewId int64, cols int) {
 	d(viewSetVtCols{viewId: viewId, cols: cols})
 }
 
-// extends the current text selection toward the given location(1 indexed)
-// this maybe in any direction
-func (a *ar) ViewStretchSelection(viewId int64, prevLn, prevCol int) {
-	d(viewStretchSelection{viewId: viewId, prevLn: prevLn, prevCol: prevCol})
-}
-
 // set the current working dir of the view, especially usefull for terminal views.
 // this is used when "opening" relative locations, among other things.
 func (a *ar) ViewSetWorkDir(viewId int64, workDir string) {
@@ -243,6 +237,13 @@ func (a *ar) ViewTitle(viewId int64) string {
 	return <-answer
 }
 
+// return the vew type (core.ViewType)
+func (a *ar) ViewType(viewId int64) int {
+	answer := make(chan int, 1)
+	d(viewType{viewId: viewId, answer: answer})
+	return <-answer
+}
+
 // undo
 func (a *ar) ViewUndo(viewId int64) {
 	d(viewUndo{viewId: viewId})
@@ -253,6 +254,11 @@ func (a *ar) ViewWorkDir(viewId int64) string {
 	answer := make(chan string, 1)
 	d(viewWorkDir{viewId: viewId, answer: answer})
 	return <-answer
+}
+
+// send raw bytes to a terminal view
+func (a *ar) TermSendBytes(viewId int64, data []byte) {
+	d(termSendBytes{viewId: viewId, data: data})
 }
 
 // ########  Impl ......
@@ -493,9 +499,10 @@ type viewInsertCur struct {
 
 func (a viewInsertCur) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v != nil {
-		v.InsertCur(a.text)
+	if v == nil {
+		return
 	}
+	v.InsertCur(a.text)
 }
 
 type viewInsertNewLine struct {
@@ -746,25 +753,6 @@ func (a viewSrcLoc) Run() {
 	a.answer <- v.Backend().SrcLoc()
 }
 
-type viewStretchSelection struct {
-	viewId          int64
-	prevLn, prevCol int
-}
-
-func (a viewStretchSelection) Run() {
-	v := core.Ed.ViewById(a.viewId)
-	ln, col := v.CurLine(), v.CurCol()
-	if v != nil {
-		v.StretchSelection(
-			a.prevLn-1,
-			a.prevCol-1,
-			ln,
-			col,
-		)
-	}
-	v.SetCursorPos(ln, col)
-}
-
 type viewSyncSlice struct {
 	viewId int64
 }
@@ -845,6 +833,20 @@ func (a viewTitle) Run() {
 	a.answer <- v.Title()
 }
 
+type viewType struct {
+	viewId int64
+	answer chan int
+}
+
+func (a viewType) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Id() == 0 {
+		a.answer <- int(core.ViewTypeStandard)
+		return
+	}
+	a.answer <- int(v.Type())
+}
+
 type viewUndo struct {
 	viewId int64
 }
@@ -867,6 +869,19 @@ func (a viewWorkDir) Run() {
 		return
 	}
 	a.answer <- v.WorkDir()
+}
+
+type termSendBytes struct {
+	viewId int64
+	data   []byte
+}
+
+func (a termSendBytes) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Type() != core.ViewTypeShell {
+		return
+	}
+	v.Backend().SendBytes(a.data)
 }
 
 func NewViewInsertAction(viewId int64, row, col int, text string, undoable bool) core.Action {

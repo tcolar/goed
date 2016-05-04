@@ -139,9 +139,16 @@ func (t *GuiTerm) Flush() {
 
 func (t *GuiTerm) SetCursor(x, y int) {
 	// todo : move cursor
+	px, py := t.cursorX, t.cursorY
 	t.cursorX = x
 	t.cursorY = y
-	t.paint()
+	t.paintChar(py, px)
+	t.paintChar(y, x)
+	ny, nx := y*t.charH, x*t.charW
+	r := image.Rect(nx, ny, nx+t.charW, ny+t.charH)
+	i := t.rgba.SubImage(r).(*image.RGBA)
+	t.win.Screen().CopyRGBA(i, r)
+	t.win.FlushImage()
 }
 
 func (t *GuiTerm) Char(y, x int, c rune, fg, bg core.Style) {
@@ -185,6 +192,7 @@ func (t *GuiTerm) SetExtendedColors(b bool) { // N/A
 
 func (t *GuiTerm) listen() {
 	evtState := event.NewEvent()
+	dragY, dragX := 0, 0
 	for ev := range t.win.EventChan() {
 		evtState.Type = event.Evt_None
 		evtState.Glyph = ""
@@ -199,7 +207,14 @@ func (t *GuiTerm) listen() {
 		case wde.MouseUpEvent:
 			evtState.MouseUp(int(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
 		case wde.MouseDraggedEvent:
-			evtState.MouseDown(int(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
+			// only send drag event if moved to new text cell
+			y, x := e.Where.Y/t.charH, e.Where.X/t.charW
+			if y == dragY && x == dragX {
+				continue
+			}
+			evtState.MouseDown(int(e.Which), y, x)
+			dragX = x
+			dragY = y
 		case wde.KeyTypedEvent:
 			evtState.Glyph = e.Glyph
 		case wde.KeyDownEvent:
@@ -216,41 +231,35 @@ func (t *GuiTerm) listen() {
 }
 
 func (t *GuiTerm) paint() {
-	c := t.ctx
-	w := fixed.Int26_6(t.charW << 6)
-	h := fixed.Int26_6(t.charH << 6)
-	pt := freetype.Pt(1, t.charH-4)
 	for y, ln := range t.text {
-		for x, r := range ln {
-			if r.rune < 32 {
-				r.rune = ' '
-				r.bg = core.Ed.Theme().Bg
-			}
-			// TODO: attributes (bold)
-			bg := image.NewUniform(palette[r.bg.Uint16()&255])
-			fg := image.NewUniform(palette[r.fg.Uint16()&255])
-			// curosor location gets inverted colors
-			if y == t.cursorY && x == t.cursorX {
-				bg, fg = fg, bg
-			}
-			c.SetSrc(fg)
-			//bounds, awidth, _ := t.face.GlyphBounds(r.rune)
-			//fmt.Printf("%s %v | %v\n",
-			//	string(r.rune),
-			//	bounds,
-			//	awidth)
-			rx := t.charW * x
-			ry := t.charH * y
-			rect := image.Rect(rx, ry, rx+t.charW, ry+t.charH)
-			draw.Draw(t.rgba, rect, bg, image.ZP, draw.Src)
-			t.drawRune(r.rune, pt)
-			pt.X += w
+		for x, _ := range ln {
+			t.paintChar(y, x)
 		}
-		pt.X = 1
-		pt.Y += h
 	}
 	t.win.Screen().CopyRGBA(t.rgba, t.rgba.Bounds())
 	t.win.FlushImage()
+}
+
+func (t *GuiTerm) paintChar(y, x int) {
+	pt := freetype.Pt(1+x*t.charW, t.charH-4+y*t.charH)
+	r := t.text[y][x]
+	if r.rune < 32 {
+		r.rune = ' '
+		r.bg = core.Ed.Theme().Bg
+	}
+	// TODO: attributes (bold)
+	bg := image.NewUniform(palette[r.bg.Uint16()&255])
+	fg := image.NewUniform(palette[r.fg.Uint16()&255])
+	// cursor location gets inverted colors
+	if y == t.cursorY && x == t.cursorX {
+		bg, fg = fg, bg
+	}
+	t.ctx.SetSrc(fg)
+	rx := t.charW * x
+	ry := t.charH * y
+	rect := image.Rect(rx, ry, rx+t.charW, ry+t.charH)
+	draw.Draw(t.rgba, rect, bg, image.ZP, draw.Src)
+	t.drawRune(r.rune, pt)
 }
 
 // Draw the rune, if the user-picked font does not provide a glyph for the given

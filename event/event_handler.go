@@ -36,31 +36,39 @@ func handleEvent(e *Event, es *eventState) bool {
 	curView := actions.Ar.EdCurView()
 	actions.Ar.ViewAutoScroll(curView, 0, 0)
 
-	y, x := actions.Ar.ViewCursorCoords(curView)
+	ln, col := actions.Ar.ViewCursorPos(curView)
+	x, y := 0, 0 // relative mouse
 
 	if e.hasMouse() {
 		curView, y, x = actions.Ar.EdViewAt(e.MouseY+1, e.MouseX+1)
+		ln, col = actions.Ar.ViewTextPos(curView, y, x)
+		if e.inDrag && e.dragLn == -1 {
+			e.dragLn, e.dragCol = ln, col
+		}
 	}
 
 	if curView < 0 {
 		return false
 	}
 
-	ln, col := actions.Ar.ViewTextPos(curView, y, x)
-
-	dirty := false
-
 	if et != Evt_None {
 		fmt.Printf("%s %s y:%d x:%d ln:%d col:%d my:%d mx:%d - %v\n",
 			et, e.String(), y, x, ln, col, e.MouseY, e.MouseX, e.inDrag)
 	}
 
+	vt := actions.Ar.ViewType(curView)
+	if !e.hasMouse() && vt == core.ViewTypeShell {
+		fmt.Println("te")
+		handleTermEvent(curView, e)
+		return false
+	}
+
+	dirty := false
+
 	// TODO : common/termonly//cmdbar/view only
 	// TODO: couldn't cmdbar be a view ?
 
-	// TODO : right click select/open still broken
 	// TODO : dbl click
-	// TODO : click to close view
 	// TODO : term Enter + VT100
 	// TODO : cmdbar
 	// TODO : shift selections
@@ -101,6 +109,7 @@ func handleEvent(e *Event, es *eventState) bool {
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtLeft)
 	case EvtMoveRight:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtRight)
+		return false
 	case EvtMoveUp:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtUp)
 	case EvtNavDown:
@@ -142,40 +151,35 @@ func handleEvent(e *Event, es *eventState) bool {
 		actions.Ar.ViewSelectAll(curView)
 		cs = false
 	case EvtSelectDown:
-		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtDown)
-		actions.Ar.ViewStretchSelection(curView, ln, col)
+		stretchSelection(curView, core.CursorMvmtDown)
 		cs = false
 	case EvtSelectEnd:
-		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtEnd)
-		actions.Ar.ViewStretchSelection(curView, ln, col)
+		stretchSelection(curView, core.CursorMvmtEnd)
 		cs = false
 	case EvtSelectHome:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtHome)
-		actions.Ar.ViewStretchSelection(curView, ln, col)
+		stretchSelection(curView, core.CursorMvmtHome)
 		cs = false
 	case EvtSelectLeft:
-		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtLeft)
-		actions.Ar.ViewStretchSelection(curView, ln, col)
+		stretchSelection(curView, core.CursorMvmtLeft)
 		cs = false
 	case EvtSelectMouse:
 		actions.Ar.ViewSetCursorPos(curView, ln, col)
-		actions.Ar.ViewStretchSelection(curView, e.dragLn, e.dragCol)
+		actions.Ar.ViewClearSelections(curView)
+		fmt.Printf("%d %d %d %d\n", ln, col, e.dragLn, e.dragCol)
+		actions.Ar.ViewAddSelection(curView, ln, col, e.dragLn, e.dragCol)
 		cs = false
 	case EvtSelectPageDown:
-		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtPgDown)
-		actions.Ar.ViewStretchSelection(curView, ln, col)
+		stretchSelection(curView, core.CursorMvmtPgDown)
 		cs = false
 	case EvtSelectPageUp:
-		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtPgUp)
-		actions.Ar.ViewStretchSelection(curView, ln, col)
+		stretchSelection(curView, core.CursorMvmtPgUp)
 		cs = false
 	case EvtSelectRight:
-		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtRight)
-		actions.Ar.ViewStretchSelection(curView, ln, col)
+		stretchSelection(curView, core.CursorMvmtRight)
 		cs = false
 	case EvtSelectUp:
-		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtUp)
-		actions.Ar.ViewStretchSelection(curView, ln, col)
+		stretchSelection(curView, core.CursorMvmtUp)
 		cs = false
 	case EvtSetCursor:
 		dblClick := es.lastClickX == e.MouseX && es.lastClickY == e.MouseY &&
@@ -226,6 +230,7 @@ func handleEvent(e *Event, es *eventState) bool {
 	//	actions.Ar.EdResize(ev.Height, ev.Width)
 	case Evt_None:
 		if len(e.Glyph) > 0 {
+			// "plain" text
 			actions.Ar.ViewInsertCur(curView, e.Glyph)
 			dirty = true
 		}
@@ -245,4 +250,109 @@ func handleEvent(e *Event, es *eventState) bool {
 	actions.Ar.EdRender()
 
 	return false
+}
+
+// Events for terminal/command views
+func handleTermEvent(vid int64, e *Event) {
+	es := false
+	//ln, col := actions.Ar.ViewCursorCoords(vid)
+
+	// Handle termbox special keys to VT100
+	switch {
+	/*	case termbox.KeyCtrlC:
+			if len(actions.Ar.ViewSelections(vid)) > 0 {
+				actions.Ar.ViewCopy(vid)
+			} else {
+				actions.Ar.TermSendBytes([]byte{byte(ev.Key)})
+			}
+		case termbox.KeyCtrlV:
+			actions.Ar.ViewPaste(vid)*/
+	// "special"/navigation keys
+	case e.hasKey(KeyReturn):
+		actions.Ar.TermSendBytes(vid, []byte{13})
+	case e.hasKey(KeyDelete):
+		actions.Ar.TermSendBytes(vid, []byte{127}) // delete (~ backspace)
+	case e.hasKey(KeyUpArrow):
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'A'})
+	case e.hasKey(KeyDownArrow):
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'B'})
+	case e.hasKey(KeyRightArrow):
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'C'})
+	case e.hasKey(KeyLeftArrow):
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'D'})
+	case e.hasKey(KeyBackspace):
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'C'}) // right
+		actions.Ar.TermSendBytes(vid, []byte{127})          //delete
+		// TODO: PgUp / pgDown not working right
+	/*case e.hasKey(KeyNext):
+		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtPgDown)
+		es = true
+	case e.hasKey(KeyPrior):
+		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtPgUp)
+		es = true*/
+	case e.hasKey(KeyEnd):
+		actions.Ar.TermSendBytes(vid, []byte{byte(0x05)}) // CTRL+E
+		es = true
+	case e.hasKey(KeyHome):
+		actions.Ar.TermSendBytes(vid, []byte{byte(0x01)}) // CTRL+A
+		es = true
+		// function keys
+	case e.hasKey(KeyF1):
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'P'})
+	case e.hasKey(KeyF2):
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'Q'})
+	case e.hasKey(KeyF3):
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'R'})
+	case e.hasKey(KeyF4):
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'S'})
+	case e.hasKey(KeyF5):
+		actions.Ar.TermSendBytes(vid, []byte{27, '[', '1', '5', '~'})
+	case e.hasKey(KeyF6):
+		actions.Ar.TermSendBytes(vid, []byte{27, '[', '1', '7', '~'})
+	case e.hasKey(KeyF7):
+		actions.Ar.TermSendBytes(vid, []byte{27, '[', '1', '8', '~'})
+	case e.hasKey(KeyF8):
+		actions.Ar.TermSendBytes(vid, []byte{27, '[', '1', '9', '~'})
+	case e.hasKey(KeyF9):
+	case e.hasKey(KeyF10):
+		actions.Ar.TermSendBytes(vid, []byte{27, '[', '2', '1', '~'})
+	case e.hasKey(KeyF11):
+		actions.Ar.TermSendBytes(vid, []byte{27, '[', '2', '3', '~'})
+	case e.hasKey(KeyF12):
+		actions.Ar.TermSendBytes(vid, []byte{27, '[', '2', '4', '~'})
+
+	default:
+		if len(e.Glyph) > 0 {
+			actions.Ar.ViewInsertCur(vid, e.Glyph)
+		} else {
+			// 	TODO
+			fmt.Printf("%#v\n", e)
+		}
+	}
+
+	// extend keyboard selection
+	if es { //&& ev.Meta == termbox.Shift {
+		// TODO
+		//		actions.Ar.ViewStretchSelection(vid, ln, col)
+	} else {
+		actions.Ar.ViewClearSelections(vid)
+	}
+}
+
+func stretchSelection(vid int64, mvmt core.CursorMvmt) {
+	l, c := actions.Ar.ViewCursorPos(vid)
+	actions.Ar.ViewCursorMvmt(vid, mvmt)
+	l2, c2 := actions.Ar.ViewCursorPos(vid)
+	ss := actions.Ar.ViewSelections(vid)
+	if len(ss) > 0 {
+		if ss[0].LineTo == l && ss[0].ColTo == c {
+			l = ss[0].LineFrom
+			c = ss[0].ColFrom
+		} else if ss[0].LineFrom == l && ss[0].ColFrom == c {
+			l = ss[0].LineTo
+			c = ss[0].ColTo
+		}
+	}
+	actions.Ar.ViewClearSelections(vid)
+	actions.Ar.ViewAddSelection(vid, l, c, l2, c2)
 }

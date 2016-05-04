@@ -13,7 +13,7 @@ type Event struct {
 	Combo           Combo
 	MouseBtns       map[int]bool
 	MouseY, MouseX  int
-	dragLn, dragCol int  // drag start point
+	dragLn, dragCol int  // seetion start point
 	inDrag          bool // mouse dragging
 }
 
@@ -69,13 +69,14 @@ func (e *Event) MouseUp(button, y, x int) {
 }
 
 func (e *Event) MouseDown(button, y, x int) {
-	if e.MouseBtns[button] && (e.MouseX != x || e.MouseY != y) {
+	if e.MouseBtns[button] &&
+		(!e.inDrag || e.MouseX != x || e.MouseY != y) {
 		e.inDrag = true
 	}
 	e.MouseY, e.MouseX = y, x
 	e.MouseBtns[button] = true
 	if !e.inDrag {
-		e.dragLn, e.dragCol = y, x
+		e.dragLn, e.dragCol = -1, -1
 	}
 }
 

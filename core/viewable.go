@@ -57,5 +57,6 @@ type Viewable interface {
 	SyncSlice()
 	Title() string
 	Text(ln1, col1, ln2, col2 int) [][]rune
+	Type() ViewType
 	WorkDir() string
 }

@@ -508,3 +508,5 @@ func (f *FileBackend) shiftFileBits(shift int64) error {
 
 func (m *FileBackend) SetVtCols(cols int) { // N/A
 }
+
+func (m *FileBackend) SendBytes(data []byte) {}

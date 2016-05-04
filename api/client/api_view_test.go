@@ -664,31 +664,6 @@ func (as *ApiSuite) TestViewSrcLoc(t *C) {
 	assert.Eq(t, res[0], expected)
 }
 
-func (as *ApiSuite) TestViewStretchSelection(t *C) {
-	vid := as.openFile1(t)
-	actions.Ar.ViewSetCursorPos(vid, 3, 5)
-	res, err := Action(as.id, []string{"view_stretch_selection", vidStr(vid), "3", "8"})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "3 5 3 8")
-	res, err = Action(as.id, []string{"view_stretch_selection", vidStr(vid), "3", "6"})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "3 5 3 6")
-	res, err = Action(as.id, []string{"view_stretch_selection", vidStr(vid), "3", "1"})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "3 1 3 5")
-	res, err = Action(as.id, []string{"view_stretch_selection", vidStr(vid), "1", "2"})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "1 2 3 5")
-	res, err = Action(as.id, []string{"view_stretch_selection", vidStr(vid), "10", "3"})
-	assert.Nil(t, err)
-	assert.Eq(t, len(res), 0)
-	assert.Eq(t, actions.Ar.ViewSelections(vid)[0].String(), "3 5 10 3")
-}
-
 func (as *ApiSuite) TestViewText(t *C) {
 	vid := as.openFile1(t)
 	// "out of bounds" shoud return no text and not panic

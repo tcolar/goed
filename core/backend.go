@@ -19,6 +19,8 @@ type Backend interface {
 	// Save saves the edited data (BufferLoc) into the original (SrcLoc)
 	Save(loc string) error
 
+	SendBytes(data []byte)
+
 	// Slice gets a region of text ("rectangle") as a runes matrix
 	Slice(line1, col, line2, col2 int) *Slice
 
