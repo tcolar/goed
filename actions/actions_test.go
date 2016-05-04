@@ -122,7 +122,7 @@ func (s *ActionSuite) TestUndoLimit(t *C) {
 
 func add(v int64, i *int, inc int) {
 	d(addAction{i, inc})
-	UndoAdd(v, addAction{i, inc}, addAction{i, -inc})
+	UndoAdd(v, []core.Action{addAction{i, inc}}, []core.Action{addAction{i, -inc}})
 	core.Bus.Flush()
 }
 

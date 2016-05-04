@@ -27,8 +27,8 @@ var palette = xtermPalette()
 var fontPath = "fonts/LiberationMono-Regular.ttf"
 
 // backup fonts
-var noto = parseFont("fonts/NotoSans-Regular.ttf")
-var notoSymbols = parseFont("fonts/NotoSansSymbols-Regular.ttf")
+var noto *truetype.Font
+var notoSymbols *truetype.Font
 
 var fontSize = 10
 var dpi = 96
@@ -53,6 +53,9 @@ type char struct {
 }
 
 func NewGuiTerm(h, w int) *GuiTerm {
+	noto = parseFont("fonts/NotoSans-Regular.ttf")
+	notoSymbols = parseFont("fonts/NotoSansSymbols-Regular.ttf")
+
 	win, err := wde.NewWindow(1400, 800) // TODO: Window size
 	win.SetTitle("GoEd")
 	if err != nil {

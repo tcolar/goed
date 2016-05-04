@@ -38,7 +38,7 @@ func (s *ApiSuite) TestEdDelCol(t *C) {
 	err := Open(s.id, "test_data", "delcol.txt")
 	vid := actions.Ar.EdCurView()
 	l, c2, _, _ := actions.Ar.ViewBounds(vid)
-	actions.Ar.EdViewMove(vid, l, c2, 2, c2+5) // force view to it's own column
+	actions.Ar.EdViewMove(l, c2, 2, c2+5) // force view to it's own column
 	_, col := actions.Ar.EdViewIndex(vid)
 	assert.NotEq(t, col, c1)
 	res, err := Action(s.id, []string{"ed_del_col", strconv.Itoa(col), "true"})
