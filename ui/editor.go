@@ -130,16 +130,12 @@ func (e *Editor) Start(locs []string) {
 
 	actions.Ar.EdRender()
 
+	go core.Bus.Start()
+
 	go e.autoScroller()
 
-	// TODO: make this not in a routine
-	go event.Listen()
 	defer event.Shutdown()
-
-	// TODO: remove this
-	if !core.Testing {
-		e.EventLoop()
-	}
+	event.Listen()
 }
 
 // Open opens a given location in the editor (in the given view)

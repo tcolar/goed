@@ -96,8 +96,6 @@ func main() {
 	actions.RegisterActions()
 	apiServer.Start()
 
-	go core.Bus.Start()
-
 	core.Ed.Start(*locs)
 }
 

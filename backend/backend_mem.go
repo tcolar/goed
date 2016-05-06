@@ -240,12 +240,13 @@ func (b *MemBackend) sliceNoLock(row, col, row2, col2 int) *core.Slice {
 	}
 	r := slice.R1
 	for ; slice.R2 == -1 || r <= slice.R2; r++ {
-		if r >= len(b.text) {
+		if r < 0 || r >= len(b.text) {
 			break
 		}
 		if slice.C2 == -1 {
 			*text = append(*text, b.text[r])
 		} else {
+			fmt.Printf("%d %d\n",len(b.text),r)
 			c, c2, l := slice.C1, slice.C2+1, len(b.text[r])
 			if c > l {
 				c = l
