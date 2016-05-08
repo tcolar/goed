@@ -109,7 +109,6 @@ func handleEvent(e *Event, es *eventState) bool {
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtLeft)
 	case EvtMoveRight:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtRight)
-		return false
 	case EvtMoveUp:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtUp)
 	case EvtNavDown:
@@ -284,12 +283,12 @@ func handleTermEvent(vid int64, e *Event) {
 		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'C'}) // right
 		actions.Ar.TermSendBytes(vid, []byte{127})          //delete
 		// TODO: PgUp / pgDown not working right
-	/*case e.hasKey(KeyNext):
+	case e.hasKey(KeyNext):
 		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtPgDown)
 		es = true
 	case e.hasKey(KeyPrior):
 		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtPgUp)
-		es = true*/
+		es = true
 	case e.hasKey(KeyEnd):
 		actions.Ar.TermSendBytes(vid, []byte{byte(0x05)}) // CTRL+E
 		es = true
