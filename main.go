@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	gui     = kingpin.Flag("g", "Star in GUI mode..").Default("false").Bool()
+	gui     = kingpin.Flag("g", "Start in GUI mode..").Default("false").Bool()
 	test    = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
 	colors  = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
 	config  = kingpin.Flag("config", "Config file.").Default("config.toml").String()
@@ -79,7 +79,7 @@ func main() {
 
 	defer func() {
 		if fail := recover(); fail != nil {
-			// writing panic to file because shell will be garbled
+			// writing panic to file because shell may be garbled
 			fmt.Printf("Panicked with %v\n", fail)
 			fmt.Printf("Writing panic to log %s \n", core.LogFile.Name())
 			data := debug.Stack()

@@ -119,12 +119,12 @@ func parseFont(fontPath string) *truetype.Font {
 
 func (t *GuiTerm) Init() error {
 	t.win.Show()
-	go t.listen()
 	return nil
 }
 
 func (t *GuiTerm) Close() {
 	t.win.Close()
+	wde.Stop()
 }
 
 func (t *GuiTerm) Clear(fg, bg uint16) {
@@ -193,6 +193,11 @@ func (t *GuiTerm) SetInputMode(m termbox.InputMode) { // N/A
 func (t *GuiTerm) SetExtendedColors(b bool) { // N/A
 }
 
+func (t *GuiTerm) Listen() {
+	go t.listen()
+	wde.Run()
+}
+
 func (t *GuiTerm) listen() {
 	evtState := event.NewEvent()
 	dragY, dragX := 0, 0
@@ -205,6 +210,7 @@ func (t *GuiTerm) listen() {
 			evtState.Type = event.EvtWinResize
 		case wde.CloseEvent:
 			evtState.Type = event.EvtQuit
+			return
 		case wde.MouseDownEvent:
 			evtState.MouseDown(int(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
 		case wde.MouseUpEvent:

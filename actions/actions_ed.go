@@ -54,6 +54,11 @@ func (a *ar) EdOpenTerm(args []string) int64 {
 	return <-vid
 }
 
+// Quit the editor
+func (a *ar) EdQuit() {
+	d(edQuit{})
+}
+
 // Retuns whether the editor can be quit (ie: are any views "dirty")
 func (a *ar) EdQuitCheck() bool {
 	answer := make(chan (bool), 1)
@@ -216,6 +221,13 @@ type edOpenTerm struct {
 func (a edOpenTerm) Run() {
 	vid := core.Ed.StartTermView(a.args)
 	a.vid <- vid
+}
+
+type edQuit struct {
+}
+
+func (a edQuit) Run() {
+	core.Ed.Quit()
 }
 
 type edQuitCheck struct {

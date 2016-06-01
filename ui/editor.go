@@ -37,7 +37,7 @@ func NewEditor(gui bool) *Editor {
 	if gui {
 		term = NewGuiTerm(50, 160)
 	} else {
-		term = core.NewTermBox()
+		term = NewTermBox()
 	}
 	return &Editor{
 		term:   term,
@@ -57,6 +57,11 @@ func NewMockEditor() *Editor {
 
 func (e *Editor) Dispatch(action core.Action) {
 	core.Bus.Dispatch(action)
+}
+
+func (e *Editor) Quit() {
+	event.Shutdown()
+	e.term.Close()
 }
 
 // Start starts-up the editor
@@ -134,8 +139,9 @@ func (e *Editor) Start(locs []string) {
 
 	go e.autoScroller()
 
-	defer event.Shutdown()
-	event.Listen()
+	go event.Listen()
+
+	e.term.Listen()
 }
 
 // Open opens a given location in the editor (in the given view)

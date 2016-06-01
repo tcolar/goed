@@ -25,15 +25,65 @@ type EvtState struct {
 	InDrag                        bool
 }
 
-// EventLoop is the main event loop that keeps waiting for events as long as
-// the editor is running.
-func (e *Editor) EventLoop() {
+// ==================== Termbox impl ===========================
 
-	e.term.SetMouseMode(termbox.MouseMotion)
+// Real Terinal implementation using termbox
+type TermBox struct {
+}
+
+func NewTermBox() *TermBox {
+	return &TermBox{}
+}
+
+func (t *TermBox) Init() error {
+	return termbox.Init()
+}
+
+func (t *TermBox) Clear(fg, bg uint16) {
+	termbox.Clear(termbox.Attribute(fg), termbox.Attribute(bg))
+}
+
+func (t *TermBox) Close() {
+	termbox.Close()
+}
+
+func (t *TermBox) Flush() {
+	termbox.Flush()
+}
+
+func (t *TermBox) SetExtendedColors(b bool) {
+	termbox.SetExtendedColors(b)
+}
+
+func (t *TermBox) SetCursor(y, x int) {
+	termbox.SetCursor(y, x)
+}
+
+func (t *TermBox) Char(y, x int, c rune, fg, bg core.Style) {
+	termbox.SetCell(x, y, c, termbox.Attribute(fg.Uint16()), termbox.Attribute(bg.Uint16()))
+}
+
+func (t *TermBox) Size() (h, w int) {
+	w, h = termbox.Size()
+	return h, w
+}
+
+func (t *TermBox) SetMouseMode(m termbox.MouseMode) {
+	termbox.SetMouseMode(m)
+}
+
+func (t *TermBox) SetInputMode(m termbox.InputMode) {
+	termbox.SetInputMode(m)
+}
+
+func (t *TermBox) Listen() {
+	t.SetMouseMode(termbox.MouseMotion)
 	// Note: terminal might not support SGR mouse events, but trying anyway
-	e.term.SetMouseMode(termbox.MouseSgr)
+	t.SetMouseMode(termbox.MouseSgr)
 
-	e.term.SetInputMode(termbox.InputMouse)
+	t.SetInputMode(termbox.InputMouse)
+
+	e := core.Ed.(*Editor)
 	for {
 		ev := termbox.PollEvent()
 		if ev.Key == termbox.KeyCtrlQ {

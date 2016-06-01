@@ -14,6 +14,7 @@ type Editable interface {
 	// Open opens a file in the given view (new view if viewid<0)
 	// create -> create file at loc if does not exist yet
 	Open(loc string, viewId int64, rel string, create bool) (int64, error)
+	Quit()
 	QuitCheck() bool
 	// Render updates the whole editor UI
 	Render()

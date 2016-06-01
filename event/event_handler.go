@@ -137,6 +137,7 @@ func handleEvent(e *Event, es *eventState) bool {
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtPgUp)
 	case EvtQuit:
 		if actions.Ar.EdQuitCheck() {
+			actions.Ar.EdQuit()
 			return true
 		}
 	case EvtRedo:
