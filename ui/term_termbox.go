@@ -40,6 +40,8 @@ func (t *TermBox) Clear(fg, bg uint16) {
 }
 
 func (t *TermBox) Close() {
+	// TODO: should set it to original value, but how to read it ??
+	t.SetMouseMode(termbox.MouseClick)
 	termbox.Close()
 }
 

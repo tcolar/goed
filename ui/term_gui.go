@@ -16,7 +16,6 @@ import (
 	_ "github.com/skelterjohn/go.wde/init"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
-	termbox "github.com/tcolar/termbox-go"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 )
@@ -182,12 +181,6 @@ func (t *GuiTerm) CharAt(y, x int) rune {
 		panic("CharAt out of bounds")
 	}
 	return t.text[y][x].rune
-}
-
-func (t *GuiTerm) SetMouseMode(m termbox.MouseMode) { // N/A
-}
-
-func (t *GuiTerm) SetInputMode(m termbox.InputMode) { // N/A
 }
 
 func (t *GuiTerm) SetExtendedColors(b bool) { // N/A

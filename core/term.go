@@ -1,10 +1,6 @@
 package core
 
-import (
-	"fmt"
-
-	termbox "github.com/tcolar/termbox-go"
-)
+import "fmt"
 
 // Terminal interface
 type Term interface {
@@ -17,8 +13,6 @@ type Term interface {
 	SetExtendedColors(bool)
 	SetCursor(y, x int)
 	Size() (y, x int)
-	SetMouseMode(termbox.MouseMode)
-	SetInputMode(termbox.InputMode)
 }
 
 // ==================== Mock impl ===========================
@@ -73,12 +67,6 @@ func (t *MockTerm) Char(y, x int, c rune, fg, bg Style) {
 
 func (t *MockTerm) Size() (h, w int) {
 	return t.h, t.w
-}
-
-func (t *MockTerm) SetMouseMode(m termbox.MouseMode) {
-}
-
-func (t *MockTerm) SetInputMode(m termbox.InputMode) {
 }
 
 // for testing
