@@ -109,3 +109,11 @@ const (
 	KeyNext         = "next"
 	KeyCapsLock     = "caps"
 )
+
+const (
+	MouseLeft int = 1 << iota
+	MouseMiddle
+	MouseRight
+	MouseWheelUp
+	MouseWheelDown
+)

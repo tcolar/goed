@@ -7,6 +7,7 @@ import (
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/event"
 	termbox "github.com/tcolar/termbox-go"
 )
 
@@ -82,6 +83,197 @@ func (t *TermBox) Listen() {
 	t.SetMouseMode(termbox.MouseSgr)
 
 	t.SetInputMode(termbox.InputMouse)
+	es := event.NewEvent()
+	for {
+		ev := termbox.PollEvent()
+		t.parseEvent(ev, es)
+		if es.Type == event.EvtQuit {
+			return
+		}
+		event.Queue(es)
+	}
+}
+
+// parses a termbox event into the 'es' goed event (event.Event)
+func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
+	es.Type = event.Evt_None
+	if e.Ch > 0 {
+		es.Glyph = string(e.Ch)
+	} else {
+		es.Glyph = ""
+	}
+	es.MouseBtns = map[int]bool{}
+	es.Combo = event.Combo{}
+	es.Keys = []string{}
+
+	if len(es.Glyph) > 0 {
+		es.KeyDown(es.Glyph)
+	}
+
+	ctrl := func(k string) {
+		es.KeyDown(event.KeyLeftControl)
+		es.KeyDown(k)
+	}
+
+	k := e.Key
+	switch k {
+	case termbox.MouseLeft:
+		es.MouseDown(event.MouseLeft, e.MouseY, e.MouseX)
+	case termbox.MouseRight:
+		es.MouseDown(event.MouseRight, e.MouseY, e.MouseX)
+	case termbox.MouseMiddle:
+		es.MouseDown(event.MouseMiddle, e.MouseY, e.MouseX)
+	case termbox.MouseScrollDown:
+		es.MouseDown(event.MouseWheelDown, e.MouseY, e.MouseX)
+	case termbox.MouseScrollUp:
+		es.MouseDown(event.MouseWheelUp, e.MouseY, e.MouseX)
+	case termbox.KeyBackspace:
+		es.KeyDown(event.KeyBackspace)
+	case termbox.KeyTab:
+		es.KeyDown(event.KeyTab)
+	case termbox.KeyEnter:
+		es.KeyDown(event.KeyReturn)
+	case termbox.KeySpace:
+		es.KeyDown(event.KeySpace)
+	case termbox.KeyF1:
+		es.KeyDown(event.KeyF1)
+	case termbox.KeyF2:
+		es.KeyDown(event.KeyF2)
+	case termbox.KeyF3:
+		es.KeyDown(event.KeyF3)
+	case termbox.KeyF4:
+		es.KeyDown(event.KeyF4)
+	case termbox.KeyF5:
+		es.KeyDown(event.KeyF5)
+	case termbox.KeyF6:
+		es.KeyDown(event.KeyF7)
+	case termbox.KeyF7:
+		es.KeyDown(event.KeyF7)
+	case termbox.KeyF8:
+		es.KeyDown(event.KeyF8)
+	case termbox.KeyF9:
+		es.KeyDown(event.KeyF9)
+	case termbox.KeyF10:
+		es.KeyDown(event.KeyF10)
+	case termbox.KeyF11:
+		es.KeyDown(event.KeyF11)
+	case termbox.KeyF12:
+		es.KeyDown(event.KeyF12)
+	case termbox.KeyInsert:
+		es.KeyDown(event.KeyInsert)
+	case termbox.KeyDelete:
+		es.KeyDown(event.KeyDelete)
+	case termbox.KeyHome:
+		es.KeyDown(event.KeyHome)
+	case termbox.KeyEnd:
+		es.KeyDown(event.KeyEnd)
+	case termbox.KeyPgup:
+		es.KeyDown(event.KeyPrior)
+	case termbox.KeyPgdn:
+		es.KeyDown(event.KeyNext)
+	case termbox.KeyArrowUp:
+		es.KeyDown(event.KeyUpArrow)
+	case termbox.KeyArrowDown:
+		es.KeyDown(event.KeyDownArrow)
+	case termbox.KeyArrowLeft:
+		es.KeyDown(event.KeyLeftArrow)
+	case termbox.KeyArrowRight:
+		es.KeyDown(event.KeyRightArrow)
+
+	// Termbox list of supported ctrl characters is weird ....
+	case termbox.KeyCtrl2:
+		ctrl("2")
+	case termbox.KeyCtrl3:
+		ctrl("3")
+	case termbox.KeyCtrl4:
+		ctrl("4")
+	case termbox.KeyCtrl5:
+		ctrl("5")
+	case termbox.KeyCtrl6:
+		ctrl("6")
+	case termbox.KeyCtrl7:
+		ctrl("7")
+	case termbox.KeyCtrl8:
+		ctrl("8")
+	case termbox.KeyCtrlA:
+		ctrl("a")
+	case termbox.KeyCtrlB:
+		ctrl("b")
+	case termbox.KeyCtrlC:
+		ctrl("c")
+	case termbox.KeyCtrlD:
+		ctrl("d")
+	case termbox.KeyCtrlE:
+		ctrl("e")
+	case termbox.KeyCtrlF:
+		ctrl("f")
+	case termbox.KeyCtrlG:
+		ctrl("g")
+	case termbox.KeyCtrlJ:
+		ctrl("j")
+	case termbox.KeyCtrlK:
+		ctrl("k")
+	case termbox.KeyCtrlL:
+		ctrl("l")
+	case termbox.KeyCtrlN:
+		ctrl("n")
+	case termbox.KeyCtrlO:
+		ctrl("o")
+	case termbox.KeyCtrlP:
+		ctrl("p")
+	case termbox.KeyCtrlQ:
+		ctrl("q")
+	case termbox.KeyCtrlR:
+		ctrl("r")
+	case termbox.KeyCtrlS:
+		ctrl("s")
+	case termbox.KeyCtrlT:
+		ctrl("t")
+	case termbox.KeyCtrlU:
+		ctrl("u")
+	case termbox.KeyCtrlV:
+		ctrl("v")
+	case termbox.KeyCtrlW:
+		ctrl("w")
+	case termbox.KeyCtrlX:
+		ctrl("x")
+	case termbox.KeyCtrlY:
+		ctrl("y")
+	case termbox.KeyCtrlZ:
+		ctrl("z")
+
+		// hu ?? all those are duplicated values in termbox .....
+		//case termbox.KeyCtrlH:
+		//	ctrl("h")
+		//case termbox.KeyCtrlI:
+		//ctrl("i")
+		//case termbox.KeyCtrlM:
+		//ctrl("m")
+		//case termbox.KeyCtrlSpace:
+		//	ctrl(" ")
+		//case termbox.KeyCtrlTilde:
+		//	ctrl("~")
+		//case termbox.KeyCtrlLsqBracket:
+		//	ctrl("[")
+		//case termbox.KeyCtrlRsqBracket:
+		//	ctrl("]")
+		//case termbox.KeyCtrlBackslash:
+		//	ctrl("\\")
+		//case termbox.KeyCtrlSlash:
+		//	ctrl("/")
+		//case termbox.KeyCtrlUnderscore:
+		//	ctrl("_")
+	}
+}
+
+// ############# TO BE OBSOLETED
+
+func (t *TermBox) old() {
+	t.SetMouseMode(termbox.MouseMotion)
+	// Note: terminal might not support SGR mouse events, but trying anyway
+	t.SetMouseMode(termbox.MouseSgr)
+
+	t.SetInputMode(termbox.InputMouse)
 
 	e := core.Ed.(*Editor)
 	for {
@@ -147,7 +339,7 @@ func (c *Cmdbar) Event(e *Editor, ev *termbox.Event) {
 func (s *Cmdbar) MouseEvent(e *Editor, ev *termbox.Event) {
 	switch ev.Key {
 	case termbox.MouseLeft:
-		if isMouseUp(ev) && !e.cmdOn {
+		if isMouseDown(ev) && !e.cmdOn {
 			actions.Ar.CmdbarToggle()
 		}
 	}
@@ -396,7 +588,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 	vid := v.Id()
 	_, y, x := actions.Ar.EdViewAt(ev.MouseY+1, ev.MouseX+1)
 	ln, col := actions.Ar.ViewTextPos(vid, y, x)
-	if isMouseUp(ev) && ev.MouseX == e.evtState.LastClickX &&
+	if isMouseDown(ev) && ev.MouseX == e.evtState.LastClickX &&
 		ev.MouseY == e.evtState.LastClickY &&
 		time.Now().Unix()-e.evtState.LastLeftClick <= 2 {
 		ev.Key = MouseLeftDbl
@@ -429,7 +621,7 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 		actions.Ar.ViewMoveCursor(vid, 1, 0, false)
 		return
 	case termbox.MouseRight:
-		if isMouseUp(ev) {
+		if isMouseDown(ev) {
 			e.evtState.InDrag = false
 			e.evtState.LastClickX, e.evtState.LastClickY = ev.MouseX, ev.MouseY
 			e.evtState.LastRightClick = time.Now().Unix()
@@ -440,19 +632,19 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 		return
 	case termbox.MouseLeft:
 		// end view move
-		if e.evtState.MovingView && isMouseUp(ev) {
+		if e.evtState.MovingView && isMouseDown(ev) {
 			e.evtState.MovingView = false
 			actions.Ar.EdViewMove(e.evtState.LastClickY+1, e.evtState.LastClickX+1, ev.MouseY+1, ev.MouseX+1)
 			actions.Ar.EdSetStatus(fmt.Sprintf("%s  [%d]", v.WorkDir(), vid))
 			return
 		}
 		// 'X' button (close view)
-		if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseUp(ev) {
+		if ev.MouseX == v.x2-1 && ev.MouseY == v.y1 && isMouseDown(ev) {
 			actions.Ar.EdDelView(vid, true)
 			return
 		}
 		// start view move
-		if ev.MouseX == v.x1 && ev.MouseY == v.y1 && isMouseUp(ev) {
+		if ev.MouseX == v.x1 && ev.MouseY == v.y1 && isMouseDown(ev) {
 			// handle
 			e.evtState.MovingView = true
 			e.evtState.LastClickX = ev.MouseX
@@ -498,10 +690,10 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 			return
 		}
 
-		if isMouseUp(ev) { // click
+		if isMouseDown(ev) { // click
 			if selected, _ := v.Selected(ln, col); selected {
 				e.evtState.InDrag = false
-				// otherwise it could be the mouseUp at the end of a drag.
+				// otherwise it could be the MouseDown at the end of a drag.
 			}
 			if !e.evtState.InDrag {
 				actions.Ar.ViewClearSelections(vid)
@@ -519,6 +711,6 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 	}
 }
 
-func isMouseUp(ev *termbox.Event) bool {
+func isMouseDown(ev *termbox.Event) bool {
 	return ev.MouseBtnState == termbox.MouseBtnUp
 }

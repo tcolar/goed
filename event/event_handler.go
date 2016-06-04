@@ -51,11 +51,6 @@ func handleEvent(e *Event, es *eventState) bool {
 		return false
 	}
 
-	if et != Evt_None {
-		fmt.Printf("%s %s y:%d x:%d ln:%d col:%d my:%d mx:%d - %v\n",
-			et, e.String(), y, x, ln, col, e.MouseY, e.MouseX, e.inDrag)
-	}
-
 	vt := actions.Ar.ViewType(curView)
 	if !e.hasMouse() && vt == core.ViewTypeShell {
 		fmt.Println("te")

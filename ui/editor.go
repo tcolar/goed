@@ -62,6 +62,7 @@ func (e *Editor) Dispatch(action core.Action) {
 func (e *Editor) Quit() {
 	event.Shutdown()
 	e.term.Close()
+	os.Exit(0)
 }
 
 // Start starts-up the editor
