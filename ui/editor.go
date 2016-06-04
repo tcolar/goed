@@ -27,7 +27,6 @@ type Editor struct {
 	curViewId int64
 	CurCol    *Col
 	cmdOn     bool
-	evtState  *EvtState
 	term      core.Term
 	views     map[int64]*View
 }
@@ -78,7 +77,6 @@ func (e *Editor) Start(locs []string) {
 		e.term.Close()
 	}()
 	e.term.SetExtendedColors(core.Colors == 256)
-	e.evtState = &EvtState{}
 	e.theme, err = core.ReadTheme(core.FindResource(path.Join("themes", e.config.Theme)))
 	if err != nil {
 		panic(err)

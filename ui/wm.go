@@ -8,7 +8,6 @@ import (
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
-	termbox "github.com/tcolar/termbox-go"
 )
 
 // Col represent a column of the editor (a set of views)
@@ -96,8 +95,6 @@ type Renderer interface {
 	Bounds() (y1, x1, y2, x2 int)
 	Render()
 	SetBounds(y1, x1, y2, x2 int)
-	Event(e *Editor, ev *termbox.Event)
-	MouseEvent(e *Editor, ev *termbox.Event)
 }
 
 func (e *Editor) Size() (rows, cols int) {

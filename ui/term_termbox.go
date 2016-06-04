@@ -1,11 +1,6 @@
 package ui
 
 import (
-	"fmt"
-	"time"
-
-	"github.com/tcolar/goed/actions"
-	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
 	termbox "github.com/tcolar/termbox-go"
@@ -267,7 +262,7 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 }
 
 // ############# TO BE OBSOLETED
-
+/*
 func (t *TermBox) old() {
 	t.SetMouseMode(termbox.MouseMotion)
 	// Note: terminal might not support SGR mouse events, but trying anyway
@@ -713,4 +708,4 @@ func (v *View) MouseEvent(e *Editor, ev *termbox.Event) {
 
 func isMouseDown(ev *termbox.Event) bool {
 	return ev.MouseBtnState == termbox.MouseBtnUp
-}
+}*/
