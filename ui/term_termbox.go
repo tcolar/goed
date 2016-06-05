@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"log"
+
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
 	termbox "github.com/tcolar/termbox-go"
@@ -83,9 +85,14 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		es.Glyph = ""
 	}
 	es.MouseBtns = map[int]bool{}
-	es.Combo = event.Combo{}
+	m := e.Meta
+	es.Combo = event.Combo{
+		LAlt:   m == termbox.Alt || m == termbox.AltCtrl || m == termbox.AltCtrlShift || m == termbox.AltShift,
+		LCtrl:  m == termbox.Ctrl || m == termbox.CtrlShift || m == termbox.AltCtrl || m == termbox.AltCtrlShift,
+		LShift: m == termbox.Shift || m == termbox.AltShift || m == termbox.CtrlShift || m == termbox.AltCtrlShift,
+		LSuper: m == termbox.Meta,
+	}
 	es.Keys = []string{}
-
 	if len(es.Glyph) > 0 {
 		es.KeyDown(es.Glyph)
 	}
@@ -244,4 +251,6 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		//case termbox.KeyCtrlUnderscore:
 		//	ctrl("_")
 	}
+
+	log.Printf("Evt: %#v", es)
 }

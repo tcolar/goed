@@ -9,7 +9,7 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-var queue chan *Event = make(chan *Event)
+var queue = make(chan *Event)
 
 func Queue(e *Event) {
 	if e.Type == Evt_None {
@@ -53,7 +53,6 @@ func handleEvent(e *Event, es *eventState) bool {
 
 	vt := actions.Ar.ViewType(curView)
 	if !e.hasMouse() && vt == core.ViewTypeShell {
-		fmt.Println("te")
 		handleTermEvent(curView, e)
 		return false
 	}
@@ -64,13 +63,13 @@ func handleEvent(e *Event, es *eventState) bool {
 	// TODO: couldn't cmdbar be a view ?
 
 	// TODO : dbl click
-	// TODO : term Enter + VT100
 	// TODO : cmdbar
 	// TODO : shift selections
 	// TODO : mouse select / scroll / drag / drag + scroll
 	// TODO : down/pg_down selection seems buggy too (tabs ?)
-	// TODO : window resize
+	// TODO : window resize (term)
 	// TODO : allow other acme like events such as drag selection / click on selection
+	// TODO : ctrl+c in terminal
 
 	cs := true // clear selections
 
@@ -161,7 +160,6 @@ func handleEvent(e *Event, es *eventState) bool {
 	case EvtSelectMouse:
 		actions.Ar.ViewSetCursorPos(curView, ln, col)
 		actions.Ar.ViewClearSelections(curView)
-		fmt.Printf("%d %d %d %d\n", ln, col, e.dragLn, e.dragCol)
 		actions.Ar.ViewAddSelection(curView, ln, col, e.dragLn, e.dragCol)
 		cs = false
 	case EvtSelectPageDown:
@@ -254,14 +252,14 @@ func handleTermEvent(vid int64, e *Event) {
 
 	// Handle termbox special keys to VT100
 	switch {
-	/*	case termbox.KeyCtrlC:
-			if len(actions.Ar.ViewSelections(vid)) > 0 {
-				actions.Ar.ViewCopy(vid)
-			} else {
-				actions.Ar.TermSendBytes([]byte{byte(ev.Key)})
-			}
-		case termbox.KeyCtrlV:
-			actions.Ar.ViewPaste(vid)*/
+	/*case termbox.KeyCtrlC:
+	if len(actions.Ar.ViewSelections(vid)) > 0 {
+		actions.Ar.ViewCopy(vid)
+	} else {
+		actions.Ar.TermSendBytes([]byte{byte(ev.Key)})
+	}
+	case termbox.KeyCtrlV:
+		actions.Ar.ViewPaste(vid)*/
 	// "special"/navigation keys
 	case e.hasKey(KeyReturn):
 		actions.Ar.TermSendBytes(vid, []byte{13})
@@ -321,7 +319,7 @@ func handleTermEvent(vid int64, e *Event) {
 			actions.Ar.ViewInsertCur(vid, e.Glyph)
 		} else {
 			// 	TODO
-			fmt.Printf("%#v\n", e)
+			actions.Ar.EdSetStatus(fmt.Sprintf("TODO: %#v\n", e))
 		}
 	}
 
