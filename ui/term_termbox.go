@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"log"
-
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
 	termbox "github.com/tcolar/termbox-go"
@@ -103,6 +101,11 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 	}
 
 	k := e.Key
+
+	if e.MouseBtnState == termbox.MouseBtnUp {
+		return // skip mouseUp events, we act on mouseDown
+	}
+
 	switch k {
 	case termbox.MouseLeft:
 		es.MouseDown(event.MouseLeft, e.MouseY, e.MouseX)
@@ -114,7 +117,7 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		es.MouseDown(event.MouseWheelDown, e.MouseY, e.MouseX)
 	case termbox.MouseScrollUp:
 		es.MouseDown(event.MouseWheelUp, e.MouseY, e.MouseX)
-	case termbox.KeyBackspace:
+	case termbox.KeyBackspace, termbox.KeyBackspace2:
 		es.KeyDown(event.KeyBackspace)
 	case termbox.KeyTab:
 		es.KeyDown(event.KeyTab)
@@ -180,8 +183,6 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		ctrl("6")
 	case termbox.KeyCtrl7:
 		ctrl("7")
-	case termbox.KeyCtrl8:
-		ctrl("8")
 	case termbox.KeyCtrlA:
 		ctrl("a")
 	case termbox.KeyCtrlB:
@@ -251,6 +252,4 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		//case termbox.KeyCtrlUnderscore:
 		//	ctrl("_")
 	}
-
-	log.Printf("Evt: %#v", es)
 }
