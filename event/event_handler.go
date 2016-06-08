@@ -64,7 +64,6 @@ func handleEvent(e *Event, es *eventState) bool {
 
 	// TODO : dbl click
 	// TODO : cmdbar
-	// TODO : shift selections
 	// TODO : mouse select / scroll / drag / drag + scroll
 	// TODO : down/pg_down selection seems buggy too (tabs ?)
 	// TODO : window resize (term)
@@ -219,8 +218,8 @@ func handleEvent(e *Event, es *eventState) bool {
 	case EvtUndo:
 		actions.Ar.ViewUndo(curView)
 		dirty = true
-	//case EvtWinResize:
-	//	actions.Ar.EdResize(ev.Height, ev.Width)
+	case EvtWinResize:
+		actions.Ar.ViewRender(curView)
 	case Evt_None:
 		if len(e.Glyph) > 0 {
 			// "plain" text

@@ -33,7 +33,7 @@ type Editor struct {
 func NewEditor(gui bool) *Editor {
 	var term core.Term
 	if gui {
-		term = NewGuiTerm(50, 160)
+		term = NewGuiTerm(1200, 800)
 	} else {
 		term = NewTermBox()
 	}

@@ -55,7 +55,7 @@ func NewGuiTerm(h, w int) *GuiTerm {
 	noto = parseFont("fonts/NotoSans-Regular.ttf")
 	notoSymbols = parseFont("fonts/NotoSansSymbols-Regular.ttf")
 
-	win, err := wde.NewWindow(1400, 800) // TODO: Window size
+	win, err := wde.NewWindow(h, w)
 	win.SetTitle("GoEd")
 	if err != nil {
 		panic(err)
@@ -65,13 +65,9 @@ func NewGuiTerm(h, w int) *GuiTerm {
 		win: win,
 	}
 
-	t.applyFont(fontPath, fontSize)
-
 	t.text = [][]char{}
 
-	for i := 0; i != t.h; i++ {
-		t.text = append(t.text, make([]char, t.w))
-	}
+	t.applyFont(fontPath, fontSize)
 
 	return t
 }
@@ -84,20 +80,39 @@ func (t *GuiTerm) applyFont(fontPath string, fontSize int) {
 	bounds, _, _ := t.face.GlyphBounds('░')
 	t.charW = int((bounds.Max.X-bounds.Min.X)>>6) + dpi/32
 	t.charH = int((bounds.Max.Y-bounds.Min.Y)>>6) + dpi/16
-	ww, wh := t.win.Size()
+
+	t.ctx = freetype.NewContext()
+	t.ctx.SetDPI(float64(dpi))
+	t.ctx.SetFont(t.font)
+	t.ctx.SetFontSize(float64(fontSize))
+	t.ctx.SetHinting(font.HintingFull)
+
+	t.resize(t.win.Size())
+}
+
+func (t *GuiTerm) resize(ww, wh int) {
+	w, h := t.w, t.h
 	t.w = ww / t.charW
 	t.h = wh / t.charH
-
+	for i := 0; i < h; i++ {
+		if t.w <= w {
+			t.text[i] = t.text[i][:t.w] // truncate lines if needed
+		} else {
+			// expand lines if needed
+			t.text[i] = append(t.text[i], make([]char, t.w-w)...)
+		}
+	}
+	// extra lines if needed
+	for i := h; i < t.h; i++ {
+		t.text = append(t.text, make([]char, t.w))
+	}
+	// truncate number of lines if needed
+	t.text = t.text[:t.h]
+	// Update image/bounds
 	t.rgba = image.NewRGBA(image.Rect(0, 0, ww, wh))
-
-	c := freetype.NewContext()
-	c.SetDPI(float64(dpi))
-	c.SetFont(t.font)
-	c.SetFontSize(float64(fontSize))
-	c.SetClip(t.rgba.Bounds())
-	c.SetDst(t.rgba)
-	c.SetHinting(font.HintingFull)
-	t.ctx = c
+	t.ctx.SetClip(t.rgba.Bounds())
+	t.ctx.SetDst(t.rgba)
+	//fmt.Printf("%v %v %v\n", t.w, t.h, t.rgba.Bounds())
 }
 
 func parseFont(fontPath string) *truetype.Font {
@@ -199,7 +214,7 @@ func (t *GuiTerm) listen() {
 		evtState.Glyph = ""
 		switch e := ev.(type) {
 		case wde.ResizeEvent:
-			// TODO: pass new size
+			t.resize(e.Width, e.Height)
 			evtState.Type = event.EvtWinResize
 		case wde.CloseEvent:
 			evtState.Type = event.EvtQuit
