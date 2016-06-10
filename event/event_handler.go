@@ -246,19 +246,25 @@ func handleEvent(e *Event, es *eventState) bool {
 
 // Events for terminal/command views
 func handleTermEvent(vid int64, e *Event) {
-	es := false
-	//ln, col := actions.Ar.ViewCursorCoords(vid)
+	cs := true
+	ln, col := actions.Ar.ViewCursorCoords(vid)
 
 	// Handle termbox special keys to VT100
 	switch {
-	/*case termbox.KeyCtrlC:
-	if len(actions.Ar.ViewSelections(vid)) > 0 {
+	case e.Type == EvtSelectMouse:
+		actions.Ar.ViewSetCursorPos(vid, ln, col)
+		actions.Ar.ViewClearSelections(vid)
+		actions.Ar.ViewAddSelection(vid, ln, col, e.dragLn, e.dragCol)
+		cs = false
+	case e.Type == EvtCopy && len(actions.Ar.ViewSelections(vid)) > 0:
+		// copy if copy event and there is a selection
+		// if no selection, it may be Ctrl+C which is also used to terminate a command
+		// (next case)
 		actions.Ar.ViewCopy(vid)
-	} else {
-		actions.Ar.TermSendBytes([]byte{byte(ev.Key)})
-	}
-	case termbox.KeyCtrlV:
-		actions.Ar.ViewPaste(vid)*/
+	case (e.Combo.LCtrl || e.Combo.RCtrl) && e.hasKey(KeyC): // CTRL+C
+		actions.Ar.TermSendBytes(vid, []byte{byte(0x03)})
+	case e.Type == EvtPaste:
+		actions.Ar.ViewPaste(vid)
 	// "special"/navigation keys
 	case e.hasKey(KeyReturn):
 		actions.Ar.TermSendBytes(vid, []byte{13})
@@ -278,16 +284,16 @@ func handleTermEvent(vid int64, e *Event) {
 		// TODO: PgUp / pgDown not working right
 	case e.hasKey(KeyNext):
 		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtPgDown)
-		es = true
+		cs = false
 	case e.hasKey(KeyPrior):
 		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtPgUp)
-		es = true
+		cs = false
 	case e.hasKey(KeyEnd):
-		actions.Ar.TermSendBytes(vid, []byte{byte(0x05)}) // CTRL+E
-		es = true
+		actions.Ar.TermSendBytes(vid, []byte{byte(0x05)}) // CTRL+E		es = true
+		cs = false
 	case e.hasKey(KeyHome):
 		actions.Ar.TermSendBytes(vid, []byte{byte(0x01)}) // CTRL+A
-		es = true
+		cs = false
 		// function keys
 	case e.hasKey(KeyF1):
 		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'P'})
@@ -317,16 +323,11 @@ func handleTermEvent(vid int64, e *Event) {
 		if len(e.Glyph) > 0 {
 			actions.Ar.ViewInsertCur(vid, e.Glyph)
 		} else {
-			// 	TODO
 			actions.Ar.EdSetStatus(fmt.Sprintf("TODO: %#v\n", e))
 		}
 	}
 
-	// extend keyboard selection
-	if es { //&& ev.Meta == termbox.Shift {
-		// TODO
-		//		actions.Ar.ViewStretchSelection(vid, ln, col)
-	} else {
+	if cs { // clear selections
 		actions.Ar.ViewClearSelections(vid)
 	}
 }

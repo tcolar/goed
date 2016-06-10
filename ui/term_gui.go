@@ -14,6 +14,7 @@ import (
 	"github.com/golang/freetype/truetype"
 	wde "github.com/skelterjohn/go.wde"
 	_ "github.com/skelterjohn/go.wde/init"
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
 	"golang.org/x/image/font"
@@ -215,6 +216,7 @@ func (t *GuiTerm) listen() {
 		switch e := ev.(type) {
 		case wde.ResizeEvent:
 			t.resize(e.Width, e.Height)
+			actions.Ar.EdResize(t.h, t.w)
 			evtState.Type = event.EvtWinResize
 		case wde.CloseEvent:
 			evtState.Type = event.EvtQuit
