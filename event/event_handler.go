@@ -66,11 +66,11 @@ func handleEvent(e *Event, es *eventState) bool {
 	// TODO : cmdbar
 	// TODO : mouse select / scroll / drag / drag + scroll
 	// TODO : down/pg_down selection seems buggy too (tabs ?)
-	// TODO : window resize (term)
 	// TODO : allow other acme like events such as drag selection / click on selection
-	// TODO : ctrl+c in terminal
 
 	cs := true // clear selections
+
+	log.Printf("%#v", e)
 
 	switch et {
 	case EvtBackspace:
@@ -225,10 +225,11 @@ func handleEvent(e *Event, es *eventState) bool {
 			// "plain" text
 			actions.Ar.ViewInsertCur(curView, e.Glyph)
 			dirty = true
+		} else {
+			log.Println("Unhandled action : " + string(et))
+			actions.Ar.EdSetStatusErr("Unhandled action : " + string(et))
+			cs = false
 		}
-	default:
-		log.Println("Unhandled action : " + string(et))
-		actions.Ar.EdSetStatusErr("Unhandled action : " + string(et))
 	}
 
 	if cs {
@@ -261,6 +262,7 @@ func handleTermEvent(vid int64, e *Event) {
 		// if no selection, it may be Ctrl+C which is also used to terminate a command
 		// (next case)
 		actions.Ar.ViewCopy(vid)
+		break
 	case (e.Combo.LCtrl || e.Combo.RCtrl) && e.hasKey(KeyC): // CTRL+C
 		actions.Ar.TermSendBytes(vid, []byte{byte(0x03)})
 	case e.Type == EvtPaste:
@@ -324,6 +326,7 @@ func handleTermEvent(vid int64, e *Event) {
 			actions.Ar.ViewInsertCur(vid, e.Glyph)
 		} else {
 			actions.Ar.EdSetStatus(fmt.Sprintf("TODO: %#v\n", e))
+			cs = false
 		}
 	}
 
