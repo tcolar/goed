@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"log"
+
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
 	termbox "github.com/tcolar/termbox-go"
@@ -82,7 +84,6 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 	} else {
 		es.Glyph = ""
 	}
-	es.MouseBtns = map[int]bool{}
 	m := e.Meta
 	es.Combo = event.Combo{
 		LAlt:   m == termbox.Alt || m == termbox.AltCtrl || m == termbox.AltCtrlShift || m == termbox.AltShift,
@@ -93,6 +94,7 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 	es.Keys = []string{}
 	if len(es.Glyph) > 0 {
 		es.KeyDown(es.Glyph)
+		return
 	}
 
 	ctrl := func(k string) {
@@ -102,17 +104,25 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 
 	k := e.Key
 
-	if e.MouseBtnState == termbox.MouseBtnUp {
-		return // skip mouseUp events, we act on mouseDown
-	}
-
 	switch k {
 	case termbox.MouseLeft:
-		es.MouseDown(event.MouseLeft, e.MouseY, e.MouseX)
+		if e.MouseBtnState != termbox.MouseBtnUp {
+			es.MouseDown(event.MouseLeft, e.MouseY, e.MouseX)
+		} else {
+			es.MouseUp(event.MouseLeft, e.MouseY, e.MouseX)
+		}
 	case termbox.MouseRight:
-		es.MouseDown(event.MouseRight, e.MouseY, e.MouseX)
+		if e.MouseBtnState != termbox.MouseBtnUp {
+			es.MouseDown(event.MouseRight, e.MouseY, e.MouseX)
+		} else {
+			es.MouseUp(event.MouseRight, e.MouseY, e.MouseX)
+		}
 	case termbox.MouseMiddle:
-		es.MouseDown(event.MouseMiddle, e.MouseY, e.MouseX)
+		if e.MouseBtnState != termbox.MouseBtnUp {
+			es.MouseDown(event.MouseMiddle, e.MouseY, e.MouseX)
+		} else {
+			es.MouseUp(event.MouseMiddle, e.MouseY, e.MouseX)
+		}
 	case termbox.MouseScrollDown:
 		es.MouseDown(event.MouseWheelDown, e.MouseY, e.MouseX)
 	case termbox.MouseScrollUp:
@@ -252,4 +262,5 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		//case termbox.KeyCtrlUnderscore:
 		//	ctrl("_")
 	}
+	log.Printf("es : %#v", es)
 }
