@@ -260,6 +260,9 @@ func (t *GuiTerm) paint() {
 }
 
 func (t *GuiTerm) paintChar(y, x int) {
+	if y >= len(t.text) || x >= len(t.text[y]) {
+		return
+	}
 	pt := freetype.Pt(1+x*t.charW, t.charH-4+y*t.charH)
 	r := t.text[y][x]
 	if r.rune < 32 {

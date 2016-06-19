@@ -1,7 +1,6 @@
 package event
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -9,12 +8,9 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-var queue = make(chan *Event)
+var queue = make(chan *Event, 200)
 
 func Queue(e *Event) {
-	if e.Type == Evt_None {
-		e.parseType()
-	}
 	queue <- e
 }
 
@@ -32,6 +28,9 @@ func Listen() {
 }
 
 func handleEvent(e *Event, es *eventState) bool {
+	if e.Type == Evt_None {
+		e.parseType()
+	}
 	et := e.Type
 	curView := actions.Ar.EdCurView()
 	actions.Ar.ViewAutoScroll(curView, 0, 0)
@@ -59,13 +58,13 @@ func handleEvent(e *Event, es *eventState) bool {
 
 	dirty := false
 
-	// TODO : common/termonly//cmdbar/view only
-	// TODO: couldn't cmdbar be a view ?
+	// TODO : cmdbar support -> couldn't cmdbar be a view ?
+	// TODO : down/pg_down selection not working -> seem to be termbox / Os X issue
 
+	// parity
+
+	// TODO : sometimes moouse scroll puts gargabe character in terminal, seems to be termbox bug on OsX
 	// TODO : dbl click
-	// TODO : cmdbar
-	// TODO : mouse select / scroll / drag / drag + scroll
-	// TODO : down/pg_down selection seems buggy too (tabs ?)
 	// TODO : allow other acme like events such as drag selection / click on selection
 
 	cs := true // clear selections
@@ -227,7 +226,6 @@ func handleEvent(e *Event, es *eventState) bool {
 			dirty = true
 		} else {
 			log.Println("Unhandled action : " + string(et))
-			actions.Ar.EdSetStatusErr("Unhandled action : " + string(et))
 			cs = false
 		}
 	}
@@ -270,8 +268,11 @@ func handleTermEvent(vid int64, e *Event) {
 	// "special"/navigation keys
 	case e.hasKey(KeyReturn):
 		actions.Ar.TermSendBytes(vid, []byte{13})
+	case e.hasKey(KeyTab):
+		actions.Ar.TermSendBytes(vid, []byte{9})
 	case e.hasKey(KeyDelete):
-		actions.Ar.TermSendBytes(vid, []byte{127}) // delete (~ backspace)
+		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'C'})
+		actions.Ar.TermSendBytes(vid, []byte{127}) // delete
 	case e.hasKey(KeyUpArrow):
 		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'A'})
 	case e.hasKey(KeyDownArrow):
@@ -281,8 +282,7 @@ func handleTermEvent(vid int64, e *Event) {
 	case e.hasKey(KeyLeftArrow):
 		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'D'})
 	case e.hasKey(KeyBackspace):
-		actions.Ar.TermSendBytes(vid, []byte{27, 'O', 'C'}) // right
-		actions.Ar.TermSendBytes(vid, []byte{127})          //delete
+		actions.Ar.TermSendBytes(vid, []byte{127})
 		// TODO: PgUp / pgDown not working right
 	case e.hasKey(KeyNext):
 		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtPgDown)
@@ -291,7 +291,7 @@ func handleTermEvent(vid int64, e *Event) {
 		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtPgUp)
 		cs = false
 	case e.hasKey(KeyEnd):
-		actions.Ar.TermSendBytes(vid, []byte{byte(0x05)}) // CTRL+E		es = true
+		actions.Ar.TermSendBytes(vid, []byte{byte(0x05)}) // CTRL+E
 		cs = false
 	case e.hasKey(KeyHome):
 		actions.Ar.TermSendBytes(vid, []byte{byte(0x01)}) // CTRL+A
@@ -322,10 +322,14 @@ func handleTermEvent(vid int64, e *Event) {
 		actions.Ar.TermSendBytes(vid, []byte{27, '[', '2', '4', '~'})
 
 	default:
-		if len(e.Glyph) > 0 {
+		if (e.Combo.LCtrl || e.Combo.RCtrl) && len(e.Keys) == 1 {
+			// CTRL+? terminal combos
+			val := byte([]rune(e.Keys[0])[0] - 'a' + 1)
+			actions.Ar.TermSendBytes(vid, []byte{val})
+		} else if len(e.Glyph) > 0 {
 			actions.Ar.ViewInsertCur(vid, e.Glyph)
 		} else {
-			actions.Ar.EdSetStatus(fmt.Sprintf("TODO: %#v\n", e))
+			// TODO ??
 			cs = false
 		}
 	}
@@ -333,6 +337,8 @@ func handleTermEvent(vid int64, e *Event) {
 	if cs { // clear selections
 		actions.Ar.ViewClearSelections(vid)
 	}
+	actions.Ar.EdRender()
+
 }
 
 func stretchSelection(vid int64, mvmt core.CursorMvmt) {
