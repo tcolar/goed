@@ -1,6 +1,7 @@
 package event
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -10,8 +11,9 @@ import (
 
 var queue = make(chan *Event, 200)
 
-func Queue(e *Event) {
-	queue <- e
+// Queue - Note: Queue a copy of the event
+func Queue(e Event) {
+	queue <- &e
 }
 
 func Shutdown() {
@@ -42,7 +44,11 @@ func handleEvent(e *Event, es *eventState) bool {
 		curView, y, x = actions.Ar.EdViewAt(e.MouseY+1, e.MouseX+1)
 		ln, col = actions.Ar.ViewTextPos(curView, y, x)
 		if e.inDrag && e.dragLn == -1 {
-			e.dragLn, e.dragCol = ln, col
+			// start from prev click position as in case of terminal we are only going
+			// to get a drag event *after* we have started drag motion.
+			_, py, px := actions.Ar.EdViewAt(es.lastClickY+1, es.lastClickX+1)
+			dl, dc := actions.Ar.ViewTextPos(curView, py, px)
+			e.dragLn, e.dragCol = dl, dc
 		}
 	}
 
@@ -58,12 +64,12 @@ func handleEvent(e *Event, es *eventState) bool {
 
 	dirty := false
 
-	// TODO : cmdbar support -> couldn't cmdbar be a view ?
-	// TODO : down/pg_down selection not working -> seem to be termbox / Os X issue
+	// TODO : cmdbar support -> couldn't cmdbar be a view ? -> redo ?
 
 	// parity
 
 	// TODO : sometimes moouse scroll puts gargabe character in terminal, seems to be termbox bug on OsX
+	// TODO : down/pg_down selection not working -> seem to be termbox / Os MX issue
 	// TODO : dbl click
 	// TODO : allow other acme like events such as drag selection / click on selection
 
@@ -159,6 +165,19 @@ func handleEvent(e *Event, es *eventState) bool {
 		actions.Ar.ViewSetCursorPos(curView, ln, col)
 		actions.Ar.ViewClearSelections(curView)
 		actions.Ar.ViewAddSelection(curView, ln, col, e.dragLn, e.dragCol)
+		// Deal with selection autoscroll
+		cols, rows := actions.Ar.ViewCols(curView), actions.Ar.ViewRows(curView)
+		actions.Ar.EdSetStatus(fmt.Sprintf("%d %d %d %d", y, x, rows, cols))
+
+		if y < 3 { // scroll up
+			actions.Ar.ViewAutoScroll(curView, -5, 0)
+		} else if y > rows+3 { // scroll down
+			actions.Ar.ViewAutoScroll(curView, 5, 0)
+		} else if x < 3 { //scroll left
+			actions.Ar.ViewAutoScroll(curView, 0, -5)
+		} else if x >= cols+2 { // scroll right
+			actions.Ar.ViewAutoScroll(curView, 0, 5)
+		}
 		cs = false
 	case EvtSelectPageDown:
 		stretchSelection(curView, core.CursorMvmtPgDown)
@@ -175,7 +194,19 @@ func handleEvent(e *Event, es *eventState) bool {
 	case EvtSetCursor:
 		dblClick := es.lastClickX == e.MouseX && es.lastClickY == e.MouseY &&
 			time.Now().Unix()-es.lastClick <= 1
+
+			// Moving view to new position
+		if es.movingView && (x == 1 || y == 1) {
+			es.movingView = false
+			actions.Ar.EdViewMove(es.lastClickY+1, es.lastClickX+1, e.MouseY+1, e.MouseX+1)
+			break
+		}
+
 		y1, _, _, x2 := actions.Ar.ViewBounds(curView)
+		es.lastClickX = e.MouseX
+		es.lastClickY = e.MouseY
+		es.lastClick = time.Now().Unix()
+
 		// close button
 		if e.MouseX+1 == x2-1 && e.MouseY+1 == y1 {
 			actions.Ar.EdDelView(curView, true)
@@ -192,16 +223,7 @@ func handleEvent(e *Event, es *eventState) bool {
 				break
 			} // else, view move start
 			es.movingView = true
-			es.lastClickX = e.MouseX
-			es.lastClickY = e.MouseY
-			es.lastClick = time.Now().Unix()
 			actions.Ar.EdSetStatusErr("Starting move, click new position or dbl click to swap")
-			break
-		}
-		// Moving view to new position
-		if es.movingView && (x == 1 || y == 1) {
-			es.movingView = false
-			actions.Ar.EdViewMove(es.lastClickY+1, es.lastClickX+1, e.MouseY+1, e.MouseX+1)
 			break
 		}
 		// Set cursor position

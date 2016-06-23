@@ -27,11 +27,11 @@ func (a actionBus) Start() {
 		select {
 		case action := <-a.actionChan:
 			if core.Trace {
-				log.Printf("%#v", action)
+				log.Printf("> %#v", action)
 			}
 			action.Run()
 			if core.Trace {
-				log.Printf("%#v", action)
+				log.Printf("< %#v", action)
 			}
 		case <-a.quitc:
 			break
