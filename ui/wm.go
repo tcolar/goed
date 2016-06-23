@@ -439,7 +439,7 @@ func (e *Editor) tryNewCol(v *View) *Col {
 		if c == dirs {
 			w += 23
 		} else {
-			w += 83
+			w += 84
 		}
 	}
 	_, tw := e.term.Size()
@@ -452,7 +452,7 @@ func (e *Editor) tryNewCol(v *View) *Col {
 		if c == dirs {
 			c.WidthRatio = 23.0 / float64(tw)
 		} else {
-			c.WidthRatio = 83.0 / float64(tw)
+			c.WidthRatio = 84.0 / float64(tw)
 		}
 		r += c.WidthRatio
 	}
