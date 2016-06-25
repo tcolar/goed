@@ -2,9 +2,11 @@ package event
 
 // TODO: temporary, read from config file
 var standard = map[string]EventType{
-	"MC1":               "set_cursor",       // left click
-	"MC4":               "open_in_new_view", // right click
-	"MD1":               "select_mouse",     // mouse drag
+	"MC1":  "set_cursor",       // left click
+	"MC4":  "open_in_new_view", // right click
+	"MC8":  "page_up",          // mouse wheel up
+	"MC16": "page_down",        // mouse wheel down
+	"MD1":               "select_mouse", // mouse drag
 	"escape":            "toggle_cmd_bar",
 	"ctrl+q":            "quit",
 	"backspace":         "backspace",

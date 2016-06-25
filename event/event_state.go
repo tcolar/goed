@@ -13,7 +13,7 @@ type Event struct {
 	Combo           Combo
 	MouseBtns       map[int]bool
 	MouseY, MouseX  int
-	dragLn, dragCol int  // seetion start point
+	dragLn, dragCol int  // selection start point
 	inDrag          bool // mouse dragging
 }
 

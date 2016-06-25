@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"sync"
+	"time"
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
@@ -35,9 +35,9 @@ var dpi = 96
 
 // GuiTerm is a very minimal text terminal emulation GUI.
 type GuiTerm struct {
-	w, h             int
-	text             [][]char
-	textLock         sync.Mutex
+	w, h int
+	text [][]char
+	//	textLock         sync.RWMutex
 	win              wde.Window
 	font             *truetype.Font
 	charW, charH     int // size of characters
@@ -50,6 +50,20 @@ type GuiTerm struct {
 type char struct {
 	rune
 	fg, bg core.Style
+	fresh  bool
+}
+
+func (c char) equals(c2 char) bool {
+	if c.rune != c2.rune {
+		return false
+	}
+	if c.fg != c2.fg {
+		return false
+	}
+	if c.bg != c2.bg {
+		return false
+	}
+	return true
 }
 
 func NewGuiTerm(h, w int) *GuiTerm {
@@ -146,7 +160,10 @@ func (t *GuiTerm) Clear(fg, bg uint16) {
 	zero := rune(0)
 	for y, ln := range t.text {
 		for x, _ := range ln {
-			t.text[y][x].rune = zero
+			if t.text[y][x].rune != zero {
+				t.text[y][x].rune = zero
+				t.text[y][x].fresh = false
+			}
 		}
 	}
 }
@@ -160,8 +177,10 @@ func (t *GuiTerm) SetCursor(x, y int) {
 	px, py := t.cursorX, t.cursorY
 	t.cursorX = x
 	t.cursorY = y
+
 	t.paintChar(py, px)
 	t.paintChar(y, x)
+
 	ny, nx := y*t.charH, x*t.charW
 	r := image.Rect(nx, ny, nx+t.charW, ny+t.charH)
 	i := t.rgba.SubImage(r).(*image.RGBA)
@@ -170,14 +189,16 @@ func (t *GuiTerm) SetCursor(x, y int) {
 }
 
 func (t *GuiTerm) Char(y, x int, c rune, fg, bg core.Style) {
-	t.textLock.Lock()
-	defer t.textLock.Unlock()
-	if x >= 0 && y >= 0 && y < len(t.text) && x < len(t.text[y]) {
-		t.text[y][x] = char{
-			rune: c,
-			fg:   fg,
-			bg:   bg,
-		}
+	if x < 0 || y < 0 || y >= len(t.text) || x >= len(t.text[y]) {
+		return
+	}
+	ch := char{
+		rune: c,
+		fg:   fg,
+		bg:   bg,
+	}
+	if !ch.equals(t.text[y][x]) {
+		t.text[y][x] = ch
 	}
 }
 
@@ -188,8 +209,6 @@ func (t *GuiTerm) Size() (h, w int) {
 
 // for testing
 func (t *GuiTerm) CharAt(y, x int) rune {
-	t.textLock.Lock()
-	defer t.textLock.Unlock()
 	if x < 0 || y < 0 {
 		panic("CharAt out of bounds")
 	}
@@ -245,26 +264,36 @@ func (t *GuiTerm) listen() {
 		default:
 			continue
 		}
-		event.Queue(evtState)
+		event.Queue(*evtState)
 	}
 }
 
 func (t *GuiTerm) paint() {
+	start := time.Now()
 	for y, ln := range t.text {
 		for x, _ := range ln {
 			t.paintChar(y, x)
 		}
 	}
+	fmt.Printf("paint1 %v\n", time.Now().Sub(start))
 	t.win.Screen().CopyRGBA(t.rgba, t.rgba.Bounds())
 	t.win.FlushImage()
+	fmt.Printf("paint2 %v\n", time.Now().Sub(start))
+
 }
 
 func (t *GuiTerm) paintChar(y, x int) {
 	if y >= len(t.text) || x >= len(t.text[y]) {
 		return
 	}
-	pt := freetype.Pt(1+x*t.charW, t.charH-4+y*t.charH)
 	r := t.text[y][x]
+	//if r.fresh {
+	//	return
+	//}
+	//t.text[y][x].fresh = true
+	//fmt.Printf("%d,%d -> %s\n", y, x, string(r.rune))
+
+	pt := freetype.Pt(1+x*t.charW, t.charH-4+y*t.charH)
 	if r.rune < 32 {
 		r.rune = ' '
 		r.bg = core.Ed.Theme().Bg

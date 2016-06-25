@@ -92,6 +92,8 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		LSuper: m == termbox.Meta,
 	}
 	es.Keys = []string{}
+	es.MouseBtns[8] = false  // reset wheel down, no separate "up" event
+	es.MouseBtns[16] = false // reset wheel up
 	if len(es.Glyph) > 0 {
 		es.KeyDown(es.Glyph)
 		return
