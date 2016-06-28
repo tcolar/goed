@@ -14,12 +14,14 @@ import (
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/api"
+	"github.com/tcolar/goed/api/client"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/ui"
 	kingpin "gopkg.in/alecthomas/kingpin.v1"
 )
 
 var (
+	apiCall = kingpin.Flag("api", "API call").Default("false").Bool()
 	gui     = kingpin.Flag("g", "Start in GUI mode..").Default("false").Bool()
 	test    = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
 	colors  = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
@@ -35,6 +37,10 @@ func main() {
 	kingpin.Version(core.Version)
 
 	kingpin.Parse()
+	if *apiCall {
+		client.HandleArgs(os.Args[2:])
+		return
+	}
 	if *test {
 		core.TestTerm()
 		return
@@ -100,14 +106,14 @@ func main() {
 }
 
 func startupChecks() {
-	out, err := exec.Command("goed_api", "version").CombinedOutput()
+	out, err := exec.Command("goed", "--api", "version").CombinedOutput()
 	if err != nil {
-		fmt.Printf("Could not find/run goed_api : %s", out)
+		fmt.Printf("Could not find/run goed --api : %s", out)
 		os.Exit(1)
 	}
 	v := strings.Trim(string(out), "\n\t\r ")
 	if v != core.Version {
-		fmt.Printf("goed_api is not at the expected version. (got %s, want %s)",
+		fmt.Printf("goed --api is not at the expected version. (got %s, want %s)",
 			v, core.Version)
 		os.Exit(1)
 	}

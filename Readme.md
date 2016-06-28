@@ -27,7 +27,7 @@ go get -u github.com/tcolar/goed/...
 
 To run it: 
 ```
-export PATH=$PATH:$GOPATH/bin #(goed & goed_api must be in your $PATH)
+export PATH=$PATH:$GOPATH/bin #(goed **MUST** be in your $PATH)
 goed <path(s)>
 
 ```

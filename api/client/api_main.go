@@ -1,6 +1,4 @@
-// goed_api provides a command line wrapper around the Goed client API
-// github.com/tcolar/goed/api/client
-package main
+package client
 
 import (
 	"fmt"
@@ -9,14 +7,13 @@ import (
 	"strings"
 
 	"github.com/tcolar/goed/actions"
-	"github.com/tcolar/goed/api/client"
 	"github.com/tcolar/goed/core"
 )
 
-func main() {
-	if len(os.Args) <= 1 || os.Args[1] == "--help" {
+func HandleArgs(args []string) {
+	if len(args) <= 0 || args[0] == "help" {
 		actions.RegisterActions()
-		fmt.Println("--help : usage info")
+		fmt.Println("help : usage info")
 		fmt.Println("edit <instid> <dir> <file>: Open a file and wait until closed.")
 		fmt.Println("instances : get all goed instances Ids")
 		fmt.Println("instance : get most recent goed instance Id")
@@ -27,24 +24,24 @@ func main() {
 		fmt.Println(actions.Usage())
 		os.Exit(1)
 	}
-	switch os.Args[1] {
+	switch args[0] {
 	case "version":
 		fmt.Println(core.Version)
 	case "instance":
-		Instances(true)
+		handleInstances(true)
 	case "instances":
-		Instances(false)
+		handleInstances(false)
 	case "edit":
-		Edit(os.Args[2:])
+		handleEdit(args[1:])
 	case "open":
-		Open(os.Args[2:])
+		handleOpen(args[1:])
 	default:
 		// Everything else is passed to a goed instance
-		Action(os.Args[1:])
+		handleAction(args)
 	}
 }
 
-func Action(args []string) {
+func handleAction(args []string) {
 	action := args[0]
 	if len(args) < 2 {
 		fmt.Printf("Action '%s' needs instanceId as first argument\n", action)
@@ -55,7 +52,7 @@ func Action(args []string) {
 		fmt.Printf("InstanceId must be a number: %s\n", err.Error())
 		os.Exit(1)
 	}
-	results, err := client.Action(instance, append(args[0:1], args[2:]...))
+	results, err := Action(instance, append(args[0:1], args[2:]...))
 	if err != nil {
 		fmt.Printf("RPC call failed: %s\n", err.Error())
 		os.Exit(1)
@@ -65,7 +62,7 @@ func Action(args []string) {
 	}
 }
 
-func Instances(lastOnly bool) {
+func handleInstances(lastOnly bool) {
 	ids := core.Instances()
 	for _, id := range ids {
 		fmt.Println(id)
@@ -75,7 +72,7 @@ func Instances(lastOnly bool) {
 	}
 }
 
-func Open(args []string) {
+func handleOpen(args []string) {
 	if len(args) < 3 {
 		fmt.Printf("Action open needs instance, path, file arguments\n")
 		os.Exit(1)
@@ -86,14 +83,14 @@ func Open(args []string) {
 		os.Exit(1)
 	}
 
-	err = client.Open(instance, args[1], args[2])
+	err = Open(instance, args[1], args[2])
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
 
-func Edit(args []string) {
+func handleEdit(args []string) {
 	if len(args) < 3 {
 		fmt.Printf("Action edit needs instance, path, file arguments\n")
 		os.Exit(1)
@@ -104,7 +101,7 @@ func Edit(args []string) {
 		os.Exit(1)
 	}
 
-	err = client.Edit(instance, args[1], args[2])
+	err = Edit(instance, args[1], args[2])
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
