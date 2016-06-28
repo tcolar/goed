@@ -21,7 +21,7 @@ Prerequities:
 
 ```
 # Have your GOPATH set properly
-go get github.com/tcolar/goed/...
+go get -u github.com/tcolar/goed/...
 ```
 
 

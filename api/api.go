@@ -23,7 +23,7 @@ func (a *Api) Start() {
 	rpc.HandleHTTP()
 	l, err := net.Listen("unix", core.Socket)
 	if err != nil {
-		log.Fatalf("Socket listen error %s : \n", core.Socket, err.Error())
+		log.Fatalf("Socket listen error %s : \n", err.Error())
 	}
 
 	go func() {

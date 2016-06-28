@@ -57,8 +57,6 @@ func CountLines(r io.Reader) (int, error) {
 		}
 		count += bytes.Count(buf[:c], LineSep)
 	}
-
-	return count, nil
 }
 
 // StringToRunes transforms a string into a rune matrix.
