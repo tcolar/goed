@@ -1,7 +1,6 @@
 package event
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -30,9 +29,19 @@ func Listen() {
 }
 
 func handleEvent(e *Event, es *eventState) bool {
+	// check for dbl clicks
+	if e.hasMouse() &&
+		time.Now().Unix()-es.lastClick <= 1 && // quick enough
+		e.MouseX == es.lastClickX && e.MouseY == es.lastClickY && // same location
+		es.lastClickBtn <= 7 && // exclude scroll wheel
+		e.MouseBtns[es.lastClickBtn] { // same button
+		e.dblClick = true
+	}
+
 	if e.Type == Evt_None {
 		e.parseType()
 	}
+	log.Printf("Parsed evt: %#v", e)
 	et := e.Type
 	curView := actions.Ar.EdCurView()
 	actions.Ar.ViewAutoScroll(curView, 0, 0)
@@ -56,6 +65,10 @@ func handleEvent(e *Event, es *eventState) bool {
 		return false
 	}
 
+	if builtinEvents(e, es, y, x, curView) {
+		return false
+	}
+
 	vt := actions.Ar.ViewType(curView)
 	if !e.hasMouse() && vt == core.ViewTypeShell {
 		handleTermEvent(curView, e)
@@ -65,17 +78,9 @@ func handleEvent(e *Event, es *eventState) bool {
 	dirty := false
 
 	// TODO : cmdbar support -> couldn't cmdbar be a view ? -> redo ?
-
-	// parity
-
-	// TODO : sometimes moouse scroll puts gargabe character in terminal, seems to be termbox bug on OsX
-	// TODO : down/pg_down selection not working -> seem to be termbox / Os MX issue
-	// TODO : dbl click
 	// TODO : allow other acme like events such as drag selection / click on selection
 
 	cs := true // clear selections
-
-	log.Printf("%#v", e)
 
 	switch et {
 	case EvtBackspace:
@@ -167,7 +172,6 @@ func handleEvent(e *Event, es *eventState) bool {
 		actions.Ar.ViewAddSelection(curView, ln, col, e.dragLn, e.dragCol)
 		// Deal with selection autoscroll
 		cols, rows := actions.Ar.ViewCols(curView), actions.Ar.ViewRows(curView)
-		actions.Ar.EdSetStatus(fmt.Sprintf("%d %d %d %d", y, x, rows, cols))
 
 		if y < 3 { // scroll up
 			actions.Ar.ViewAutoScroll(curView, -5, 0)
@@ -191,42 +195,10 @@ func handleEvent(e *Event, es *eventState) bool {
 	case EvtSelectUp:
 		stretchSelection(curView, core.CursorMvmtUp)
 		cs = false
+	case EvtSelectWord:
+		actions.Ar.ViewSelectWord(curView, ln, col)
+		cs = false
 	case EvtSetCursor:
-		dblClick := es.lastClickX == e.MouseX && es.lastClickY == e.MouseY &&
-			time.Now().Unix()-es.lastClick <= 1
-
-			// Moving view to new position
-		if es.movingView && (x == 1 || y == 1) {
-			es.movingView = false
-			actions.Ar.EdViewMove(es.lastClickY+1, es.lastClickX+1, e.MouseY+1, e.MouseX+1)
-			break
-		}
-
-		y1, _, _, x2 := actions.Ar.ViewBounds(curView)
-		es.lastClickX = e.MouseX
-		es.lastClickY = e.MouseY
-		es.lastClick = time.Now().Unix()
-
-		// close button
-		if e.MouseX+1 == x2-1 && e.MouseY+1 == y1 {
-			actions.Ar.EdDelView(curView, true)
-			break
-		}
-		// view "handle" (top left corner)
-		if x == 1 && y == 1 {
-			if dblClick {
-				// view swap
-				es.movingView = false
-				cv := actions.Ar.EdCurView()
-				actions.Ar.EdSwapViews(cv, curView)
-				actions.Ar.EdActivateView(curView)
-				break
-			} // else, view move start
-			es.movingView = true
-			actions.Ar.EdSetStatusErr("Starting move, click new position or dbl click to swap")
-			break
-		}
-		// Set cursor position
 		actions.Ar.ViewSetCursorPos(curView, ln, col)
 		actions.Ar.EdActivateView(curView)
 	case EvtTab:
@@ -276,6 +248,9 @@ func handleTermEvent(vid int64, e *Event) {
 		actions.Ar.ViewSetCursorPos(vid, ln, col)
 		actions.Ar.ViewClearSelections(vid)
 		actions.Ar.ViewAddSelection(vid, ln, col, e.dragLn, e.dragCol)
+		cs = false
+	case e.Type == EvtSelectWord:
+		actions.Ar.ViewSelectWord(vid, ln, col)
 		cs = false
 	case e.Type == EvtCopy && len(actions.Ar.ViewSelections(vid)) > 0:
 		// copy if copy event and there is a selection
@@ -379,4 +354,57 @@ func stretchSelection(vid int64, mvmt core.CursorMvmt) {
 	}
 	actions.Ar.ViewClearSelections(vid)
 	actions.Ar.ViewAddSelection(vid, l, c, l2, c2)
+}
+
+// Builtin UI mouse events that are not configurable (Click location based)
+// return true if the event matched a builitn and was consumed
+func builtinEvents(e *Event, es *eventState, y, x int, curView int64) bool {
+	if !e.hasMouse() || e.inDrag {
+		return false
+	}
+
+	// view swap (dbl left click on view handle)
+	if e.MouseBtns[1] && e.dblClick && (x == 1 || y == 1) {
+		es.movingView = false
+		cv := actions.Ar.EdCurView()
+		actions.Ar.EdSwapViews(cv, curView)
+		actions.Ar.EdActivateView(curView)
+		es.lastClick = 0
+		return true
+	}
+
+	// Completes moving view to new position (left click drop)
+	if e.MouseBtns[1] && es.movingView && (x == 1 || y == 1) {
+		es.movingView = false
+		actions.Ar.EdViewMove(es.lastClickY+1, es.lastClickX+1, e.MouseY+1, e.MouseX+1)
+		return true
+	}
+
+	// Update state (ignore mouse wheel fake clicks)
+	if !e.MouseBtns[8] && !e.MouseBtns[16] {
+		es.lastClickX = e.MouseX
+		es.lastClickY = e.MouseY
+		es.lastClick = time.Now().Unix()
+		for k, b := range e.MouseBtns {
+			if b {
+				es.lastClickBtn = k
+			}
+		}
+	}
+
+	// moving view start (left click on view handle)
+	if e.MouseBtns[1] && x == 1 && y == 1 {
+		es.movingView = true
+		actions.Ar.EdSetStatusErr("Starting move, click new position or dbl click to swap")
+		return true
+	}
+
+	// close button (left click on 'x')
+	y1, _, _, x2 := actions.Ar.ViewBounds(curView)
+	if e.MouseBtns[1] && e.MouseX+1 == x2-1 && e.MouseY+1 == y1 {
+		actions.Ar.EdDelView(curView, true)
+		return true
+	}
+
+	return false
 }

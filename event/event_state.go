@@ -13,14 +13,16 @@ type Event struct {
 	Combo           Combo
 	MouseBtns       map[int]bool
 	MouseY, MouseX  int
-	dragLn, dragCol int  // selection start point
 	inDrag          bool // mouse dragging
+	dragLn, dragCol int  // selection start point
+	dblClick        bool
 }
 
 type eventState struct {
 	// state
 	movingView             bool
 	lastClickX, lastClickY int
+	lastClickBtn           int
 	lastClick              int64 // timestamp
 }
 
@@ -131,7 +133,9 @@ outer:
 	for _, k := range strings.Split(s, "+") {
 		if k[0] == 'M' { // mouse
 			a := "MC"
-			if e.inDrag {
+			if e.dblClick {
+				a = "MDC"
+			} else if e.inDrag {
 				a = "MD"
 			}
 			for btn, b := range e.MouseBtns {
@@ -210,7 +214,9 @@ func (e *Event) String() string {
 	for btn, b := range e.MouseBtns {
 		if b {
 			a := "MC"
-			if e.inDrag {
+			if e.dblClick {
+				a = "MDC"
+			} else if e.inDrag {
 				a = "MD"
 			}
 			s = append(s, fmt.Sprintf("%s%d", a, btn))

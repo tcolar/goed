@@ -2,15 +2,25 @@ package event
 
 // TODO: temporary, read from config file
 var standard = map[string]EventType{
-	"MC1":  "set_cursor",       // left click
-	"MC4":  "open_in_new_view", // right click
-	"MC8":  "page_up",          // mouse wheel up
-	"MC16": "page_down",        // mouse wheel down
-	"MD1":               "select_mouse", // mouse drag
-	"escape":            "toggle_cmd_bar",
-	"ctrl+q":            "quit",
-	"backspace":         "backspace",
-	"enter":             "enter",
+	"MC1":       "set_cursor",       // Mouse click left
+	"MC4":       "open_in_new_view", // Mouse Click right
+	"MC8":       "page_up",          // Mouse wheel up
+	"MC16":      "page_down",        // Mouse wheel down
+	"MD1":       "select_mouse",     // Mouse Drag
+	"MDC1":      "select_word",      // Mouse Double Click left
+	"escape":    "toggle_cmd_bar",
+	"ctrl+q":    "quit",
+	"backspace": "backspace",
+	"enter":     "enter",
+	// ctrl+a // go to start of line
+	// ctrl+e // go to end of line
+	// ctrl+u // delete from start of line
+	// ctrl+w // delete word before cursor
+	// ctrl+h // backspace
+	// ESC    // select text since last click, or if existing selection delete it.
+	// alt "option" key not working on osx
+	// what about apple "command" key / shortcuts
+	// Apple : command + left click for right click ????
 	"ctrl+a":            "select_all",
 	"ctrl+c":            "copy",
 	"ctrl+r":            "reload",
@@ -89,6 +99,7 @@ const (
 	EvtSelectPageUp             = "select_page_up"
 	EvtSelectRight              = "select_right"
 	EvtSelectUp                 = "select_up"
+	EvtSelectWord               = "select_word"
 	EvtSetCursor                = "set_cursor"
 	EvtTab                      = "tab"
 	EvtToggleCmdbar             = "toggle_cmd_bar"
