@@ -39,6 +39,7 @@ type Viewable interface {
 	SetBackend(backend Backend)
 	SetDirty(bool)
 	SelectAll()
+	SelectWord(ln, col int)
 	Selections() *[]Selection
 	// SetAutoScroll is used to make the view scroll contonuously in y,x increments
 	// keeps scrolling until x and y are set to 0.

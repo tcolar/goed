@@ -161,6 +161,11 @@ func (a *ar) ViewSelections(viewId int64) []core.Selection {
 	return <-answer
 }
 
+// select "word" at given path
+func (a *ar) ViewSelectWord(viewId int64, ln, col int) {
+	d(viewSelectWord{viewId: viewId, ln: ln, col: col})
+}
+
 // move the cursor to the given text position(1 indexed), scroll as needed
 func (a *ar) ViewSetCursorPos(viewId int64, y, x int) {
 	d(viewSetCursorPos{viewId: viewId, y: y, x: x})
@@ -665,6 +670,18 @@ func (a viewSelections) Run() {
 			s.LineTo+lt, s.ColTo+ct))
 	}
 	a.answer <- result
+}
+
+type viewSelectWord struct {
+	viewId  int64
+	ln, col int
+}
+
+func (a viewSelectWord) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.SelectWord(a.ln-1, a.col-1)
+	}
 }
 
 type viewSetCursorPos struct {
