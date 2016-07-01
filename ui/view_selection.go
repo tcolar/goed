@@ -141,6 +141,7 @@ func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
 // Try to select the longest "word" from current position.
 func (v *View) ExpandSelectionWord(line, col int) *core.Selection {
 	l := v.Line(v.slice, line)
+	if col < 0 || col >= len(l) {
 		return nil
 	}
 	c1, c2 := col, col
