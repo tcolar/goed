@@ -3,6 +3,7 @@ package ui
 import (
 	"log"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
 	termbox "github.com/tcolar/termbox-go"
@@ -78,7 +79,6 @@ func (t *TermBox) Listen() {
 
 // parses a termbox event into the 'es' goed event (event.Event)
 func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
-	es.Type = event.Evt_None
 	if e.Ch > 0 {
 		es.Glyph = string(e.Ch)
 	} else {
@@ -94,6 +94,15 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 	es.Keys = []string{}
 	es.MouseBtns[8] = false  // reset wheel down, no separate "up" event
 	es.MouseBtns[16] = false // reset wheel up
+
+	es.Type = event.Evt_None
+	switch e.Type {
+	case termbox.EventResize:
+		actions.Ar.EdResize(e.Height, e.Width)
+		es.Type = event.EvtWinResize
+		return
+	}
+
 	if len(es.Glyph) > 0 {
 		es.KeyDown(es.Glyph)
 		return
