@@ -8,6 +8,7 @@ const Version = "0.0.3"
 const ApiVersion = "v1"
 
 var Trace = false
+var ShowEvents = false
 
 // Ed is thew editor singleton
 var Ed Editable

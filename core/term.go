@@ -77,7 +77,7 @@ func (t *MockTerm) CharAt(y, x int) rune {
 //=================== Utilities =============================
 
 // Print colors to terminal to try it.
-func TestTerm() {
+func TermColors() {
 	fmt.Printf("Standard Colors (16):\n Plain      : ")
 	for i := 0; i != 16; i++ {
 		fmt.Printf("\033[3%dm%02X ", i, i)

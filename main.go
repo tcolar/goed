@@ -21,13 +21,14 @@ import (
 )
 
 var (
-	apiCall = kingpin.Flag("api", "API call").Default("false").Bool()
-	gui     = kingpin.Flag("g", "Start in GUI mode..").Default("false").Bool()
-	test    = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
-	colors  = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
-	config  = kingpin.Flag("config", "Config file.").Default("config.toml").String()
-	cpuprof = kingpin.Flag("cpuprof", "Cpu profile").Default("false").Bool()
-	memprof = kingpin.Flag("memprof", "Mem profile").Default("false").Bool()
+	apiCall    = kingpin.Flag("api", "API call").Default("false").Bool()
+	gui        = kingpin.Flag("g", "Start in GUI mode..").Default("false").Bool()
+	termColors = kingpin.Flag("term-colors", "Prints colors to the terminal to check them.").Bool()
+	termEvents = kingpin.Flag("term-events", "Display received events in a view.").Bool()
+	colors     = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
+	config     = kingpin.Flag("config", "Config file.").Default("config.toml").String()
+	cpuprof    = kingpin.Flag("cpuprof", "Cpu profile").Default("false").Bool()
+	memprof    = kingpin.Flag("memprof", "Mem profile").Default("false").Bool()
 
 	locs = kingpin.Arg("location", "location to open").Strings()
 )
@@ -41,8 +42,8 @@ func main() {
 		client.HandleArgs(os.Args[2:])
 		return
 	}
-	if *test {
-		core.TestTerm()
+	if *termColors {
+		core.TermColors()
 		return
 	}
 	if *colors == 0 {
@@ -75,6 +76,7 @@ func main() {
 	id := time.Now().UnixNano()
 
 	core.Colors = *colors
+	core.ShowEvents = *termEvents
 	core.Bus = actions.NewActionBus()
 	core.InitHome(id)
 	core.ConfFile = *config
