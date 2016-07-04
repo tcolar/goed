@@ -114,7 +114,6 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 	}
 
 	k := e.Key
-
 	switch k {
 	case termbox.MouseLeft:
 		if e.MouseBtnState != termbox.MouseBtnUp {
@@ -138,7 +137,7 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		es.MouseDown(event.MouseWheelDown, e.MouseY, e.MouseX)
 	case termbox.MouseScrollUp:
 		es.MouseDown(event.MouseWheelUp, e.MouseY, e.MouseX)
-	case termbox.KeyBackspace, termbox.KeyBackspace2:
+	case termbox.KeyBackspace2:
 		es.KeyDown(event.KeyBackspace)
 	case termbox.KeyTab:
 		es.KeyDown(event.KeyTab)
@@ -218,6 +217,8 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		ctrl("f")
 	case termbox.KeyCtrlG:
 		ctrl("g")
+	case termbox.KeyCtrlH:
+		ctrl("h")
 	case termbox.KeyCtrlJ:
 		ctrl("j")
 	case termbox.KeyCtrlK:
@@ -252,8 +253,6 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		ctrl("z")
 
 		// hu ?? all those are duplicated values in termbox .....
-		//case termbox.KeyCtrlH:
-		//	ctrl("h")
 		//case termbox.KeyCtrlI:
 		//ctrl("i")
 		//case termbox.KeyCtrlM:

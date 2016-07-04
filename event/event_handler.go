@@ -1,7 +1,10 @@
 package event
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"path"
 	"time"
 
 	"github.com/tcolar/goed/actions"
@@ -20,8 +23,21 @@ func Shutdown() {
 }
 
 func Listen() {
+	var fp string
+	var file *os.File
+	defer file.Close()
+	if core.ShowEvents {
+		fp = path.Join(core.Home, "events.txt")
+		file, _ = os.Create(fp)
+	}
 	es := &eventState{}
+
 	for e := range queue {
+		if core.ShowEvents {
+			fmt.Fprintf(file, "Chord:'%s'\nKeys:%#v, Combos:%#v\nMouse: Y:%d X:%d Btns:%#v\n", e.String(), e.Keys, e.Combo, e.MouseY, e.MouseX, e.MouseBtns)
+			eventv := actions.Ar.EdViewByLoc(fp)
+			actions.Ar.EdOpen(fp, eventv, "", true)
+		}
 		if done := handleEvent(e, es); done {
 			return
 		}
@@ -99,6 +115,11 @@ func handleEvent(e *Event, es *eventState) bool {
 	case EvtDelete:
 		actions.Ar.ViewDeleteCur(curView)
 		dirty = true
+	case EvtDeleteHome:
+		if col > 1 {
+			actions.Ar.ViewDelete(curView, ln, 0, ln, col-1, true)
+			dirty = true
+		}
 	case EvtEnd:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtEnd)
 	case EvtEnter:
