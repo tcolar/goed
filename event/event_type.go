@@ -2,40 +2,52 @@ package event
 
 // TODO: temporary, read from config file
 var standard = map[string]EventType{
-	"MC1":       "set_cursor",       // Mouse click left
-	"MC4":       "open_in_new_view", // Mouse Click right
-	"MC8":       "page_up",          // Mouse wheel up
-	"MC16":      "page_down",        // Mouse wheel down
-	"MD1":       "select_mouse",     // Mouse Drag
-	"MDC1":      "select_word",      // Mouse Double Click left
+	// mouse
+	"MC1":  "set_cursor",       // Mouse click left
+	"MC4":  "open_in_new_view", // Mouse Click right
+	"MC8":  "move_up",          // Mouse wheel up
+	"MC16": "move_down",        // Mouse wheel down
+	"MD1":  "select_mouse",     // Mouse Drag
+	"MDC1": "select_word",      // Mouse Double Click left
+
+	// special keys
 	"escape":    "toggle_cmd_bar",
-	"ctrl+q":    "quit",
 	"backspace": "backspace",
 	"enter":     "enter",
-	// ctrl+a // go to start of line
-	// ctrl+e // go to end of line
-	// ctrl+u // delete from start of line
-	// ctrl+w // delete word before cursor
-	// ctrl+h // backspace
-	// ESC    // select text since last click, or if existing selection delete it.
-	// alt "option" key not working on osx
-	// what about apple "command" key / shortcuts
-	// Apple : command + left click for right click ????
-	"ctrl+a":            "select_all",
-	"ctrl+c":            "copy",
-	"ctrl+r":            "reload",
-	"ctrl+s":            "save",
-	"ctrl+v":            "paste",
-	"ctrl+w":            "close_window",
-	"ctrl+x":            "cut",
-	"ctrl+y":            "redo",
-	"ctrl+z":            "undo",
+	"return":    "enter",
+	"tab":       "tab",
+	"delete":    "delete",
+
+	// control sequences
+	"ctrl+a": "home",       // as in Acme
+	"ctrl+b": "select_all", // made up since ctrl+a is used
+	"ctrl+c": "copy",
+	//"ctrl+d": "TODO", // Delete word before cursor (ctrl+w in Acme)
+	"ctrl+e": "end",
+	"ctrl+h": "move_left",  // vi like mvmt
+	"ctrl+j": "move_right", // vi like mvmt
+	"ctrl+k": "move_up",    // vi like mvmt
+	"ctrl+l": "move_down",
+	"ctrl+o": "open_in_same_view",
+	"ctrl+n": "open_in_new_view", // or right click
+	"ctrl+q": "quit",
+	"ctrl+r": "reload",
+	"ctrl+s": "save",
+	"ctrl+t": "open_term",
+	"ctrl+u": "delete_home",
+	"ctrl+v": "paste",
+	"ctrl+w": "close_window",
+	"ctrl+x": "cut",
+	"ctrl+y": "redo",
+	"ctrl+z": "undo",
+
+	// movement
 	"right_arrow":       "move_right",
 	"left_arrow":        "move_left",
 	"up_arrow":          "move_up",
 	"down_arrow":        "move_down",
-	"prior":             "page_up",
-	"next":              "page_down",
+	"prior":             "page_up",   // also works with Fn + up (OSX)
+	"next":              "page_down", // also works with Fn + down (OSX)
 	"home":              "home",
 	"end":               "end",
 	"shift+right_arrow": "select_right",
@@ -46,16 +58,16 @@ var standard = map[string]EventType{
 	"shift+next":        "select_page_down",
 	"shift+home":        "select_home",
 	"shift+end":         "select_end",
-	"tab":               "tab",
-	"delete":            "delete",
-	"alt+o":             "open_in_new_view",
-	"ctrl+o":            "open_in_same_view",
+
+	// navigation
 	"alt+right_arrow":   "nav_right",
 	"alt+left_arrow":    "nav_left",
 	"alt+down_arrow":    "nav_down",
 	"alt+up_arrow":      "nav_up",
-	"ctrl+t":            "open_term",
-	"return":            "enter",
+	"super+right_arrow": "nav_right", // on OSX alt+arrow comes as super+arrow
+	"super+left_arrow":  "nav_left",
+	"super+down_arrow":  "nav_down",
+	"super+up_arrow":    "nav_up",
 }
 
 type EventType string
@@ -68,6 +80,7 @@ const (
 	EvtCut                      = "cut"
 	EvtCopy                     = "copy"
 	EvtDelete                   = "delete"
+	EvtDeleteHome               = "delete_home"
 	EvtEnd                      = "end"
 	EvtHome                     = "home"
 	EvtEnter                    = "enter"
