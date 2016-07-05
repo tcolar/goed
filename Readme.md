@@ -1,5 +1,6 @@
 ### GoEd 
-Goed is a Terminal based code/text editor, somewhat inspired by Acme.
+Goed is a code/text editor, somewhat inspired by Acme.
+It can run within a terminal or as a standalone lightweight gui.
 
 **CURRENT STATE**:
 It's currently in **ALPHA** and has not been spread around much yet.
@@ -33,30 +34,39 @@ goed <path(s)>
 ```
 
 Quick start:
-- Use right click or Ctrl+O to open a dir/file.
+- Use right click or Ctrl+N to open a dir/file.
 - Use CTRL+T to start a terminal view ($SHELL)
 
-### Supported terminals
+### Terminal use
 In theory it should work with any terminal, however the level of support for things 
-like mouse support or extended colors vary a lot, here is a short list of tested 
-setups so far:
+like mouse support or extended colors vary a lot.
 
-Long story short is **use gnome-terminal on Linux, iTerm2 on OsX (with right click menu disabled)**.
+#### Terminal - Linux
+I recommend GnomeTerminal as it has the best support, but Konsole or Lxterminal
+should work as well.
 
-Linux:
-- Linux / GnomeTerminal : My usual setup, works great.
-- Linux / Lxerminal : Works well but does not support mouse events above 256 columns.
-- Linux / Konsole : Works well, seems mouse events are slightly offset ?
-- Linux / Terminator : Works ok, but can't use right click for "open" action.
+#### Terminal - OSX
+I highly recommend a real mouse(2+ buttons) and using ITerm2, **do not bother wth Term.app** 
+as it has very poor eventing support.
 
-OSX (barely tested so far) :
-- OSX / Iterm2 : Pretty good, **better if disabling right click context menu under "preferences ->  pointer"**. 
-- OSX / Term.app : **Don't bother ...**
+For ITerm2 those settingw work best:
+  - Under preferences / pointer, disable right click context menu.
+  - Under prefs / pfofiles / default / terminal set ter type to "xterm-256color"
+ 
+#### GUI (Experimental)
+The eventing support in terminals varies immensely, some don't support mouse
+events, some only support some CTRL, ALT sequences and almost none support any
+type of advanced chording.
+
+For this reason there is now an **experimental** GUI (**currently very slow**),
+It's based on go.wde and has much much better and reliable eventing support. 
 
 ### Keyboard / Mouse shortcuts
+Here are the standard key shortcuts, you can modify those to your liking, note
+however that terminals support a limited set, in particular on OSX, basically
+only CTRL combos work properly. Alt and Command combos are not reported.
 
-Eventually the plan is to make all the Keyboard and mouse events configurable, 
-but for now here they are:
+You may use `goed --term-events` to find out what events work in your given terminal.
 
 | Action                                  | Linux             | Mac (iTerm2)  |
 | --------------------------------------- | ----------------- | ------------- |
@@ -64,24 +74,32 @@ but for now here they are:
 |                                         | or CTRL+W         | same          |
 | Copy line/selection text           (1)  | CTRL+C            | same          |
 | Cut+Copy line/selection text            | CTRL+X            | same          |
+| Delete from start of line to cursor     | CTRL+U            | same          |
 | Execute command bar                     | Enter             | same          |
-| Navigate views                          | CTRL+Arrows       | SHIFT+Arrrows |
+| Move to syart of line                   | CTRL+A or home    | same          |
+| Move to end of line                     | CTRL+E or end     | same          |
+| Move down                               | CTRL+L or arrow   | same          |
+| Move left                               | CTRL+H or arrow   | same          |
+| Move right                              | CTRL+J or arrow   | same          |
+| Move up                                 | CTRL+K or arrow   | same          |
+| Navigate views                          | ALT+Arrows        | same          |
 | Open Terminal view                      | CTRL+T            | same          |
 | Open path (in New view)                 | RightClick        | same          |
-|                                         | or CTRL+O         | same          |
-| Open path (in current view)             | ALT+O             | N/A - TBD     |
+|                                         | or CTRL+N         | same          |
+| Open path (in current view)             | CTRL+O            | same          |
+| Page up / Page down                     | PgUp, PgDown      | Fn + up / down|
 | Paste text                              | CTRL+V            | same          |
 | Quit Goed                               | CTRL+Q            | same          |
-| Redo                                    | CTRL+Y            | same          | 
+| Redo                                    | CTRL+Y            | same          |
 | Reload view (not saving changes)        | CTRL+R            | same          |
 | Resize / Move view & columns       (2)  | LeftClick top left| same          |
 | Save view (to file)                     | CTRL+S            | same          |
-| Select all                              | CTRL+A            | same          |
+| Select all                              | CTRL+B            | same          |
 | Select word                             | Dbl LeftClick     | same          |
 | Swap views                         (4)  | Dbl LC top left   | same          |
 | Undo                                    | CTRL+Z            | same          |
 | Text selection                     (3)  | Mouse drag        | same          |
-|                                         | or SHIFT+move     | N/A           |
+|                                         | or SHIFT+move     | same          |
 | Toogle command bar                      | ESC               | same          |
 
 
@@ -90,7 +108,7 @@ but for now here they are:
   - (3) : Can use Shift + [Arrows, PgUp, PgDown, Home, End].
   - (4) : Double click the top left corner of the view (checkmark icon) to switch that view with the previous current view.
   
-### Terminal
+### Terminal usage
 
 Start a new Terminal with CTRL+T, it will be started in the same path as the current view.
 
@@ -131,6 +149,8 @@ The config file can be edited at ~/.goed/config.toml (The original is under ~/.g
 You may create custom themes under ~/.goed/themes/ (originals under ~/.goed/default/themes/)
 
 You may create/override actions under ~/.goed/actions/ .
+
+TODO : key/mouse actions
 
 ### Reporting issues
 Report in github, try not to create duplicates.
