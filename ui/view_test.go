@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/kr/pretty"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/assert"
 	"github.com/tcolar/goed/core"
@@ -360,7 +359,6 @@ func (us *UiSuite) TestUndo(t *C) {
 
 	for i := 0; i != 15; i++ {
 		s := states[len(states)-i-1]
-		pretty.Println(s)
 		assert.Eq(t, s.y, v.CurLine())
 		assert.Eq(t, s.x, v.CurCol())
 		assert.Eq(t, s.txt, core.RunesToString(*v.Slice().Text()))

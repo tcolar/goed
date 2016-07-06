@@ -138,6 +138,8 @@ func (as *ApiSuite) TestViewCmdStop(t *C) {
 	out, err = exec.Command("ps", "-ax").CombinedOutput()
 	assert.Nil(t, err)
 	assert.False(t, strings.Contains(string(out), "sleep "+marker))
+	actions.Ar.EdActionBusFlush()
+	actions.Ar.EdDelView(vid, false)
 }
 
 func (as *ApiSuite) TestViewCols(t *C) {

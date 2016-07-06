@@ -52,15 +52,18 @@ func (s *ApiSuite) SetUpSuite(c *C) {
 	apiServer.Start()
 	core.Ed.Start([]string{})
 	s.dirView = core.Ed.Views()[0]
-	go core.Bus.Start()
 }
 
 func (s *ApiSuite) SetUpTest(c *C) {
+	actions.Ar.EdActionBusFlush()
 	// Put the editor back into known state (only dir view open)
 	for _, v := range actions.Ar.EdViews() {
 		if v != s.dirView {
 			actions.Ar.EdDelView(v, false)
 		}
+	}
+	if len(actions.Ar.EdViews()) > 1 {
+		debugViews()
 	}
 	assert.Eq(c, len(actions.Ar.EdViews()), 1)
 	actions.Ar.ViewClearSelections(s.dirView)

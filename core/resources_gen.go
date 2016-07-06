@@ -158,7 +158,7 @@ func resDefaultActionsGoedRc() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/default/actions/goed.rc", size: 664, mode: os.FileMode(420), modTime: time.Unix(1467125826, 0)}
+	info := bindataFileInfo{name: "res/default/actions/goed.rc", size: 664, mode: os.FileMode(420), modTime: time.Unix(1467325082, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -178,7 +178,7 @@ func resDefaultActionsGoedSh() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/default/actions/goed.sh", size: 558, mode: os.FileMode(420), modTime: time.Unix(1467125864, 0)}
+	info := bindataFileInfo{name: "res/default/actions/goed.sh", size: 558, mode: os.FileMode(420), modTime: time.Unix(1467325082, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -218,7 +218,7 @@ func resDefaultActionsGoimportsSh() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/default/actions/goimports.sh", size: 385, mode: os.FileMode(493), modTime: time.Unix(1467125890, 0)}
+	info := bindataFileInfo{name: "res/default/actions/goimports.sh", size: 385, mode: os.FileMode(493), modTime: time.Unix(1467325082, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -298,7 +298,7 @@ func resDefaultActionsVt100_sizeSh() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/default/actions/vt100_size.sh", size: 336, mode: os.FileMode(493), modTime: time.Unix(1467125910, 0)}
+	info := bindataFileInfo{name: "res/default/actions/vt100_size.sh", size: 336, mode: os.FileMode(493), modTime: time.Unix(1467325082, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -363,7 +363,7 @@ func resDefaultThemesDefaultToml() (*asset, error) {
 	return a, nil
 }
 
-var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\x33\x37\x34\x32\xb5\x34\xb4\xe4\x02\x04\x00\x00\xff\xff\xd0\x87\xe4\x59\x0b\x00\x00\x00")
+var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\x33\x37\x37\xb5\x34\xb0\x34\xe3\x02\x04\x00\x00\xff\xff\xae\x6d\x42\x16\x0b\x00\x00\x00")
 
 func resResources_versionTxtBytes() ([]byte, error) {
 	return bindataRead(
@@ -378,7 +378,7 @@ func resResources_versionTxt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1467125919, 0)}
+	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1467759096, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
