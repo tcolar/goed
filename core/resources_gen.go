@@ -11,6 +11,7 @@
 // res/default/actions/search_text.sh
 // res/default/actions/stats.sh
 // res/default/actions/vt100_size.sh
+// res/default/bindings.toml
 // res/default/config.toml
 // res/default/themes/acme.toml
 // res/default/themes/default.toml
@@ -158,7 +159,7 @@ func resDefaultActionsGoedRc() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/default/actions/goed.rc", size: 664, mode: os.FileMode(420), modTime: time.Unix(1467325082, 0)}
+	info := bindataFileInfo{name: "res/default/actions/goed.rc", size: 664, mode: os.FileMode(420), modTime: time.Unix(1467821873, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -178,7 +179,7 @@ func resDefaultActionsGoedSh() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/default/actions/goed.sh", size: 558, mode: os.FileMode(420), modTime: time.Unix(1467325082, 0)}
+	info := bindataFileInfo{name: "res/default/actions/goed.sh", size: 558, mode: os.FileMode(420), modTime: time.Unix(1467821873, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -218,7 +219,7 @@ func resDefaultActionsGoimportsSh() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/default/actions/goimports.sh", size: 385, mode: os.FileMode(493), modTime: time.Unix(1467325082, 0)}
+	info := bindataFileInfo{name: "res/default/actions/goimports.sh", size: 385, mode: os.FileMode(493), modTime: time.Unix(1467821873, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -298,7 +299,27 @@ func resDefaultActionsVt100_sizeSh() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/default/actions/vt100_size.sh", size: 336, mode: os.FileMode(493), modTime: time.Unix(1467325082, 0)}
+	info := bindataFileInfo{name: "res/default/actions/vt100_size.sh", size: 336, mode: os.FileMode(493), modTime: time.Unix(1467821873, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _resDefaultBindingsToml = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x7c\x94\x39\x6f\xdc\x30\x10\x85\xfb\xfd\x15\xc4\xba\x34\xb2\x82\x81\x20\x08\x02\xa4\xb2\x53\xa4\x70\x15\xa4\x16\x28\x6a\x2c\x29\x4b\x71\x68\x72\xb8\xf2\xa6\xc8\x6f\x8f\x34\x24\x75\xf9\x68\x12\xef\xf7\x9e\x66\xe6\xf1\xba\x11\x8f\xd2\x7a\x71\x86\x6b\x85\xd2\xd5\x45\x8f\xc1\x83\x50\x2d\xba\xda\x0b\x42\xf1\xfb\xa7\x80\x0b\x18\xf2\x87\x1b\xf1\x0b\x40\xb4\x44\xd6\x7f\x2b\x8a\xa6\xa3\x36\x54\x27\x85\x7d\x41\x0a\xb5\x74\x45\x83\x50\x17\x95\xc6\xaa\xe8\xa5\x27\x70\x05\x7f\x17\xff\x2d\xe9\x6a\xe1\xd4\xe0\xe1\x66\x2c\xf3\xa3\xee\x48\x74\x46\xfc\x2b\x4e\xf1\x9b\xce\xd4\x9d\x69\xfc\x89\xb0\xd7\xa3\xfe\x49\x3c\xde\xdf\x09\x4f\xd2\x8c\x23\x3c\xa1\x13\x8f\x3c\xd3\xbd\xee\xd4\x59\x54\x81\x08\x8d\xb8\x8b\xbe\x87\x37\x7c\x0f\x4e\x36\x7b\x5b\xae\xb7\xb6\x61\xa8\xf4\xab\xaa\xc7\xb1\xf5\x51\x7c\x17\x47\x0f\x54\xaa\xe0\x3c\xba\x23\xc3\x2f\x91\x2a\x87\x5a\x97\x35\x0e\x86\xf1\x67\xa6\x68\xc1\x94\x9d\x29\x0d\x0c\xe5\xa5\x83\x81\xa5\xaf\xeb\x0f\x82\x9d\xd8\x43\x2e\xad\x41\x51\xc9\x2b\xcd\xf8\x7e\xc3\x87\x71\xe9\x47\x2c\x35\xdd\x4e\x7d\x4a\xe9\x1c\x0e\x6c\x30\xf2\x92\x5b\x4f\xaa\x86\x27\xda\xa9\x13\x4a\xaa\xeb\x9a\x76\x2f\x33\x4b\x7a\xb0\x3b\x91\x67\xac\xa4\x3a\x7b\x2b\x15\x30\x5e\x7e\x1d\x8e\x8a\x9c\xbe\x95\x8c\x5b\xec\x67\x52\xad\x47\x97\x5a\x67\xae\x98\x2b\xb4\xd7\x4c\x62\x49\x30\x75\x06\x2d\x83\x1e\x2f\x90\xe7\x66\xfc\x67\xc1\x79\x5e\xe6\xe7\x85\xf3\xa8\x0c\xf5\x02\xd3\xca\x30\x36\xef\xed\x0b\xab\xb8\x51\xbd\xec\x61\x23\x3f\xb3\xfc\x1c\xba\xb9\xb5\x63\xe2\x40\xa3\x9c\xa7\xf7\x31\xb8\xbc\xcc\x4b\x41\x4b\xd9\xf1\xf8\xf7\x19\x07\xc6\xf5\xb8\x42\x04\xe5\x7a\xe9\x2e\x2c\xd8\xe9\xb2\x64\x14\x77\x43\x69\xf4\x50\x0e\xe3\xb5\xc0\x79\xa8\x97\xa8\x84\x79\xa6\x6b\x9a\xa9\xc6\x4c\xfe\x32\x09\x86\x49\xec\xb7\x6a\x3d\xb1\xed\x71\x5a\xaf\xda\xb4\x2d\xcb\xf6\x8c\x37\x16\x5c\xfa\x3d\xfd\x35\x12\xaf\xa4\x8d\xe5\x08\x9b\x46\x43\xa9\xfa\xba\xac\xe4\xa4\x71\xa6\xd5\xb9\xd8\x9d\xcb\xf5\x06\x1b\x78\xa1\x94\xba\x99\x7b\x5b\xd7\xa1\x5b\x28\x6f\xae\x03\x0a\xce\x6c\x46\xd8\x1f\xe8\xcd\x09\xf1\x6d\xf7\xf4\xea\xbe\xa4\x53\x99\xda\x44\x4b\x0e\x9a\xb4\x98\x37\x4a\x73\x8e\xa4\xa5\x38\x51\xdc\x85\x4a\x96\x14\x2b\x5a\xe6\x70\x49\x5c\x67\x8c\x8e\x25\xe9\xda\xc2\x81\xa3\x61\x9f\x31\xd9\xb6\x29\x37\x37\x37\x39\x62\x8d\x60\xc1\x7d\xf0\x68\x44\xfd\xfd\x67\x23\xea\x1f\x3d\x1c\xd1\xf1\xf6\xd3\x41\x32\xbe\x05\xd3\xff\x87\xe3\xc6\x33\x5f\xda\xc3\xff\x00\x00\x00\xff\xff\x60\x12\x3b\x81\x6f\x06\x00\x00")
+
+func resDefaultBindingsTomlBytes() ([]byte, error) {
+	return bindataRead(
+		_resDefaultBindingsToml,
+		"res/default/bindings.toml",
+	)
+}
+
+func resDefaultBindingsToml() (*asset, error) {
+	bytes, err := resDefaultBindingsTomlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "res/default/bindings.toml", size: 1647, mode: os.FileMode(420), modTime: time.Unix(1468170513, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -363,7 +384,7 @@ func resDefaultThemesDefaultToml() (*asset, error) {
 	return a, nil
 }
 
-var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\x33\x37\x37\xb5\x34\xb0\x34\xe3\x02\x04\x00\x00\xff\xff\xae\x6d\x42\x16\x0b\x00\x00\x00")
+var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\xb3\x30\x34\x37\x30\x37\x32\xe6\x02\x04\x00\x00\xff\xff\x5f\xaa\x9f\x00\x0b\x00\x00\x00")
 
 func resResources_versionTxtBytes() ([]byte, error) {
 	return bindataRead(
@@ -378,7 +399,7 @@ func resResources_versionTxt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1467759096, 0)}
+	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1468170723, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -466,6 +487,7 @@ var _bindata = map[string]func() (*asset, error){
 	"res/default/actions/search_text.sh": resDefaultActionsSearch_textSh,
 	"res/default/actions/stats.sh": resDefaultActionsStatsSh,
 	"res/default/actions/vt100_size.sh": resDefaultActionsVt100_sizeSh,
+	"res/default/bindings.toml": resDefaultBindingsToml,
 	"res/default/config.toml": resDefaultConfigToml,
 	"res/default/themes/acme.toml": resDefaultThemesAcmeToml,
 	"res/default/themes/default.toml": resDefaultThemesDefaultToml,
@@ -530,6 +552,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 				"stats.sh": &bintree{resDefaultActionsStatsSh, map[string]*bintree{}},
 				"vt100_size.sh": &bintree{resDefaultActionsVt100_sizeSh, map[string]*bintree{}},
 			}},
+			"bindings.toml": &bintree{resDefaultBindingsToml, map[string]*bintree{}},
 			"config.toml": &bintree{resDefaultConfigToml, map[string]*bintree{}},
 			"themes": &bintree{nil, map[string]*bintree{
 				"acme.toml": &bintree{resDefaultThemesAcmeToml, map[string]*bintree{}},

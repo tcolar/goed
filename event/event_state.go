@@ -45,7 +45,7 @@ func (e *Event) hasMouse() bool {
 func (e *Event) parseType() {
 	bestScore := 0
 	t := Evt_None
-	for chord, et := range standard {
+	for chord, et := range bindings {
 		score := e.scoreMatch(chord)
 		if score > bestScore {
 			t = et

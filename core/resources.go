@@ -41,6 +41,14 @@ func UpdateResources() {
 				panic(err)
 			}
 		}
+		loc = path.Join(Home, "bindings.toml")
+		// If no custom bindings file yet, create one
+		if _, err = os.Stat(loc); os.IsNotExist(err) {
+			err := CopyFile(path.Join(Home, "default", "bindings.toml"), loc)
+			if err != nil {
+				panic(err)
+			}
+		}
 	}
 }
 

@@ -7,11 +7,13 @@ import (
 	"path"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
 var queue = make(chan *Event, 200)
+var bindings map[string]EventType
 
 // Queue - Note: Queue a copy of the event
 func Queue(e Event) {
@@ -23,6 +25,7 @@ func Shutdown() {
 }
 
 func Listen() {
+	loadBindings()
 	var fp string
 	var file *os.File
 	defer file.Close()
@@ -436,4 +439,13 @@ func builtinEvents(e *Event, es *eventState, y, x int, curView int64) bool {
 	}
 
 	return false
+}
+
+func loadBindings() {
+	loc := core.FindResource("bindings.toml")
+	if _, err := toml.DecodeFile(loc, &bindings); err != nil {
+		log.Println(err)
+		actions.Ar.EdSetStatusErr(fmt.Sprintf("Could not load ~/.goed/bindings.toml %s", err.Error()))
+		bindings = defaultBindings
+	}
 }

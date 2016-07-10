@@ -1,7 +1,61 @@
 package event
 
-// TODO: temporary, read from config file
-var standard = map[string]EventType{
+type EventType string
+
+const (
+	Evt_None          EventType = "_"
+	EvtBackspace                = "backspace"
+	EvtBottom                   = "bottom"
+	EvtCloseWindow              = "close_window"
+	EvtCut                      = "cut"
+	EvtCopy                     = "copy"
+	EvtDelete                   = "delete"
+	EvtDeleteHome               = "delete_home"
+	EvtEnd                      = "end"
+	EvtHome                     = "home"
+	EvtEnter                    = "enter"
+	EvtMoveDown                 = "move_down"
+	EvtMoveLeft                 = "move_left"
+	EvtMoveRight                = "move_right"
+	EvtMoveUp                   = "move_up"
+	EvtNavDown                  = "nav_down"
+	EvtNavLeft                  = "nav_left"
+	EvtNavRight                 = "nav_right"
+	EvtNavUp                    = "nav_up"
+	EvtOpenInNewView            = "open_in_new_view"
+	EvtOpenInSameView           = "open_in_same_view"
+	EvtOpenTerm                 = "open_term"
+	EvtPaste                    = "paste"
+	EvtPageDown                 = "page_down"
+	EvtPageUp                   = "page_up"
+	EvtQuit                     = "quit"
+	EvtRedo                     = "redo"
+	EvtReload                   = "reload"
+	EvtSave                     = "save"
+	EvtScrollDown               = "scroll_down"
+	EvtScrollUp                 = "scroll_up"
+	EvtSelectMouse              = "select_mouse"
+	EvtSelectAll                = "select_all"
+	EvtSelectDown               = "select_down"
+	EvtSelectEnd                = "select_end"
+	EvtSelectHome               = "select_home"
+	EvtSelectLeft               = "select_left"
+	EvtSelectPageDown           = "select_page_down"
+	EvtSelectPageUp             = "select_page_up"
+	EvtSelectRight              = "select_right"
+	EvtSelectUp                 = "select_up"
+	EvtSelectWord               = "select_word"
+	EvtSetCursor                = "set_cursor"
+	EvtTab                      = "tab"
+	EvtToggleCmdbar             = "toggle_cmd_bar"
+	EvtTop                      = "top"
+	EvtUndo                     = "undo"
+	EvtWinResize                = "win_resize"
+)
+
+// Default bindings, if bindings.toml not found
+// mirrors res/default/bindings.toml
+var defaultBindings = map[string]EventType{
 	// mouse
 	"MC1":  "set_cursor",       // Mouse click left
 	"MC4":  "open_in_new_view", // Mouse Click right
@@ -69,56 +123,3 @@ var standard = map[string]EventType{
 	"super+down_arrow":  "nav_down",
 	"super+up_arrow":    "nav_up",
 }
-
-type EventType string
-
-const (
-	Evt_None          EventType = "_"
-	EvtBackspace                = "backspace"
-	EvtBottom                   = "bottom"
-	EvtCloseWindow              = "close_window"
-	EvtCut                      = "cut"
-	EvtCopy                     = "copy"
-	EvtDelete                   = "delete"
-	EvtDeleteHome               = "delete_home"
-	EvtEnd                      = "end"
-	EvtHome                     = "home"
-	EvtEnter                    = "enter"
-	EvtMoveDown                 = "move_down"
-	EvtMoveLeft                 = "move_left"
-	EvtMoveRight                = "move_right"
-	EvtMoveUp                   = "move_up"
-	EvtNavDown                  = "nav_down"
-	EvtNavLeft                  = "nav_left"
-	EvtNavRight                 = "nav_right"
-	EvtNavUp                    = "nav_up"
-	EvtOpenInNewView            = "open_in_new_view"
-	EvtOpenInSameView           = "open_in_same_view"
-	EvtOpenTerm                 = "open_term"
-	EvtPaste                    = "paste"
-	EvtPageDown                 = "page_down"
-	EvtPageUp                   = "page_up"
-	EvtQuit                     = "quit"
-	EvtRedo                     = "redo"
-	EvtReload                   = "reload"
-	EvtSave                     = "save"
-	EvtScrollDown               = "scroll_down"
-	EvtScrollUp                 = "scroll_up"
-	EvtSelectMouse              = "select_mouse"
-	EvtSelectAll                = "select_all"
-	EvtSelectDown               = "select_down"
-	EvtSelectEnd                = "select_end"
-	EvtSelectHome               = "select_home"
-	EvtSelectLeft               = "select_left"
-	EvtSelectPageDown           = "select_page_down"
-	EvtSelectPageUp             = "select_page_up"
-	EvtSelectRight              = "select_right"
-	EvtSelectUp                 = "select_up"
-	EvtSelectWord               = "select_word"
-	EvtSetCursor                = "set_cursor"
-	EvtTab                      = "tab"
-	EvtToggleCmdbar             = "toggle_cmd_bar"
-	EvtTop                      = "top"
-	EvtUndo                     = "undo"
-	EvtWinResize                = "win_resize" // no key/mouse
-)
