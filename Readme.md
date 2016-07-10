@@ -13,8 +13,12 @@ Early screenshot (6/2/2015):
 
 Of course typically I have a much large window and resolution such as [this screenshot](https://raw.githubusercontent.com/tcolar/goed/master/screenshot_hd.png).
 
-### Installation
-Note: Might distribute binaries once stable.
+### Download binaries
+
+You can [download prebuilt standalone binaries from bintray here](https://bintray.com/tcolar/Goed/Goed), built using [release.sh](release.sh).
+
+### Build from source
+If you rather build yourself :
 
 Prerequities: 
 - Have Go(Golang) installed
@@ -25,12 +29,12 @@ Prerequities:
 go get -u github.com/tcolar/goed/...
 ```
 
+### Running goed
+Note : goed **MUST** be in your $PATH !!
 
-To run it: 
 ```
-export PATH=$PATH:$GOPATH/bin #(goed **MUST** be in your $PATH)
+which goed        # must be found in your path
 goed <path(s)>
-
 ```
 
 Quick start:
