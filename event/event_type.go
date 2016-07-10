@@ -5,8 +5,8 @@ var standard = map[string]EventType{
 	// mouse
 	"MC1":  "set_cursor",       // Mouse click left
 	"MC4":  "open_in_new_view", // Mouse Click right
-	"MC8":  "move_up",          // Mouse wheel up
-	"MC16": "move_down",        // Mouse wheel down
+	"MC8":  "scroll_up",        // Mouse wheel up
+	"MC16": "scroll_down",      // Mouse wheel down
 	"MD1":  "select_mouse",     // Mouse Drag
 	"MDC1": "select_word",      // Mouse Double Click left
 
@@ -102,6 +102,8 @@ const (
 	EvtRedo                     = "redo"
 	EvtReload                   = "reload"
 	EvtSave                     = "save"
+	EvtScrollDown               = "scroll_down"
+	EvtScrollUp                 = "scroll_up"
 	EvtSelectMouse              = "select_mouse"
 	EvtSelectAll                = "select_all"
 	EvtSelectDown               = "select_down"

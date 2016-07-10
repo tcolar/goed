@@ -169,6 +169,10 @@ func handleEvent(e *Event, es *eventState) bool {
 		dirty = true
 	case EvtReload:
 		actions.Ar.ViewReload(curView)
+	case EvtScrollDown:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtScrollDown)
+	case EvtScrollUp:
+		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtScrollUp)
 	case EvtSave:
 		actions.Ar.ViewSave(curView)
 	case EvtSelectAll:
@@ -273,6 +277,10 @@ func handleTermEvent(vid int64, e *Event) {
 	case e.Type == EvtSelectWord:
 		actions.Ar.ViewSelectWord(vid, ln, col)
 		cs = false
+	case e.Type == EvtScrollDown:
+		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtScrollDown)
+	case e.Type == EvtScrollUp:
+		actions.Ar.ViewCursorMvmt(vid, core.CursorMvmtScrollUp)
 	case e.Type == EvtCopy && len(actions.Ar.ViewSelections(vid)) > 0:
 		// copy if copy event and there is a selection
 		// if no selection, it may be Ctrl+C which is also used to terminate a command

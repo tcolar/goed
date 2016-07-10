@@ -493,6 +493,10 @@ func (v *View) CursorMvmt(mvmt core.CursorMvmt) {
 			c = v.lineCols(slice, v.LineCount()-1) + 1 - col
 		}
 		v.MoveCursor(v.LineCount()-1-v.CurLine(), c)
+	case core.CursorMvmtScrollDown:
+		v.MoveCursor(7, 0)
+	case core.CursorMvmtScrollUp:
+		v.MoveCursor(-7, 0)
 	}
 }
 
