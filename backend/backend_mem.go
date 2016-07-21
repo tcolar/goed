@@ -11,6 +11,8 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+var _ core.Backend = (*MemBackend)(nil)
+
 // MemBackend is a Backend implementation backed by an in memory bufer.
 type MemBackend struct {
 	text   [][]rune

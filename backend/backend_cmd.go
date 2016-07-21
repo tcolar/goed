@@ -15,6 +15,8 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+var _ core.Backend = (*BackendCmd)(nil)
+
 // BackendCmd is used to run a command using a specific backend
 // whose content will be the the output of the command. (VT100 support)
 type BackendCmd struct {

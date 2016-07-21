@@ -9,6 +9,8 @@ import (
 	termbox "github.com/tcolar/termbox-go"
 )
 
+var _ core.Term = (*TermBox)(nil)
+
 // Termbox : Term implementation using termbox
 type TermBox struct {
 }
@@ -137,6 +139,8 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		es.MouseDown(event.MouseWheelDown, e.MouseY, e.MouseX)
 	case termbox.MouseScrollUp:
 		es.MouseDown(event.MouseWheelUp, e.MouseY, e.MouseX)
+	case termbox.KeyEsc:
+		es.KeyDown(event.KeyEscape)
 	case termbox.KeyBackspace2:
 		es.KeyDown(event.KeyBackspace)
 	case termbox.KeyTab:
@@ -193,8 +197,6 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 	// Termbox list of supported ctrl characters is weird ....
 	case termbox.KeyCtrl2:
 		ctrl("2")
-	case termbox.KeyCtrl3:
-		ctrl("3")
 	case termbox.KeyCtrl4:
 		ctrl("4")
 	case termbox.KeyCtrl5:
@@ -271,6 +273,9 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		//	ctrl("/")
 		//case termbox.KeyCtrlUnderscore:
 		//	ctrl("_")
+		//case termbox.KeyCtrl3:
+		//	ctrl("3")
+
 	}
 	log.Printf("es : %#v", es)
 }

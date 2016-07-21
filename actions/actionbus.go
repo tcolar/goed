@@ -6,6 +6,8 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+var _ core.ActionDispatcher = (*actionBus)(nil)
+
 type actionBus struct {
 	actionChan chan (core.Action)
 	quitc      chan (struct{})

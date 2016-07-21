@@ -13,6 +13,8 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+var _ core.Backend = (*FileBackend)(nil)
+
 // FileBackend is a backend implemetation that uses a plain unbuffered file as
 // its buffer.
 type FileBackend struct {

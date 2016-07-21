@@ -21,6 +21,8 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
+var _ core.Term = (*GuiTerm)(nil)
+
 var palette = xtermPalette()
 
 // TODO: font config
