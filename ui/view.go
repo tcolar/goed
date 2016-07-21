@@ -12,6 +12,8 @@ import (
 
 const tabSize = 4
 
+var _ core.Viewable = (*View)(nil)
+
 // View represents an individual view pane(file) in the editor.
 type View struct {
 	Widget

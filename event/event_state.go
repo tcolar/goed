@@ -24,6 +24,7 @@ type eventState struct {
 	lastClickX, lastClickY int
 	lastClickBtn           int
 	lastClick              int64 // timestamp
+	cmdbarOn               bool
 }
 
 func NewEvent() *Event {

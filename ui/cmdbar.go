@@ -9,12 +9,16 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
+var _ core.Commander = (*Cmdbar)(nil)
+
 // Cmdbar is the CommandBar widget
-// TODO: needs to be decoupled from it's actions
+// It's sort of a temporary crutch as of now.
 type Cmdbar struct {
 	Widget
-	Cmd     []rune
-	History [][]rune // TODO : cmd history
+	cmd        []rune
+	history    [][]rune
+	cursorX    int
+	historyPos int
 }
 
 func (c *Cmdbar) Render() {
@@ -22,27 +26,90 @@ func (c *Cmdbar) Render() {
 	t := ed.Theme()
 	ed.TermFB(t.Cmdbar.Fg, t.Cmdbar.Bg)
 	ed.TermFill(t.Cmdbar.Rune, c.y1, c.x1, c.y2, c.x2)
+	fg := t.CmdbarText
+	bg := t.Cmdbar.Bg
 	if ed.CmdOn() {
-		ed.TermFB(t.CmdbarTextOn, t.Cmdbar.Bg)
-		ed.TermStr(c.y1, c.x1, fmt.Sprintf("> %s", string(c.Cmd)))
-	} else {
-		ed.TermFB(t.CmdbarText, t.Cmdbar.Bg)
-		ed.TermStr(c.y1, c.x1, fmt.Sprintf("> %s", string(c.Cmd)))
+		fg = t.CmdbarTextOn
+	}
+	ed.TermFB(fg, bg)
+	for i, r := range "> " + string(c.cmd) + " " {
+		if ed.CmdOn() && i == c.cursorX+2 {
+			ed.TermFB(t.FgCursor, t.BgCursor)
+		}
+		ed.TermChar(c.y1, c.x1+i, r)
+		if ed.CmdOn() && i == c.cursorX+2 {
+			ed.TermFB(fg, bg)
+		}
 	}
 	ed.TermFB(t.CmdbarText, t.Cmdbar.Bg)
 	ed.TermStr(c.y1, c.x2-11, fmt.Sprintf("|GoEd %s", core.Version))
 }
 
 func (e *Editor) CmdbarToggle() {
-	if !e.cmdOn {
-		e.Cmdbar.Cmd = []rune{}
-	}
 	e.cmdOn = !e.cmdOn
+	if e.cmdOn {
+		e.Cmdbar.historyPos = 0
+	}
 }
 
-func (c *Cmdbar) RunCmd() {
-	// TODO: This is temporary until I create real fs based events & actions
-	s := string(c.Cmd)
+func (c *Cmdbar) Backspace() {
+	if c.cursorX <= 0 {
+		return
+	}
+	c.cmd = append(c.cmd[:c.cursorX-1], c.cmd[c.cursorX:]...)
+	c.cursorX--
+}
+
+func (c *Cmdbar) Clear() {
+	c.cmd = []rune{}
+	c.cursorX = 0
+}
+
+func (c *Cmdbar) Delete() {
+	if c.cursorX >= len(c.cmd) {
+		return
+	}
+	if c.cursorX == len(c.cmd)-1 {
+		c.cmd = c.cmd[:c.cursorX+1]
+	} else {
+		c.cmd = append(c.cmd[:c.cursorX+1], c.cmd[c.cursorX+2:]...)
+	}
+	c.cursorX--
+}
+
+func (c *Cmdbar) Insert(s string) {
+	c.cmd = append(c.cmd[:c.cursorX], append([]rune(s), c.cmd[c.cursorX:]...)...)
+	c.cursorX += len(s)
+}
+
+func (c *Cmdbar) CursorMvmt(m core.CursorMvmt) {
+	switch m {
+	case core.CursorMvmtLeft:
+		if c.cursorX > 0 {
+			c.cursorX--
+		}
+	case core.CursorMvmtRight:
+		if c.cursorX < len(c.cmd) {
+			c.cursorX++
+		}
+	case core.CursorMvmtUp:
+		if c.historyPos >= len(c.history)-1 {
+			return
+		}
+		c.historyPos++
+		c.cmd = c.history[len(c.history)-c.historyPos]
+	case core.CursorMvmtDown:
+		if c.historyPos >= 1 {
+			return
+		}
+		c.historyPos--
+		c.cmd = c.history[len(c.history)-c.historyPos]
+	}
+}
+
+func (c *Cmdbar) NewLine() { // run the command
+	// TODO: Temporary hard coded commands until I create real fs based events & actions
+	s := string(c.cmd)
 	parts := strings.Fields(s)
 	if len(parts) < 1 {
 		return
@@ -55,19 +122,24 @@ func (c *Cmdbar) RunCmd() {
 	case ":", "line":
 		c.line(args)
 	case "/", "search":
-		if len(c.Cmd) < 2 {
+		if len(c.cmd) < 2 {
 			break
 		}
-		query := string(c.Cmd[2:])
+		query := string(c.cmd[2:])
 		c.Search(query)
 	default:
 		exec(parts, false)
 	}
-	if err == nil {
-		actions.Ar.CmdbarEnable(false)
-	} else {
+
+	c.history = append(c.history, c.cmd)
+
+	if err != nil {
 		actions.Ar.EdSetStatusErr(err.Error())
+	} else {
+		actions.Ar.CmdbarClear()
+		actions.Ar.CmdbarEnable(false)
 	}
+	actions.Ar.EdRender()
 }
 
 func (c *Cmdbar) open(args []string) error {
@@ -105,91 +177,5 @@ func (c *Cmdbar) line(args []string) {
 }
 
 func (c *Cmdbar) Search(query string) {
-	exec([]string{"grep", "-rn", query}, false)
+	exec([]string{"grep", "-rni", "--color", query, "."}, false)
 }
-
-/*
-func (c *Cmdbar) viPaste(args []string) {
-	ed := core.Ed.(*Editor)
-	v := ed.curView
-	actions.ViewMoveCursorRollAction(v.Id(), 1, -v.CurCol())
-	l := v.CurLine()
-	v.Paste()
-	x, y := v.CurCol(), v.CurLine()
-	v.Insert(y, x, "\n")
-	actions.ViewMoveCursorRollAction(v.Id(), l-y, -x)
-	v.SetDirty(true)
-}
-
-func (c *Cmdbar) viYank(args []string) error {
-	ed := core.Ed.(*Editor)
-	v := ed.curView
-	if len(args) == 0 {
-		return fmt.Errorf("Expected an argument")
-	}
-	nb, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("Expected a numericargument")
-	}
-	nb--
-	s := &core.Selection{
-		LineFrom: v.CurLine(),
-		LineTo:   v.CurLine() + nb,
-		ColTo:    -1,
-	}
-	ed.curView.SelectionCopy(s)
-	return nil
-}
-
-func (c *Cmdbar) save(args []string) {
-	ed := core.Ed.(*Editor)
-	if ed.CurView != nil {
-		ed.curView.Save()
-	}
-}
-
-func (c *Cmdbar) newCol(args []string) {
-	// nc : newblank col
-	// nc [file], new col, open file
-	// nc 40 -> new col 40% width
-	// nc 40 [file] -> new col 40% width, open file
-	loc := ""
-	pct := 50
-	if len(args) > 0 {
-		p, err := strconv.Atoi(args[0])
-		if err == nil {
-			pct = p
-			if len(args) > 1 {
-				loc = strings.Join(args[1:], " ")
-			}
-		} else {
-			loc = strings.Join(args, " ")
-		}
-	}
-	ed := core.Ed.(*Editor)
-	v := ed.AddCol(ed.CurCol, float64(pct)/100.0).Views[0]
-	if len(loc) > 0 {
-		ed.Open(loc, v, "")
-	}
-}
-
-func (c *Cmdbar) newView(args []string) {
-	loc := ""
-	pct := 50
-	if len(args) > 0 {
-		p, err := strconv.Atoi(args[0])
-		if err == nil {
-			pct = p
-			if len(args) > 1 {
-				loc = strings.Join(args[1:], " ")
-			}
-		} else {
-			loc = strings.Join(args, " ")
-		}
-	}
-	ed := core.Ed.(*Editor)
-	v := ed.AddView(ed.curView, float64(pct)/100.0)
-	if len(loc) > 0 {
-		ed.Open(loc, v, "")
-	}
-}*/

@@ -2,6 +2,7 @@ package core
 
 // Editable provides editor features entry poins.
 type Editable interface {
+	Commandbar() Commander
 	CmdbarToggle()
 	Config() Config
 	CurViewId() int64
@@ -40,8 +41,8 @@ type Editable interface {
 	ViewActivate(v int64)
 	ViewAt(ln, col int) int64
 	// ViewByLoc finds if there is an existing view for the given file (loc)
-	ViewByLoc(loc string) int64
 	ViewById(id int64) Viewable
+	ViewByLoc(loc string) int64
 	ViewIndex(id int64) (row, col int) // column, row **index** in the editor UI
 	// Move a view
 	ViewMove(y1, x1, y2, x2 int)

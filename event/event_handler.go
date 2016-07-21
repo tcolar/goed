@@ -60,8 +60,16 @@ func handleEvent(e *Event, es *eventState) bool {
 	if e.Type == Evt_None {
 		e.parseType()
 	}
+
 	log.Printf("Parsed evt: %#v", e)
 	et := e.Type
+
+	es.cmdbarOn = actions.Ar.CmdbarEnabled()
+	if es.cmdbarOn || (et == EvtSetCursor && e.MouseY < 1) {
+		handleCmdbarEvent(e, es)
+		return false
+	}
+
 	curView := actions.Ar.EdCurView()
 	actions.Ar.ViewAutoScroll(curView, 0, 0)
 
@@ -227,12 +235,17 @@ func handleEvent(e *Event, es *eventState) bool {
 		actions.Ar.ViewSelectWord(curView, ln, col)
 		cs = false
 	case EvtSetCursor:
+		if es.cmdbarOn {
+			actions.Ar.CmdbarEnable(false)
+			es.cmdbarOn = false
+		}
 		actions.Ar.ViewSetCursorPos(curView, ln, col)
 		actions.Ar.EdActivateView(curView)
 	case EvtTab:
 		actions.Ar.ViewInsertCur(curView, "\t")
 		dirty = true
 	case EvtToggleCmdbar:
+		es.cmdbarOn = !es.cmdbarOn
 		actions.Ar.CmdbarToggle()
 	case EvtTop:
 		actions.Ar.ViewCursorMvmt(curView, core.CursorMvmtTop)
@@ -243,7 +256,6 @@ func handleEvent(e *Event, es *eventState) bool {
 		actions.Ar.ViewRender(curView)
 	case Evt_None:
 		if len(e.Glyph) > 0 {
-			// "plain" text
 			actions.Ar.ViewInsertCur(curView, e.Glyph)
 			dirty = true
 		} else {
@@ -367,7 +379,47 @@ func handleTermEvent(vid int64, e *Event) {
 		actions.Ar.ViewClearSelections(vid)
 	}
 	actions.Ar.EdRender()
+}
 
+func handleCmdbarEvent(e *Event, es *eventState) {
+	switch e.Type {
+	case EvtToggleCmdbar:
+		es.cmdbarOn = !es.cmdbarOn
+		actions.Ar.CmdbarToggle()
+	case EvtSetCursor:
+		if e.MouseY < 1 {
+			if !es.cmdbarOn {
+				es.cmdbarOn = true
+				actions.Ar.CmdbarEnable(true)
+			}
+		} else {
+			if es.cmdbarOn {
+				es.cmdbarOn = false
+				actions.Ar.CmdbarEnable(false)
+			}
+		}
+	case EvtBackspace:
+		actions.Ar.CmdbarBackspace()
+	case EvtDelete:
+		actions.Ar.CmdbarDelete()
+	case EvtDeleteHome:
+		actions.Ar.CmdbarClear()
+	case EvtEnter:
+		actions.Ar.CmdbarNewLine()
+	case EvtMoveDown:
+		actions.Ar.CmdbarCursorMvmt(core.CursorMvmtDown)
+	case EvtMoveUp:
+		actions.Ar.CmdbarCursorMvmt(core.CursorMvmtUp)
+	case EvtMoveLeft:
+		actions.Ar.CmdbarCursorMvmt(core.CursorMvmtLeft)
+	case EvtMoveRight:
+		actions.Ar.CmdbarCursorMvmt(core.CursorMvmtRight)
+	default:
+		if len(e.Glyph) > 0 {
+			actions.Ar.CmdbarInsert(e.Glyph)
+		}
+	}
+	actions.Ar.EdRender()
 }
 
 func stretchSelection(vid int64, mvmt core.CursorMvmt) {

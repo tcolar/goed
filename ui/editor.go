@@ -15,6 +15,8 @@ import (
 	"github.com/tcolar/goed/event"
 )
 
+var _ core.Editable = (*Editor)(nil)
+
 // Editor is goed's main Editor pane (singleton)
 type Editor struct {
 	Cmdbar    *Cmdbar
@@ -55,6 +57,10 @@ func NewMockEditor() *Editor {
 
 func (e *Editor) Dispatch(action core.Action) {
 	core.Bus.Dispatch(action)
+}
+
+func (e *Editor) Commandbar() core.Commander {
+	return e.Cmdbar
 }
 
 func (e *Editor) Quit() {
