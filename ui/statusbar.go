@@ -35,11 +35,11 @@ func (s *Statusbar) RenderPos() {
 	if vid < 0 {
 		return
 	}
-	v := e.ViewById(vid).(*View)
+	v := e.ViewById(vid)
 	if v == nil || v.Backend() == nil {
 		return
 	}
-	col, ln := v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()), v.CurLine()
+	ln, col := v.CurLine(), v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol())
 	pos := fmt.Sprintf(" %d:%d [%d]", ln+1, col+1, v.LineCount())
 	e.TermStr(s.y1, s.x2-len(pos), pos)
 }

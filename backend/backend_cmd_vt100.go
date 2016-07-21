@@ -13,7 +13,7 @@ import (
 func (b *backendAppender) vt100(data []byte) (int, error) {
 	// handle VT100 codes
 	from := 0
-	log.Printf("VT100 raw data: %v\n", data)
+	log.Printf("VT100 raw data: %v %q\n", data, string(data))
 	for i := 0; i < len(data); i++ {
 		if b.consumeVt100(data, from, &i) {
 			from = i
@@ -32,7 +32,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// bell
 	if b.consume(data, i, 7) {
 		b.flush(data[from:start])
-		actions.EdSetStatusErr("Beep !!")
+		actions.Ar.EdSetStatusErr("Beep !!")
 		return true
 	}
 	*i = start
@@ -59,7 +59,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	*i = start
 	if b.consume(data, i, 127) {
 		b.flush(data[from:start])
-		actions.ViewDeleteCur(b.viewId)
+		actions.Ar.ViewDeleteCur(b.viewId)
 		return true
 	}
 	*i = start // \r\n
@@ -102,16 +102,25 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	}
 
 	// set title (xterm-ish)
+	// http://www.xfree86.org/4.7.0/ctlseqs.html
 	*i = start
 	if b.consume(data, i, 27) && b.consume(data, i, 93) &&
-		b.consume(data, i, '0') && b.consume(data, i, ';') {
+		// 0 is (icon&window title), 2 is window only
+		(b.consume(data, i, '0') || b.consume(data, i, '2')) &&
+		b.consume(data, i, ';') {
 		b.consumeUntil(data, i, 7)
-		actions.ViewSetTitle(b.viewId, string(data[start+4:*i]))
+		actions.Ar.ViewSetTitle(b.viewId, string(data[start+4:*i]))
+		return true
+	}
+
+	// Other unhandled xterm codes -> ignore
+	*i = start
+	if b.consume(data, i, 27) && b.consume(data, i, 93) {
+		b.consumeUntil(data, i, 7)
 		return true
 	}
 
 	// ###### Start "real" VT100 codes
-
 	*i = start
 	if !(b.consume(data, i, 27) && b.consume(data, i, 91)) { // ^[
 		return false

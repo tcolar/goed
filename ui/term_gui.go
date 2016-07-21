@@ -1,50 +1,78 @@
 package ui
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"io/ioutil"
 	"log"
 	"os"
-	"sync"
+	"time"
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	wde "github.com/skelterjohn/go.wde"
 	_ "github.com/skelterjohn/go.wde/init"
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
-	termbox "github.com/tcolar/termbox-go"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 )
 
+var _ core.Term = (*GuiTerm)(nil)
+
 var palette = xtermPalette()
 
-// TODO: font config, provide a default ??
-var fontPath = "test_data/Hack-Regular.ttf"
-var fontSize = 12
+// TODO: font config
+var fontPath = "fonts/LiberationMono-Regular.ttf"
 
+// backup fonts
+var noto *truetype.Font
+var notoSymbols *truetype.Font
+
+var fontSize = 10
+var dpi = 96
+
+// GuiTerm is a very minimal text terminal emulation GUI.
 type GuiTerm struct {
-	w, h         int
-	text         [][]char
-	textLock     sync.Mutex
-	win          wde.Window
-	font         *truetype.Font
-	charW, charH int // size of characters
-	face         font.Face
-	ctx          *freetype.Context
-	rgba         *image.RGBA
+	w, h int
+	text [][]char
+	//	textLock         sync.RWMutex
+	win              wde.Window
+	font             *truetype.Font
+	charW, charH     int // size of characters
+	face             font.Face
+	ctx              *freetype.Context
+	rgba             *image.RGBA
+	cursorX, cursorY int
 }
 
 type char struct {
 	rune
 	fg, bg core.Style
+	fresh  bool
+}
+
+func (c char) equals(c2 char) bool {
+	if c.rune != c2.rune {
+		return false
+	}
+	if c.fg != c2.fg {
+		return false
+	}
+	if c.bg != c2.bg {
+		return false
+	}
+	return true
 }
 
 func NewGuiTerm(h, w int) *GuiTerm {
-	win, err := wde.NewWindow(1400, 800) // TODO: Window size
+	noto = parseFont("fonts/NotoSans-Regular.ttf")
+	notoSymbols = parseFont("fonts/NotoSansSymbols-Regular.ttf")
+
+	win, err := wde.NewWindow(h, w)
 	win.SetTitle("GoEd")
 	if err != nil {
 		panic(err)
@@ -54,83 +82,125 @@ func NewGuiTerm(h, w int) *GuiTerm {
 		win: win,
 	}
 
-	t.applyFont(fontPath, fontSize)
-
 	t.text = [][]char{}
 
-	for i := 0; i != t.h; i++ {
-		t.text = append(t.text, make([]char, t.w))
-	}
+	t.applyFont(fontPath, fontSize)
 
 	return t
 }
 
 func (t *GuiTerm) applyFont(fontPath string, fontSize int) {
-	fontBytes, err := ioutil.ReadFile(fontPath)
-	if err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
-	t.font, err = freetype.ParseFont(fontBytes)
-	if err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
+	t.font = parseFont(fontPath)
 	opts := truetype.Options{}
 	opts.Size = float64(fontSize)
 	t.face = truetype.NewFace(t.font, &opts)
 	bounds, _, _ := t.face.GlyphBounds('░')
-	t.charW = int((bounds.Max.X-bounds.Min.X)>>6) + 2
-	t.charH = int((bounds.Max.Y-bounds.Min.Y)>>6) + 2
-	ww, wh := t.win.Size()
+	t.charW = int((bounds.Max.X-bounds.Min.X)>>6) + dpi/32
+	t.charH = int((bounds.Max.Y-bounds.Min.Y)>>6) + dpi/16
+
+	t.ctx = freetype.NewContext()
+	t.ctx.SetDPI(float64(dpi))
+	t.ctx.SetFont(t.font)
+	t.ctx.SetFontSize(float64(fontSize))
+	t.ctx.SetHinting(font.HintingFull)
+
+	t.resize(t.win.Size())
+}
+
+func (t *GuiTerm) resize(ww, wh int) {
+	w, h := t.w, t.h
 	t.w = ww / t.charW
 	t.h = wh / t.charH
-
+	for i := 0; i < h; i++ {
+		if t.w <= w {
+			t.text[i] = t.text[i][:t.w] // truncate lines if needed
+		} else {
+			// expand lines if needed
+			t.text[i] = append(t.text[i], make([]char, t.w-w)...)
+		}
+	}
+	// extra lines if needed
+	for i := h; i < t.h; i++ {
+		t.text = append(t.text, make([]char, t.w))
+	}
+	// truncate number of lines if needed
+	t.text = t.text[:t.h]
+	// Update image/bounds
 	t.rgba = image.NewRGBA(image.Rect(0, 0, ww, wh))
+	t.ctx.SetClip(t.rgba.Bounds())
+	t.ctx.SetDst(t.rgba)
+	//fmt.Printf("%v %v %v\n", t.w, t.h, t.rgba.Bounds())
+}
 
-	c := freetype.NewContext()
-	c.SetDPI(72)
-	c.SetFont(t.font)
-	c.SetFontSize(float64(fontSize))
-	c.SetClip(t.rgba.Bounds())
-	c.SetDst(t.rgba)
-	c.SetHinting(font.HintingFull)
-	t.ctx = c
+func parseFont(fontPath string) *truetype.Font {
+	fontBytes, err := ioutil.ReadFile(fontPath)
+	if err != nil {
+		fmt.Println(err)
+		log.Println(err)
+		os.Exit(1)
+	}
+	font, err := freetype.ParseFont(fontBytes)
+	if err != nil {
+		fmt.Println(err)
+		log.Println(err)
+		os.Exit(1)
+	}
+	return font
 }
 
 func (t *GuiTerm) Init() error {
 	t.win.Show()
-	go t.listen()
 	return nil
 }
 
 func (t *GuiTerm) Close() {
 	t.win.Close()
+	wde.Stop()
 }
 
 func (t *GuiTerm) Clear(fg, bg uint16) {
-	c := image.NewUniform(palette[bg&255])
-	x, y := t.win.Size()
-	draw.Draw(t.win.Screen(), image.Rect(0, 0, x, y), c, image.ZP, draw.Src)
+	zero := rune(0)
+	for y, ln := range t.text {
+		for x, _ := range ln {
+			if t.text[y][x].rune != zero {
+				t.text[y][x].rune = zero
+				t.text[y][x].fresh = false
+			}
+		}
+	}
 }
 
 func (t *GuiTerm) Flush() {
 	t.paint()
 }
 
-func (t *GuiTerm) SetCursor(y, x int) {
+func (t *GuiTerm) SetCursor(x, y int) {
 	// todo : move cursor
+	px, py := t.cursorX, t.cursorY
+	t.cursorX = x
+	t.cursorY = y
+
+	t.paintChar(py, px)
+	t.paintChar(y, x)
+
+	ny, nx := y*t.charH, x*t.charW
+	r := image.Rect(nx, ny, nx+t.charW, ny+t.charH)
+	i := t.rgba.SubImage(r).(*image.RGBA)
+	t.win.Screen().CopyRGBA(i, r)
+	t.win.FlushImage()
 }
 
 func (t *GuiTerm) Char(y, x int, c rune, fg, bg core.Style) {
-	t.textLock.Lock()
-	defer t.textLock.Unlock()
-	if x >= 0 && y >= 0 && y < len(t.text) && x < len(t.text[y]) {
-		t.text[y][x] = char{
-			rune: c,
-			fg:   fg,
-			bg:   bg,
-		}
+	if x < 0 || y < 0 || y >= len(t.text) || x >= len(t.text[y]) {
+		return
+	}
+	ch := char{
+		rune: c,
+		fg:   fg,
+		bg:   bg,
+	}
+	if !ch.equals(t.text[y][x]) {
+		t.text[y][x] = ch
 	}
 }
 
@@ -141,8 +211,6 @@ func (t *GuiTerm) Size() (h, w int) {
 
 // for testing
 func (t *GuiTerm) CharAt(y, x int) rune {
-	t.textLock.Lock()
-	defer t.textLock.Unlock()
 	if x < 0 || y < 0 {
 		panic("CharAt out of bounds")
 	}
@@ -152,72 +220,122 @@ func (t *GuiTerm) CharAt(y, x int) rune {
 	return t.text[y][x].rune
 }
 
-func (t *GuiTerm) SetMouseMode(m termbox.MouseMode) { // N/A
-}
-
-func (t *GuiTerm) SetInputMode(m termbox.InputMode) { // N/A
-}
-
 func (t *GuiTerm) SetExtendedColors(b bool) { // N/A
 }
 
+func (t *GuiTerm) Listen() {
+	go t.listen()
+	wde.Run()
+}
+
 func (t *GuiTerm) listen() {
-	evtState := event.EventState{}
+	evtState := event.NewEvent()
+	dragY, dragX := 0, 0
 	for ev := range t.win.EventChan() {
+		evtState.Type = event.Evt_None
+		evtState.Glyph = ""
 		switch e := ev.(type) {
 		case wde.ResizeEvent:
-			// TODO: resize
+			t.resize(e.Width, e.Height)
+			actions.Ar.EdResize(t.h, t.w)
+			evtState.Type = event.EvtWinResize
 		case wde.CloseEvent:
-			os.Exit(0) //TODO : proper quit event
+			evtState.Type = event.EvtQuit
+			return
 		case wde.MouseDownEvent:
-			evtState.MouseDown(int(e.Which), e.Where.Y, e.Where.X)
+			evtState.MouseDown(int(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
 		case wde.MouseUpEvent:
-			evtState.MouseUp(int(e.Which), e.Where.Y, e.Where.X)
+			evtState.MouseUp(int(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
 		case wde.MouseDraggedEvent:
-			evtState.MouseDown(int(e.Which), e.Where.Y, e.Where.X)
+			// only send drag event if moved to new text cell
+			y, x := e.Where.Y/t.charH, e.Where.X/t.charW
+			if y == dragY && x == dragX {
+				continue
+			}
+			evtState.MouseDown(int(e.Which), y, x)
+			dragX = x
+			dragY = y
+		case wde.KeyTypedEvent:
+			evtState.Glyph = e.Glyph
 		case wde.KeyDownEvent:
 			evtState.KeyDown(e.Key)
+			continue
 		case wde.KeyUpEvent:
 			evtState.KeyUp(e.Key)
+			continue
 		default:
 			continue
 		}
-		event.Queue(evtState)
+		event.Queue(*evtState)
 	}
 }
 
 func (t *GuiTerm) paint() {
-	c := t.ctx
-	w := fixed.Int26_6(t.charW << 6)
-	h := fixed.Int26_6(t.charH << 6)
-	pt := freetype.Pt(1, t.charH-4)
+	start := time.Now()
 	for y, ln := range t.text {
-		for x, r := range ln {
-			if r.rune == 0 {
-				r.rune = ' '
-				r.bg = core.Ed.Theme().Bg
-			}
-			// TODO: attributes (bold)
-			bg := image.NewUniform(palette[r.bg.Uint16()&255])
-			fg := image.NewUniform(palette[r.fg.Uint16()&255])
-			c.SetSrc(fg)
-			//bounds, awidth, _ := t.face.GlyphBounds(r.rune)
-			//fmt.Printf("%s %v | %v\n",
-			//	string(r.rune),
-			//	bounds,
-			//	awidth)
-			rx := t.charW * x
-			ry := t.charH * y
-			rect := image.Rect(rx, ry, rx+t.charW, ry+t.charH)
-			draw.Draw(t.rgba, rect, bg, image.ZP, draw.Src)
-			c.DrawString(string(r.rune), pt)
-			pt.X += w
+		for x, _ := range ln {
+			t.paintChar(y, x)
 		}
-		pt.X = 1
-		pt.Y += h
 	}
+	fmt.Printf("paint1 %v\n", time.Now().Sub(start))
 	t.win.Screen().CopyRGBA(t.rgba, t.rgba.Bounds())
 	t.win.FlushImage()
+	fmt.Printf("paint2 %v\n", time.Now().Sub(start))
+
+}
+
+func (t *GuiTerm) paintChar(y, x int) {
+	if y >= len(t.text) || x >= len(t.text[y]) {
+		return
+	}
+	r := t.text[y][x]
+	//if r.fresh {
+	//	return
+	//}
+	//t.text[y][x].fresh = true
+	//fmt.Printf("%d,%d -> %s\n", y, x, string(r.rune))
+
+	pt := freetype.Pt(1+x*t.charW, t.charH-4+y*t.charH)
+	if r.rune < 32 {
+		r.rune = ' '
+		r.bg = core.Ed.Theme().Bg
+	}
+	// TODO: attributes (bold)
+	bg := image.NewUniform(palette[r.bg.Uint16()&255])
+	fg := image.NewUniform(palette[r.fg.Uint16()&255])
+	// cursor location gets inverted colors
+	if y == t.cursorY && x == t.cursorX {
+		bg, fg = fg, bg
+	}
+	t.ctx.SetSrc(fg)
+	rx := t.charW * x
+	ry := t.charH * y
+	rect := image.Rect(rx, ry, rx+t.charW, ry+t.charH)
+	draw.Draw(t.rgba, rect, bg, image.ZP, draw.Src)
+	t.drawRune(r.rune, pt)
+}
+
+// Draw the rune, if the user-picked font does not provide a glyph for the given
+// rune try to fallback to noto / notoSymbols
+func (t *GuiTerm) drawRune(r rune, pt fixed.Point26_6) {
+	if t.font.Index(r) != 0 {
+		t.ctx.DrawString(string(r), pt)
+		return
+	}
+	font := t.font
+	if font.Index(r) != 0 {
+	} else if noto.Index(r) != 0 {
+		t.ctx.SetFont(noto)
+		t.ctx.SetFontSize(float64(fontSize - 3)) // "fat" font
+
+	} else if notoSymbols.Index(r) != 0 {
+		t.ctx.SetFont(notoSymbols)
+		t.ctx.SetFontSize(float64(fontSize - 3))
+	}
+	t.ctx.DrawString(string(r), pt)
+	// restore font
+	t.ctx.SetFontSize(float64(fontSize))
+	t.ctx.SetFont(font)
 }
 
 // Palette based of what's used in gnome-terminal / xterm-256

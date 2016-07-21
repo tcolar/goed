@@ -35,24 +35,29 @@ type Viewable interface {
 	// Reset reinitializes the view to it's startup state.
 	Reset()
 	Save() // Save from buffer to src
+	ScrollPos() (ln, col int)
 	SetBackend(backend Backend)
 	SetDirty(bool)
 	SelectAll()
+	SelectWord(ln, col int)
 	Selections() *[]Selection
 	// SetAutoScroll is used to make the view scroll contonuously in y,x increments
 	// keeps scrolling until x and y are set to 0.
 	SetAutoScroll(y, x int, isSelect bool)
+	SetCursorPos(y, x int)
+	SetScrollPos(y, x int)
+	SetTitle(title string)
 	SetViewType(t ViewType)
+	SetVtCols(cols int)
 	// Sets the view work directory, commands and "open" actions will be relative
 	// to this path.
 	SetWorkDir(dir string)
-	SetTitle(title string)
-	SetVtCols(cols int)
-	// Slice returns a view's text subset (matrix)
+	// Slice returns a view's text subset (rectangle)
 	Slice() *Slice
 	StretchSelection(prevl, prevc, ln, c int)
 	SyncSlice()
-	Terminated() bool // view is nil or marked for termination
 	Title() string
+	Text(ln1, col1, ln2, col2 int) [][]rune
+	Type() ViewType
 	WorkDir() string
 }

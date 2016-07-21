@@ -33,6 +33,9 @@ func (v *View) InsertCur(s string) {
 
 // Insert inserts text at the given text location
 func (v *View) Insert(line, col int, s string, undoable bool) {
+	selections := v.Selections()
+	cl, cc := v.CurTextPos()
+	v.SetDirty(true)
 	e := core.Ed
 	if s == "\n" {
 		if col >= v.LineLen(v.slice, line) {
@@ -46,29 +49,29 @@ func (v *View) Insert(line, col int, s string, undoable bool) {
 	}
 
 	// move the cursor to after insertion
-	c := v.lineColsTo(v.slice, line, col)
 	b := []byte(s)
-	offy := bytes.Count(b, core.LineSep)
+	endLn := line + bytes.Count(b, core.LineSep)
 	idx := bytes.LastIndex(b, core.LineSep) + 1
-	lnLen := len(b[idx:])
-	offx := 0
-	if offy > 0 {
-		offx -= c
-	}
-	offx += v.strSize(string(b[idx:]))
-	if offy == 0 {
-		lnLen += col
+	endCol := len(b[idx:])
+	if line == endLn {
+		endCol += col
 	}
 
 	if undoable {
 		actions.UndoAdd(
 			v.Id(),
-			actions.NewViewInsertAction(v.Id(), line, col, s, false),
-			actions.NewViewDeleteAction(v.Id(), line, col, line+offy, lnLen-1, false))
+			[]core.Action{
+				actions.NewViewInsertAction(v.Id(), line, col, s, false),
+				actions.NewSetCursorAction(v.Id(), endLn, endCol)},
+			append([]core.Action{
+				actions.NewViewDeleteAction(v.Id(), line, col, endLn, endCol-1, false),
+				actions.NewSetCursorAction(v.Id(), cl, cc)},
+				actions.NewSetSelectionsActions(v.Id(), selections)...),
+		)
 	}
 	v.Render()
 	e.TermFlush()
-	v.MoveCursor(line+offy-v.CurLine(), c+offx-v.CurCol())
+	v.SetCursorPos(endLn, endCol)
 }
 
 func (v *View) lineIndent(line int) []rune {
@@ -102,6 +105,9 @@ func (v *View) Reload() {
 
 // Delete removes characters at the given text location
 func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
+	cl, cc := v.CurTextPos()
+	selections := v.Selections()
+	v.SetDirty(true)
 	s := core.NewSelection(line1, col1, line2, col2)
 	text := core.RunesToString(v.SelectionText(s))
 	err := v.backend.Remove(line1, col1, line2, col2)
@@ -112,13 +118,18 @@ func (v *View) Delete(line1, col1, line2, col2 int, undoable bool) {
 	if undoable {
 		actions.UndoAdd(
 			v.Id(),
-			actions.NewViewDeleteAction(v.Id(), line1, col1, line2, col2, false),
-			actions.NewViewInsertAction(v.Id(), line1, col1, text, false))
+			[]core.Action{
+				actions.NewViewDeleteAction(v.Id(), line1, col1, line2, col2, false),
+				actions.NewSetCursorAction(v.Id(), line1, col1)},
+			append([]core.Action{
+				actions.NewViewInsertAction(v.Id(), line1, col1, text, false),
+				actions.NewSetCursorAction(v.Id(), cl, cc)},
+				actions.NewSetSelectionsActions(v.Id(), selections)...),
+		)
 	}
 	v.Render()
 	core.Ed.TermFlush()
-	offx := v.lineColsTo(v.Slice(), line1, col1)
-	v.MoveCursor(line1-v.CurLine(), offx-v.CurCol())
+	v.SetCursorPos(line1, col1)
 }
 
 // DeleteCur removes a selection or the curent character
@@ -154,7 +165,11 @@ func (v *View) LineCount() int {
 }
 
 // Line return the line at the given index
-func (v *View) Line(s *core.Slice, lnIndex int) []rune {
+func (v *View) Line(slice *core.Slice, lnIndex int) []rune {
+	s := slice
+	if lnIndex < s.R1 || lnIndex > s.R2 {
+		s = v.backend.Slice(lnIndex, 0, lnIndex, -1)
+	}
 	index := lnIndex - s.R1
 	if index < 0 || index >= len(*s.Text()) {
 		return []rune{}
@@ -162,35 +177,50 @@ func (v *View) Line(s *core.Slice, lnIndex int) []rune {
 	return (*s.Text())[index]
 }
 
-// LineLen returns the length of a line (raw runes length)
-func (v *View) LineLen(s *core.Slice, lnIndex int) int {
+// LineLen returns the length onf a line (raw runes length)
+func (v *View) LineLen(slice *core.Slice, lnIndex int) int {
+	s := slice
+	if lnIndex < s.R1 || lnIndex > s.R2 {
+		s = v.backend.Slice(lnIndex, 0, lnIndex, -1)
+	}
 	return len(v.Line(s, lnIndex))
 }
 
 // LineCol returns the number of columns used for the given lines
 // ie: a tab uses multiple columns
-func (v *View) lineCols(s *core.Slice, lnIndex int) int {
+func (v *View) lineCols(slice *core.Slice, lnIndex int) int {
+	s := slice
+	if lnIndex < s.R1 || lnIndex > s.R2 {
+		s = v.backend.Slice(lnIndex, 0, lnIndex, -1)
+	}
 	return v.lineColsTo(s, lnIndex, v.LineLen(s, lnIndex))
 }
 
 // LineColsTo returns the number of columns up to the given line index
 // ie: a tab uses multiple columns
 func (v *View) lineColsTo(s *core.Slice, lnIndex, to int) int {
+	if lnIndex > v.LineCount() {
+		return 0
+	}
 	line := v.Line(s, lnIndex)
-	if lnIndex > v.LineCount() || to > len(line) {
+	if len(line) == 0 {
 		return 0
 	}
 	ln := 0
-	for _, r := range line[:to] {
-		ln += v.runeSize(r)
+	for i := 0; i < to && i < len(line); i++ {
+		ln += v.runeSize(line[i])
 	}
 	return ln
 }
 
 // LineRunesTo returns the number of raw runes to the given line column
-func (v View) LineRunesTo(s *core.Slice, lnIndex, column int) int {
+func (v View) LineRunesTo(slice *core.Slice, lnIndex, column int) int {
+	s := slice
+	if lnIndex < s.R1 || lnIndex > s.R2 {
+		s = v.backend.Slice(lnIndex, 0, lnIndex, -1)
+	}
 	runes := 0
-	if len(*s.Text()) == 0 || lnIndex >= v.LineCount() || lnIndex < 0 {
+	if lnIndex < 0 || lnIndex > v.LineCount() {
 		return 0
 	}
 	ln := v.Line(s, lnIndex)
@@ -204,9 +234,12 @@ func (v View) LineRunesTo(s *core.Slice, lnIndex, column int) int {
 }
 
 // CursorChar returns the rune at the given cursor location
-// Also returns the position of the char in the text buffer
-func (v *View) CursorChar(s *core.Slice, cursorY, cursorX int) (r *rune, textY, textX int) {
-	// backend is 1-based indexed
+// Also returns the position of the char in the text buffer (text position)
+func (v *View) CursorChar(slice *core.Slice, cursorY, cursorX int) (r *rune, textY, textX int) {
+	s := slice
+	if cursorY > slice.R2 || cursorY < slice.R1 {
+		s = v.backend.Slice(cursorY, 0, cursorY, -1)
+	}
 	x, y := v.LineRunesTo(s, cursorY, cursorX), cursorY
 	ln := v.Line(s, y)
 	if len(ln) <= x { // EOL

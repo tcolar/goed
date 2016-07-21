@@ -2,126 +2,268 @@ package actions
 
 import "github.com/tcolar/goed/core"
 
-func ViewAddSelection(viewId int64, l1, c1, l2, c2 int) {
+// Add a text selection to the view. from l1,c1 to l2,c2 (1 indexed)
+func (a *ar) ViewAddSelection(viewId int64, l1, c1, l2, c2 int) {
 	d(viewAddSelection{viewId: viewId, l1: l1, c1: c1, l2: l2, c2: c2})
 }
 
-func ViewAutoScroll(viewId int64, y, x int, on bool) {
-	d(viewAutoScroll{viewId: viewId, x: x, y: y, on: on})
+// Enable/disable a view autoscrolling, while selecting (dragged selection + scrolling)
+// By y,x increments. 0,0 means off
+func (a *ar) ViewAutoScroll(viewId int64, y, x int) {
+	d(viewAutoScroll{viewId: viewId, x: x, y: y, on: y != 0 || x != 0})
 }
 
-func ViewBackspace(viewId int64) {
+// send 'backspace' to the view
+func (a *ar) ViewBackspace(viewId int64) {
 	d(viewBackspace{viewId: viewId})
 }
 
-func ViewClearSelections(viewId int64) {
+// return the current view location in the ui (1 indexed)
+func (a *ar) ViewBounds(viewId int64) (ln, col, ln2, col2 int) {
+	answer := make(chan int, 4)
+	d(viewBounds{viewId: viewId, answer: answer})
+	return <-answer, <-answer, <-answer, <-answer
+}
+
+// remove all the view selections.
+func (a *ar) ViewClearSelections(viewId int64) {
 	d(viewClearSelections{viewId: viewId})
 }
 
-func ViewCmdStop(viewId int64) {
+// stop the command currenty running in the view (for exec views.)
+func (a *ar) ViewCmdStop(viewId int64) {
 	d(viewCmdStop{viewId: viewId})
 }
 
-func ViewCopy(viewId int64) {
+// return the nuber of columns (width) of the view.
+func (a *ar) ViewCols(viewId int64) (cols int) {
+	answer := make(chan int, 1)
+	d(viewCols{viewId: viewId, answer: answer})
+	return <-answer
+}
+
+// copy text from the view (current selection, if none, current line)
+func (a *ar) ViewCopy(viewId int64) {
 	d(viewCopy{viewId: viewId})
 }
 
-func ViewCut(viewId int64) {
+// cut text from the view (current selection, if none, current line)
+func (a *ar) ViewCut(viewId int64) {
 	d(viewCut{viewId: viewId})
 }
 
-func ViewCurPos(viewId int64) (ln, col int) {
-	answer := make(chan (int), 2)
-	d(viewCurPos{viewId: viewId, answer: answer})
+// return the current cursor UI position in the view (1 indexed)
+func (a *ar) ViewCursorCoords(viewId int64) (y, x int) {
+	answer := make(chan int, 2)
+	d(viewCursorCoords{viewId: viewId, answer: answer})
 	return <-answer, <-answer
 }
 
-func ViewCursorMvmt(viewId int64, mvmt core.CursorMvmt) {
+// return the current cursor text position in the view (1 indexed)
+func (a *ar) ViewCursorPos(viewId int64) (y, x int) {
+	answer := make(chan int, 2)
+	d(viewCursorPos{viewId: viewId, answer: answer})
+	return <-answer, <-answer
+}
+
+// send a movement event to the view. (ie: down, up, left, right, etc...)
+func (a *ar) ViewCursorMvmt(viewId int64, mvmt core.CursorMvmt) {
 	d(viewCursorMvmt{viewId: viewId, mvmt: mvmt})
 }
 
-func ViewDelete(viewId int64, row1, col1, row2, col2 int, undoable bool) {
+// delete text from the view (from row1,col1 to row2,col2). 1 indexed
+func (a *ar) ViewDelete(viewId int64, row1, col1, row2, col2 int, undoable bool) {
 	d(viewDeleteAction{viewId: viewId, row1: row1, col1: col1, row2: row2, col2: col2, undoable: undoable})
 }
 
-func ViewDeleteCur(viewId int64) {
+// delete text from the view (current selection, if none, current line)
+func (a *ar) ViewDeleteCur(viewId int64) {
 	d(viewDeleteCur{viewId: viewId})
 }
 
-func ViewInsert(viewId int64, row, col int, text string, undoable bool) {
+// is the view dirty or not ?
+func (a *ar) ViewDirty(viewId int64) bool {
+	answer := make(chan bool, 1)
+	d(viewDirty{answer: answer, viewId: viewId})
+	return <-answer
+}
+
+// insert text into the view at the row,col location. 1 indexed
+func (a *ar) ViewInsert(viewId int64, row, col int, text string, undoable bool) {
 	d(viewInsertAction{viewId: viewId, row: row, col: col, text: text, undoable: undoable})
 }
 
-func ViewInsertCur(viewId int64, text string) {
+// insert text into the view at the current cursor location
+func (a *ar) ViewInsertCur(viewId int64, text string) {
 	d(viewInsertCur{viewId: viewId, text: text})
 }
 
-func ViewInsertNewLine(viewId int64) {
+// insert a newLine at the current cursor location
+func (a *ar) ViewInsertNewLine(viewId int64) {
 	d(viewInsertNewLine{viewId: viewId})
 }
 
-func ViewMoveCursor(viewId int64, y, x int) {
-	d(viewMoveCursor{viewId: viewId, x: x, y: y})
+// move the cursor by ln, col runes (relative), scroll as needed
+// roll means "roll" to prev/next line on column overflow
+func (a *ar) ViewMoveCursor(viewId int64, y, x int, roll bool) {
+	d(viewMoveCursor{viewId: viewId, x: x, y: y, roll: roll})
 }
 
-func ViewMoveCursorRoll(viewId int64, y, x int) {
-	d(viewMoveCursor{viewId: viewId, x: x, y: y, roll: true})
-}
-
-func ViewPaste(viewId int64) {
+// paste text into the view at the curent location
+// if in a selection, paste over it.
+func (a *ar) ViewPaste(viewId int64) {
 	d(viewPaste{viewId: viewId})
 }
 
-func ViewOpenSelection(viewId int64, newView bool) {
+// try to "open" the current selection into a view (ie: expect a file path)
+func (a *ar) ViewOpenSelection(viewId int64, newView bool) {
 	d(viewOpenSelection{viewId: viewId, newView: newView})
 }
 
-func ViewRedo(viewId int64) {
+// redo
+func (a *ar) ViewRedo(viewId int64) {
 	d(viewRedo{viewId: viewId})
 }
 
-func ViewReload(viewId int64) {
+// reload the view from it's source file, discard all unsaved buffer changes
+func (a *ar) ViewReload(viewId int64) {
 	d(viewReload{viewId: viewId})
 }
 
-func ViewRender(viewId int64) {
+// render/repaint the view
+func (a *ar) ViewRender(viewId int64) {
 	d(viewRender{viewId: viewId})
 }
 
-func ViewSave(viewId int64) {
+// return the number of rows (lines) in the view
+func (a *ar) ViewRows(viewId int64) (rows int) {
+	answer := make(chan int, 1)
+	d(viewRows{viewId: viewId, answer: answer})
+	return <-answer
+}
+
+// save the view content to the backing file
+func (a *ar) ViewSave(viewId int64) {
 	d(viewSave{viewId: viewId})
 }
 
-func ViewSelectAll(viewId int64) {
+// select all
+func (a *ar) ViewSelectAll(viewId int64) {
 	d(viewSelectAll{viewId: viewId})
 }
 
-func ViewSetDirty(viewId int64, on bool) {
+// Return a list of view selctions (one per line), 1 indexed, ie:
+// 2 1 2 6
+// 3 2 4 7
+func (a *ar) ViewSelections(viewId int64) []core.Selection {
+	answer := make(chan []core.Selection, 1)
+	d(viewSelections{answer: answer, viewId: viewId})
+	return <-answer
+}
+
+// select "word" at given path
+func (a *ar) ViewSelectWord(viewId int64, ln, col int) {
+	d(viewSelectWord{viewId: viewId, ln: ln, col: col})
+}
+
+// move the cursor to the given text position(1 indexed), scroll as needed
+func (a *ar) ViewSetCursorPos(viewId int64, y, x int) {
+	d(viewSetCursorPos{viewId: viewId, y: y, x: x})
+}
+
+// mark the view "dirty" or not (ie: modified, unsaved)
+func (a *ar) ViewSetDirty(viewId int64, on bool) {
 	d(viewSetDirty{viewId: viewId, on: on})
 }
 
-func ViewSetTitle(viewId int64, title string) {
+// set scrolling offsets (1 indexed)
+func (a *ar) ViewSetScrollPos(viewId int64, ln, col int) {
+	d(viewSetScrollPos{viewId: viewId, ln: ln, col: col})
+}
+
+// se the view title (typically file path)
+func (a *ar) ViewSetTitle(viewId int64, title string) {
 	d(viewSetTitle{viewId: viewId, title: title})
 }
 
-func ViewSetVtCols(viewId int64, cols int) {
+// set the number of vt100 columns, this is useful so that tty programs that
+// can use the full view wisth properly
+func (a *ar) ViewSetVtCols(viewId int64, cols int) {
 	d(viewSetVtCols{viewId: viewId, cols: cols})
 }
 
-func ViewStretchSelection(viewId int64, prevLn, prevCol int) {
-	d(viewStretchSelection{viewId: viewId, prevLn: prevLn, prevCol: prevCol})
+// set the current working dir of the view, especially usefull for terminal views.
+// this is used when "opening" relative locations, among other things.
+func (a *ar) ViewSetWorkDir(viewId int64, workDir string) {
+	d(viewSetWorkDir{viewId: viewId, workDir: workDir})
 }
 
-func ViewSetWorkdir(viewId int64, workDir string) {
-	d(viewSetWorkdir{viewId: viewId, workDir: workDir})
+// return the absolute path of the file backing the view (if any)
+func (a *ar) ViewSrcLoc(viewId int64) string {
+	answer := make(chan string, 1)
+	d(viewSrcLoc{viewId: viewId, answer: answer})
+	return <-answer
 }
 
-func ViewSyncSlice(viewId int64) {
+// return the current scrolling position (1,1 is top, left)
+func (a *ar) ViewScrollPos(viewId int64) (ln, col int) {
+	answer := make(chan int, 2)
+	d(viewScrollPos{viewId: viewId, answer: answer})
+	return <-answer, <-answer
+}
+
+// this forces a sync of the in memory slice representing the part of the content
+// that is currently visible in the view (performance optimization)
+func (a *ar) ViewSyncSlice(viewId int64) {
 	d(viewSyncSlice{viewId: viewId})
 }
 
-func ViewUndo(viewId int64) {
+// returns a slice of the buffer text from ln1,col1 to ln2,col2 (inclusive). 1 indexed
+// note: col2==-1 means to end of line; ln2==-1 means to last line
+func (a *ar) ViewText(viewId int64, ln1, col1, ln2, col2 int) []string {
+	answer := make(chan []string, 1)
+	d(viewText{viewId: viewId, ln1: ln1, col1: col1, ln2: ln2, col2: col2, answer: answer})
+	return <-answer
+}
+
+// return the text position(1 indexed) for the given y,x cursor coordinates (0 indexed)
+// if the given coordinates are not on text, return the closest text position.
+// typically would be passed coordinates gotten from EdViewAt.
+func (a *ar) ViewTextPos(viewId int64, y, x int) (ln, col int) {
+	answer := make(chan int, 2)
+	d(viewTextPos{viewId: viewId, answer: answer, y: y, x: x})
+	return <-answer, <-answer
+}
+
+// return the vew title
+func (a *ar) ViewTitle(viewId int64) string {
+	answer := make(chan string, 1)
+	d(viewTitle{viewId: viewId, answer: answer})
+	return <-answer
+}
+
+// return the vew type (core.ViewType)
+func (a *ar) ViewType(viewId int64) int {
+	answer := make(chan int, 1)
+	d(viewType{viewId: viewId, answer: answer})
+	return <-answer
+}
+
+// undo
+func (a *ar) ViewUndo(viewId int64) {
 	d(viewUndo{viewId: viewId})
+}
+
+// working directory
+func (a *ar) ViewWorkDir(viewId int64) string {
+	answer := make(chan string, 1)
+	d(viewWorkDir{viewId: viewId, answer: answer})
+	return <-answer
+}
+
+// send raw bytes to a terminal view
+func (a *ar) TermSendBytes(viewId int64, data []byte) {
+	d(termSendBytes{viewId: viewId, data: data})
 }
 
 // ########  Impl ......
@@ -131,15 +273,19 @@ type viewAddSelection struct {
 	l1, c1, l2, c2 int
 }
 
-func (a viewAddSelection) Run() error {
+func (a viewAddSelection) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if a.l2 != -1 {
+		a.l2--
 	}
-	s := core.NewSelection(a.l1, a.c1, a.l2, a.c2)
-	selections := v.Selections()
-	*selections = append(*selections, *s)
-	return nil
+	if a.c2 != -1 {
+		a.c2--
+	}
+	if v != nil {
+		s := core.NewSelection(a.l1-1, a.c1-1, a.l2, a.c2)
+		selections := v.Selections()
+		*selections = append(*selections, *s)
+	}
 }
 
 type viewAutoScroll struct {
@@ -148,84 +294,127 @@ type viewAutoScroll struct {
 	on     bool
 }
 
-func (a viewAutoScroll) Run() error {
+func (a viewAutoScroll) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.SetAutoScroll(a.y, a.x, a.on)
 	}
-	v.SetAutoScroll(a.y, a.x, a.on)
-	return nil
 }
 
 type viewBackspace struct {
 	viewId int64
 }
 
-func (a viewBackspace) Run() error {
+func (a viewBackspace) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.Backspace()
+	}
+}
+
+type viewBounds struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewBounds) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
-		return nil
+		a.answer <- 0
+		a.answer <- 0
+		a.answer <- 0
+		a.answer <- 0
+		return
 	}
-	v.Backspace()
-	return nil
+	l1, c1, l2, c2 := v.Bounds()
+	a.answer <- l1 + 1
+	a.answer <- c1 + 1
+	a.answer <- l2 + 1
+	a.answer <- c2 + 1
 }
 
 type viewClearSelections struct {
 	viewId int64
 }
 
-func (a viewClearSelections) Run() error {
+func (a viewClearSelections) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.ClearSelections()
 	}
-	v.ClearSelections()
-	return nil
 }
 
 type viewCmdStop struct {
 	viewId int64
 }
 
-func (a viewCmdStop) Run() error {
+func (a viewCmdStop) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
-		return nil
+		return
 	}
 	b := v.Backend()
 	if b != nil {
 		b.Close()
 	}
-	return nil
+	return
+}
+
+type viewCols struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewCols) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 0
+		return
+	}
+	a.answer <- v.LastViewCol()
 }
 
 type viewCopy struct {
 	viewId int64
 }
 
-func (a viewCopy) Run() error {
+func (a viewCopy) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Copy()
 	}
-	v.Copy()
-	return nil
 }
 
-type viewCurPos struct {
+type viewCursorCoords struct {
 	answer chan int
 	viewId int64
 }
 
-func (a viewCurPos) Run() error {
+func (a viewCursorCoords) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
 		a.answer <- 0
 		a.answer <- 0
+		return
 	}
-	a.answer <- v.CurLine()
-	a.answer <- v.CurCol()
-	return nil
+	a.answer <- v.CurLine() + 1
+	a.answer <- v.CurCol() + 1
+}
+
+type viewCursorPos struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewCursorPos) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 0
+		a.answer <- 0
+		return
+	}
+	a.answer <- v.CurLine() + 1
+	a.answer <- v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()) + 1
 }
 
 type viewCursorMvmt struct {
@@ -233,26 +422,22 @@ type viewCursorMvmt struct {
 	mvmt   core.CursorMvmt
 }
 
-func (a viewCursorMvmt) Run() error {
+func (a viewCursorMvmt) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.CursorMvmt(a.mvmt)
 	}
-	v.CursorMvmt(a.mvmt)
-	return nil
 }
 
 type viewCut struct {
 	viewId int64
 }
 
-func (a viewCut) Run() error {
+func (a viewCut) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Cut()
 	}
-	v.Cut()
-	return nil
 }
 
 type viewDeleteAction struct {
@@ -261,26 +446,41 @@ type viewDeleteAction struct {
 	undoable               bool
 }
 
-func (a viewDeleteAction) Run() error {
+func (a viewDeleteAction) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		if a.row2 != -1 {
+			a.row2--
+		}
+		if a.col2 != -1 {
+			a.col2--
+		}
+		v.Delete(a.row1-1, a.col1-1, a.row2, a.col2, a.undoable)
 	}
-	v.Delete(a.row1, a.col1, a.row2, a.col2, a.undoable)
-	return nil
 }
 
 type viewDeleteCur struct {
 	viewId int64
 }
 
-func (a viewDeleteCur) Run() error {
+func (a viewDeleteCur) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.DeleteCur()
 	}
-	v.DeleteCur()
-	return nil
+}
+
+type viewDirty struct {
+	viewId int64
+	answer chan bool
+}
+
+func (a viewDirty) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		a.answer <- v.Dirty()
+	}
+	a.answer <- false
 }
 
 type viewInsertAction struct {
@@ -290,13 +490,11 @@ type viewInsertAction struct {
 	undoable bool
 }
 
-func (a viewInsertAction) Run() error {
+func (a viewInsertAction) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Insert(a.row-1, a.col-1, a.text, a.undoable)
 	}
-	v.Insert(a.row, a.col, a.text, a.undoable)
-	return nil
 }
 
 type viewInsertCur struct {
@@ -304,46 +502,41 @@ type viewInsertCur struct {
 	text   string
 }
 
-func (a viewInsertCur) Run() error {
+func (a viewInsertCur) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
-		return nil
+		return
 	}
 	v.InsertCur(a.text)
-	return nil
 }
 
 type viewInsertNewLine struct {
 	viewId int64
 }
 
-func (a viewInsertNewLine) Run() error {
+func (a viewInsertNewLine) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.InsertNewLineCur()
 	}
-	v.InsertNewLineCur()
-	return nil
 }
 
 type viewMoveCursor struct {
 	viewId int64
-	status string
 	y, x   int
 	roll   bool
 }
 
-func (a viewMoveCursor) Run() error {
+func (a viewMoveCursor) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
-		return nil
+		return
 	}
 	if a.roll {
 		v.MoveCursorRoll(a.y, a.x)
 	} else {
 		v.MoveCursor(a.y, a.x)
 	}
-	return nil
 }
 
 type viewOpenSelection struct {
@@ -351,82 +544,168 @@ type viewOpenSelection struct {
 	newView bool
 }
 
-func (a viewOpenSelection) Run() error {
+func (a viewOpenSelection) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.OpenSelection(a.newView)
 	}
-	v.OpenSelection(a.newView)
-	return nil
 }
 
 type viewPaste struct {
 	viewId int64
 }
 
-func (a viewPaste) Run() error {
+func (a viewPaste) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.Paste()
 	}
-	v.Paste()
-	return nil
 }
 
 type viewRedo struct {
 	viewId int64
 }
 
-func (a viewRedo) Run() error {
-	return Redo(a.viewId)
+func (a viewRedo) Run() {
+	if viewExists(a.viewId) {
+		Redo(a.viewId)
+	}
 }
 
 type viewReload struct{ viewId int64 }
 
-func (a viewReload) Run() error {
+func (a viewReload) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.Reload()
 	}
-	return nil
 }
 
 type viewRender struct {
 	viewId int64
 }
 
-func (a viewRender) Run() error {
+func (a viewRender) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.Render()
 	}
-	return nil
+}
+
+type viewRows struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewRows) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 0
+		return
+	}
+	a.answer <- v.LastViewLine()
 }
 
 type viewSave struct {
 	viewId int64
 }
 
-func (a viewSave) Run() error {
+func (a viewSave) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.Save()
+	}
+}
+
+type viewScrollPos struct {
+	answer chan int
+	viewId int64
+}
+
+func (a viewScrollPos) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v == nil {
-		return nil
+		a.answer <- 0
+		a.answer <- 0
+		return
 	}
-	v.Save()
-	return nil
+	y, x := v.ScrollPos()
+	a.answer <- y + 1
+	a.answer <- x + 1
 }
 
 type viewSelectAll struct {
 	viewId int64
 }
 
-func (a viewSelectAll) Run() error {
+func (a viewSelectAll) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.SelectAll()
 	}
-	v.SelectAll()
-	return nil
+}
+
+type viewSelections struct {
+	answer chan []core.Selection
+	viewId int64
+}
+
+func (a viewSelections) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	result := []core.Selection{}
+	if v == nil {
+		a.answer <- result
+		return
+	}
+	for _, s := range *v.Selections() {
+		ct := 1
+		lt := 1
+		if s.ColTo == -1 {
+			ct = 0
+		}
+		if s.LineTo == -1 {
+			lt = 0
+		}
+		result = append(result, *core.NewSelection(s.LineFrom+1, s.ColFrom+1,
+			s.LineTo+lt, s.ColTo+ct))
+	}
+	a.answer <- result
+}
+
+type viewSelectWord struct {
+	viewId  int64
+	ln, col int
+}
+
+func (a viewSelectWord) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.SelectWord(a.ln-1, a.col-1)
+	}
+}
+
+type viewSetCursorPos struct {
+	viewId int64
+	y, x   int
+}
+
+func (a viewSetCursorPos) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.SetCursorPos(a.y-1, a.x-1)
+	}
+}
+
+type viewSetScrollPos struct {
+	viewId  int64
+	ln, col int
+}
+
+func (a viewSetScrollPos) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.SetScrollPos(a.ln-1, a.col-1)
+	}
 }
 
 type viewSetDirty struct {
@@ -434,13 +713,11 @@ type viewSetDirty struct {
 	on     bool
 }
 
-func (a viewSetDirty) Run() error {
+func (a viewSetDirty) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.SetDirty(a.on)
 	}
-	v.SetDirty(a.on)
-	return nil
 }
 
 type viewSetTitle struct {
@@ -448,25 +725,23 @@ type viewSetTitle struct {
 	title  string
 }
 
-func (a viewSetTitle) Run() error {
+func (a viewSetTitle) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetTitle(a.title)
 	}
-	return nil
 }
 
-type viewSetWorkdir struct {
+type viewSetWorkDir struct {
 	viewId  int64
 	workDir string
 }
 
-func (a viewSetWorkdir) Run() error {
+func (a viewSetWorkDir) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetWorkDir(a.workDir)
 	}
-	return nil
 }
 
 type viewSetVtCols struct {
@@ -474,63 +749,178 @@ type viewSetVtCols struct {
 	cols   int
 }
 
-func (a viewSetVtCols) Run() error {
+func (a viewSetVtCols) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetVtCols(a.cols)
 	}
-	return nil
 }
 
-type viewStretchSelection struct {
-	viewId          int64
-	prevLn, prevCol int
+type viewSrcLoc struct {
+	viewId int64
+	answer chan string
 }
 
-func (a viewStretchSelection) Run() error {
+func (a viewSrcLoc) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v == nil || v.Id() == 0 {
+		a.answer <- ""
+		return
 	}
-	v.StretchSelection(
-		a.prevLn,
-		v.LineRunesTo(v.Slice(), a.prevLn, a.prevCol),
-		v.CurLine(),
-		v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol()),
-	)
-	return nil
+	a.answer <- v.Backend().SrcLoc()
 }
 
 type viewSyncSlice struct {
 	viewId int64
 }
 
-func (a viewSyncSlice) Run() error {
+func (a viewSyncSlice) Run() {
 	v := core.Ed.ViewById(a.viewId)
-	if v == nil {
-		return nil
+	if v != nil {
+		v.SyncSlice()
 	}
-	v.SyncSlice()
-	return nil
 }
 
-type viewTrim struct {
+type viewText struct {
+	viewId               int64
+	ln1, col1, ln2, col2 int
+	answer               chan []string
+}
+
+func (a viewText) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Backend() == nil || a.col2 == 0 || a.col1 == 0 || a.ln1 == 0 || a.ln2 == 0 {
+		a.answer <- []string{}
+		return
+	}
+	if a.col2 > 0 {
+		a.col2--
+	}
+	if a.ln2 > 0 {
+		a.ln2--
+	}
+	strs := []string{}
+	text := v.Text(a.ln1-1, a.col1-1, a.ln2, a.col2)
+	for _, s := range text {
+		strs = append(strs, string(s))
+	}
+	a.answer <- strs
+}
+
+type viewTextPos struct {
 	viewId int64
-	limit  int
+	y, x   int
+	answer chan int
+}
+
+func (a viewTextPos) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil {
+		a.answer <- 1
+		a.answer <- 1
+		return
+	}
+	sy, sx := v.ScrollPos()
+	ln := a.y - 2 + sy
+	if ln < 1 {
+		ln = 1
+	} else if ln > v.LineCount() {
+		ln = v.LineCount()
+	}
+	to := a.x - 2 + sx - 1
+	if to < 0 {
+		to = 0
+	}
+	col := v.LineRunesTo(v.Slice(), ln-1, to) + 1
+	a.answer <- ln
+	a.answer <- col
+}
+
+type viewTitle struct {
+	viewId int64
+	answer chan string
+}
+
+func (a viewTitle) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Id() == 0 {
+		a.answer <- ""
+		return
+	}
+	a.answer <- v.Title()
+}
+
+type viewType struct {
+	viewId int64
+	answer chan int
+}
+
+func (a viewType) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Id() == 0 {
+		a.answer <- int(core.ViewTypeStandard)
+		return
+	}
+	a.answer <- int(v.Type())
 }
 
 type viewUndo struct {
 	viewId int64
 }
 
-func (a viewUndo) Run() error {
-	return Undo(a.viewId)
+func (a viewUndo) Run() {
+	if viewExists(a.viewId) {
+		Undo(a.viewId)
+	}
+}
+
+type viewWorkDir struct {
+	viewId int64
+	answer chan string
+}
+
+func (a viewWorkDir) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Id() == 0 {
+		a.answer <- ""
+		return
+	}
+	a.answer <- v.WorkDir()
+}
+
+type termSendBytes struct {
+	viewId int64
+	data   []byte
+}
+
+func (a termSendBytes) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Type() != core.ViewTypeShell {
+		return
+	}
+	v.Backend().SendBytes(a.data)
 }
 
 func NewViewInsertAction(viewId int64, row, col int, text string, undoable bool) core.Action {
-	return viewInsertAction{viewId: viewId, row: row, col: col, text: text, undoable: undoable}
+	return viewInsertAction{viewId: viewId, row: row + 1, col: col + 1,
+		text: text, undoable: undoable}
 }
 
 func NewViewDeleteAction(viewId int64, row1, col1, row2, col2 int, undoable bool) core.Action {
-	return viewDeleteAction{viewId: viewId, row1: row1, col1: col1, row2: row2, col2: col2, undoable: undoable}
+	return viewDeleteAction{viewId: viewId, row1: row1 + 1, col1: col1 + 1,
+		row2: row2 + 1, col2: col2 + 1, undoable: undoable}
+}
+
+func NewSetCursorAction(viewId int64, ln, col int) core.Action {
+	return viewSetCursorPos{viewId: viewId, y: ln + 1, x: col + 1}
+}
+
+func NewSetSelectionsActions(viewId int64, selections *[]core.Selection) []core.Action {
+	a := []core.Action{
+		viewClearSelections{viewId: viewId},
+	}
+	for _, s := range *selections {
+		a = append(a, viewAddSelection{viewId: viewId, l1: s.LineFrom + 1, c1: s.ColFrom + 1, l2: s.LineTo + 1, c2: s.ColTo + 1})
+	}
+	return a
 }

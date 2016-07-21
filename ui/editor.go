@@ -13,32 +13,31 @@ import (
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
-	termbox "github.com/tcolar/termbox-go"
 )
+
+var _ core.Editable = (*Editor)(nil)
 
 // Editor is goed's main Editor pane (singleton)
 type Editor struct {
-	Cmdbar     *Cmdbar
-	config     *core.Config
-	Statusbar  *Statusbar
-	Fg, Bg     core.Style
-	theme      *core.Theme
-	Cols       []*Col
-	curViewId  int64
-	CurCol     *Col
-	cmdOn      bool
-	pctw, pcth float64
-	evtState   *EvtState
-	term       core.Term
-	views      map[int64]*View
+	Cmdbar    *Cmdbar
+	config    *core.Config
+	Statusbar *Statusbar
+	Fg, Bg    core.Style
+	theme     *core.Theme
+	Cols      []*Col
+	curViewId int64
+	CurCol    *Col
+	cmdOn     bool
+	term      core.Term
+	views     map[int64]*View
 }
 
 func NewEditor(gui bool) *Editor {
 	var term core.Term
 	if gui {
-		term = NewGuiTerm(50, 160)
+		term = NewGuiTerm(1200, 800)
 	} else {
-		term = core.NewTermBox()
+		term = NewTermBox()
 	}
 	return &Editor{
 		term:   term,
@@ -60,6 +59,16 @@ func (e *Editor) Dispatch(action core.Action) {
 	core.Bus.Dispatch(action)
 }
 
+func (e *Editor) Commandbar() core.Commander {
+	return e.Cmdbar
+}
+
+func (e *Editor) Quit() {
+	event.Shutdown()
+	e.term.Close()
+	os.Exit(0)
+}
+
 // Start starts-up the editor
 func (e *Editor) Start(locs []string) {
 	err := e.term.Init()
@@ -68,12 +77,9 @@ func (e *Editor) Start(locs []string) {
 	}
 
 	defer func() {
-		// TODO: should set it to original value, but how to read it ??
-		e.term.SetMouseMode(termbox.MouseClick)
 		e.term.Close()
 	}()
 	e.term.SetExtendedColors(core.Colors == 256)
-	e.evtState = &EvtState{}
 	e.theme, err = core.ReadTheme(core.FindResource(path.Join("themes", e.config.Theme)))
 	if err != nil {
 		panic(err)
@@ -127,18 +133,17 @@ func (e *Editor) Start(locs []string) {
 		e.curViewId = c.Views[0]
 	}
 
-	actions.EdResize(e.term.Size())
+	actions.Ar.EdResize(e.term.Size())
 
-	actions.EdRender()
+	actions.Ar.EdRender()
+
+	go core.Bus.Start()
 
 	go e.autoScroller()
 
 	go event.Listen()
-	defer event.Shutdown()
 
-	if !core.Testing {
-		e.EventLoop()
-	}
+	e.term.Listen()
 }
 
 // Open opens a given location in the editor (in the given view)
@@ -187,9 +192,9 @@ func (e *Editor) Open(loc string, viewId int64, rel string, create bool) (int64,
 	}
 	if nv {
 		if stat != nil && stat.IsDir() {
-			e.AddDirViewSmart(view.(*View))
+			e.AddDirViewSmart(viewCast(view))
 		} else {
-			e.InsertViewSmart(view.(*View))
+			e.InsertViewSmart(viewCast(view))
 		}
 	}
 	view.Reset()
@@ -199,7 +204,11 @@ func (e *Editor) Open(loc string, viewId int64, rel string, create bool) (int64,
 
 // OpenDir opens a directory listing
 func (e *Editor) openDir(loc string, view core.Viewable) error {
-	view.(*View).highlighter = &TermHighlighter{}
+	v := viewCast(view)
+	if v == nil {
+		return fmt.Errorf("No such view")
+	}
+	v.highlighter = &TermHighlighter{}
 	args := append([]string{"ls"}, core.OsLsArgs...)
 	title := filepath.Base(loc) + "/"
 	backend, err := backend.NewMemBackendCmd(args, loc, view.Id(), &title, true)
@@ -292,6 +301,24 @@ func (e *Editor) QuitCheck() bool {
 	return true
 }
 
+func (e *Editor) StartTermView(args []string) int64 {
+	vid := exec(args, true)
+	v := viewCast(core.Ed.ViewById(vid))
+	if v == nil || v.backend == nil {
+		return -1
+	}
+	b := v.backend.(*backend.BackendCmd)
+	time.Sleep(500 * time.Millisecond)
+	ext := ".sh"
+	if os.Getenv("SHELL") == "rc" {
+		ext = ".rc"
+	}
+	cmd := ". $HOME/.goed/default/actions/goed" +
+		fmt.Sprintf("%s %d %d\n", ext, core.InstanceId, v.Id())
+	b.SendBytes([]byte(cmd))
+	return vid
+}
+
 // Handle selection auto scrolling of views
 func (e *Editor) autoScroller() {
 	action := autoScrollAction{}
@@ -304,17 +331,17 @@ func (e *Editor) autoScroller() {
 type autoScrollAction struct {
 }
 
-func (e autoScrollAction) Run() error {
-	v := core.Ed.ViewById(core.Ed.CurViewId()).(*View)
+func (e autoScrollAction) Run() {
+	v := viewCast(core.Ed.ViewById(core.Ed.CurViewId()))
 	if v == nil {
-		return nil
+		return
 	}
 	x, y := v.autoScrollX, v.autoScrollY
 	if x == 0 && y == 0 {
-		return nil
+		return
 	}
 	if len(v.selections) == 0 {
-		return nil
+		return
 	}
 	s := v.selections[0]
 	ln := v.CurLine()
@@ -369,5 +396,22 @@ func (e autoScrollAction) Run() error {
 		s,
 	}
 	core.Ed.Render()
+}
+
+// TODO: Do away with those ugly assertions
+func viewCast(v core.Viewable) *View {
+	if v == nil {
+		return nil
+	}
+	return v.(*View)
+}
+
+func widgetCast(w Renderer) *View {
+	if w == nil {
+		return nil
+	}
+	if v, ok := w.(*View); ok {
+		return v
+	}
 	return nil
 }

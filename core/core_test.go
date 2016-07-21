@@ -5,61 +5,69 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/tcolar/goed/assert"
+	. "gopkg.in/check.v1"
 )
 
-func init() {
+func Test(t *testing.T) { TestingT(t) }
+
+type CoreSuite struct {
+}
+
+var _ = Suite(&CoreSuite{})
+
+func (cs *CoreSuite) SetUpSuite(c *C) {
 	Testing = true
 	InitHome(time.Now().Unix())
 }
 
-func TestCountLines(t *testing.T) {
+func (cs *CoreSuite) TestCountLines(t *C) {
 	// CountLines
 	f, err := os.Open("../test_data/file1.txt")
-	assert.Nil(t, err, "file")
+	assert.Nil(t, err)
 	defer f.Close()
 	lns, err := CountLines(f)
-	assert.Nil(t, err, "CountLines")
-	assert.Equal(t, lns, 12, "CountLines")
+	assert.Nil(t, err)
+	assert.Eq(t, lns, 12)
 }
 
-func TestStringToRunes(t *testing.T) {
+func (cs *CoreSuite) TestStringToRunes(t *C) {
 	r := [][]rune{}
 	s := RunesToString(r)
-	assert.Equal(t, s, "", "runestostring1")
-	assert.Equal(t, StringToRunes(s), r, "stringToRunes1")
+	assert.Eq(t, s, "")
+	assert.DeepEq(t, StringToRunes(s), r)
 	r = [][]rune{
 		[]rune{'A', 'B', 'C'},
 	}
 	s = RunesToString(r)
-	assert.Equal(t, s, "ABC", "runestostring2")
-	assert.Equal(t, StringToRunes(s), r, "stringToRunes2")
+	assert.Eq(t, s, "ABC")
+	assert.DeepEq(t, StringToRunes(s), r)
 	r = append(r, []rune{}, []rune{'1', '2'})
 	s = RunesToString(r)
-	assert.Equal(t, s, "ABC\n\n12", "runestostring3")
-	assert.Equal(t, StringToRunes(s), r, "stringToRunes3")
+	assert.Eq(t, s, "ABC\n\n12")
+	assert.DeepEq(t, StringToRunes(s), r)
 	r = [][]rune{
 		[]rune{},
 		[]rune{'2'},
 	}
 	s = RunesToString(r)
-	assert.Equal(t, s, "\n2", "runestostring4")
-	assert.Equal(t, StringToRunes(s), r, "stringToRunes4")
+	assert.Eq(t, s, "\n2")
+	assert.DeepEq(t, StringToRunes(s), r)
 	r = [][]rune{
 		[]rune{'1'},
 		[]rune{},
 	}
 	s = RunesToString(r)
-	assert.Equal(t, s, "1\n", "runestostring5")
-	assert.Equal(t, StringToRunes(s), r, "stringToRunes5")
+	assert.Eq(t, s, "1\n")
+	assert.DeepEq(t, StringToRunes(s), r)
 }
 
-func TestTheme(t *testing.T) {
+func (cs *CoreSuite) TestTheme(t *C) {
 	th, err := ReadTheme("../test_data/theme.toml")
-	assert.Nil(t, err, "theme")
+	assert.Nil(t, err)
 	s := NewStyle(0)
 	s.UnmarshalText([]byte("99663311"))
-	assert.Equal(t, th.Bg, s, "theme bg")
+	assert.Eq(t, th.Bg, s)
 	sb := th.Statusbar
 	s.UnmarshalText([]byte("EB070000"))
 	s2 := NewStyle(0)
@@ -69,14 +77,14 @@ func TestTheme(t *testing.T) {
 		Bg:   s,
 		Fg:   s2,
 	}
-	assert.Equal(t, sb, sr, "styled rune")
+	assert.Eq(t, sb, sr)
 	s = NewStyle(0x41)
 	s = s.WithAttr(Bold)
-	assert.Equal(t, s, NewStyle(0x0141), "style attr2")
+	assert.Eq(t, s, NewStyle(0x0141))
 }
 
-func TestIsText(t *testing.T) {
-	assert.Equal(t, IsTextFile("../test_data/empty.txt"), true)
-	assert.Equal(t, IsTextFile("../test_data/test.txt"), true)
-	assert.Equal(t, IsTextFile("../test_data/test.bin"), false)
+func (cs *CoreSuite) TestIsText(t *C) {
+	assert.True(t, IsTextFile("../test_data/empty.txt"))
+	assert.True(t, IsTextFile("../test_data/test.txt"))
+	assert.False(t, IsTextFile("../test_data/test.bin"))
 }

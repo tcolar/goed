@@ -8,7 +8,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/atotto/clipboard"
 	"github.com/tcolar/goed/core"
 )
 
@@ -23,6 +22,9 @@ func (v *View) SelectionText(s *core.Selection) [][]rune {
 	ct := s.ColTo
 	lt := s.LineTo
 	lf := s.LineFrom
+	if lt == -1 {
+		lt = v.LineCount() - 1
+	}
 	if lf == lt {
 		return *v.backend.Slice(lf, cf, lt, ct).Text()
 	}
@@ -62,6 +64,7 @@ func (v *View) Cut() {
 	}
 	v.SelectionCopy(&v.selections[0])
 	v.SelectionDelete(&v.selections[0])
+	v.ClearSelections()
 }
 
 func (v *View) Copy() {
@@ -77,16 +80,24 @@ func (v *View) SelectionCopy(s *core.Selection) {
 	if len(text) == 0 {
 		return
 	}
+	// when copying full lines, add a "\n" at the end of the copy
+	if s.ColTo == -1 {
+		text += "\n"
+	}
 	core.Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
-	clipboard.WriteAll(text)
+	core.ClipboardWrite(text)
 }
 
 func (v *View) SelectionDelete(s *core.Selection) {
-	v.Delete(s.LineFrom, s.ColFrom, s.LineTo, s.ColTo, true)
+	colTo := s.ColTo
+	if colTo == -1 {
+		colTo = v.LineLen(v.slice, s.LineTo)
+	}
+	v.Delete(s.LineFrom, s.ColFrom, s.LineTo, colTo, true)
 }
 
 func (v *View) Paste() {
-	text, err := clipboard.ReadAll()
+	text, err := core.ClipboardRead()
 	if err != nil {
 		core.Ed.SetStatusErr(err.Error())
 		return
@@ -94,8 +105,8 @@ func (v *View) Paste() {
 	if len(v.selections) > 0 {
 		v.DeleteCur()
 	}
-	_, y, x := v.CurChar()
-	v.Insert(y, x, text, true)
+	ln, col := v.CurTextPos()
+	v.Insert(ln, col, text, true)
 }
 
 var locationRegexp = regexp.MustCompile(`([^"\s(){}[\]<>,?|+=&^%#@!;':\x1B]+)(:\d+)?(:\d+)?`)
@@ -124,17 +135,16 @@ func (v *View) ExpandSelectionPath(line, col int) *core.Selection {
 	// convert byte indexes back to rune count
 	r1 := utf8.RuneCountInString(ln[:best[0]])
 	r2 := utf8.RuneCountInString(ln[:best[1]])
-	return core.NewSelection(line, r1, line, r2)
+	return core.NewSelection(line, r1, line, r2-1)
 }
 
 // Try to select the longest "word" from current position.
 func (v *View) ExpandSelectionWord(line, col int) *core.Selection {
 	l := v.Line(v.slice, line)
-	c := v.LineRunesTo(v.slice, line, col)
-	if c < 0 || c >= len(l) {
+	if col < 0 || col >= len(l) {
 		return nil
 	}
-	c1, c2 := c, c
+	c1, c2 := col, col
 	for ; c1 >= 0 && isWordRune(l[c1]); c1-- {
 	}
 	c1++
@@ -153,7 +163,8 @@ func isWordRune(r rune) bool {
 
 func (v *View) SelectAll() {
 	lastLn := v.LineCount() - 1
-	s := core.NewSelection(0, 0, lastLn, v.LineLen(v.slice, lastLn)-1)
+	slice := v.Backend().Slice(lastLn, 0, lastLn, -1)
+	s := core.NewSelection(0, 0, lastLn, v.LineLen(slice, lastLn)-1)
 	v.selections = []core.Selection{
 		*s,
 	}
@@ -161,7 +172,7 @@ func (v *View) SelectAll() {
 
 // Select the whole given line
 func (v *View) SelectLine(line int) {
-	s := core.NewSelection(line, 0, line, v.LineLen(v.slice, line))
+	s := core.NewSelection(line, 0, line, -1)
 	v.selections = []core.Selection{
 		*s,
 	}
@@ -198,20 +209,14 @@ func (v *View) SelectionToLoc(sel *core.Selection) (loc string, line, col int) {
 
 // Stretch a selection toward a new position
 func (v *View) StretchSelection(prevl, prevc, l, c int) {
-	if len(v.selections) == 0 {
-		s := *core.NewSelection(prevl, prevc, l, c)
-		v.selections = []core.Selection{
-			s,
-		}
-	} else {
-		s := v.selections[0]
-		if s.LineTo == prevl && s.ColTo == prevc {
-			s.LineTo, s.ColTo = l, c
-		} else {
-			s.LineFrom, s.ColFrom = l, c
-		}
+	if len(v.selections) != 0 {
+		s := &v.selections[0]
+		s.LineFrom, s.LineTo, s.ColFrom, s.ColTo = prevl, l, prevc, c
 		s.Normalize()
-		v.selections[0] = s
+	} else {
+		s := core.NewSelection(prevl, prevc, l, c)
+		s.Normalize()
+		v.selections = []core.Selection{*s}
 	}
 }
 
@@ -222,7 +227,8 @@ func (v *View) OpenSelection(newView bool) {
 	ed := core.Ed.(*Editor)
 	newView = newView || v.Dirty()
 	if len(v.selections) == 0 {
-		selection := v.ExpandSelectionPath(v.CurLine(), v.CurCol())
+		ln, col := v.CurTextPos()
+		selection := v.ExpandSelectionPath(ln, col)
 		if selection == nil {
 			ed.SetStatusErr("Could not expand location from cursor location.")
 			return
@@ -234,11 +240,15 @@ func (v *View) OpenSelection(newView bool) {
 	col--
 	isDir := false
 	loc, isDir = core.LookupLocation(v.WorkDir(), strings.TrimSpace(loc))
-	vv := ed.ViewByLoc(loc)
-	if vv > 0 {
-		// Already open
-		ed.ViewActivate(vv, line, col)
-		return
+	vid := ed.ViewByLoc(loc)
+	if vid >= 0 {
+		vv := ed.ViewById(vid)
+		if vv != nil {
+			// Already open
+			vv.SetCursorPos(line, col)
+			ed.ViewActivate(vv.Id())
+			return
+		}
 	}
 	v2 := ed.NewView(loc)
 	if _, err := ed.Open(loc, v2.Id(), v.WorkDir(), false); err != nil {
@@ -254,5 +264,6 @@ func (v *View) OpenSelection(newView bool) {
 	} else {
 		ed.ReplaceView(v, v2)
 	}
-	ed.ViewActivate(v2.Id(), line, col)
+	v2.SetCursorPos(line, col)
+	ed.ViewActivate(v2.Id())
 }

@@ -22,13 +22,13 @@ var lock sync.Mutex
 
 // a do/undo combo
 type actionTuple struct {
-	do   core.Action
-	undo core.Action
+	do   []core.Action
+	undo []core.Action
 }
 
 // or group by alphanum sequence ??
-func Undo(viewId int64) error {
-	action, err := func() (core.Action, error) {
+func Undo(viewId int64) {
+	action, err := func() ([]core.Action, error) {
 		lock.Lock()
 		defer lock.Unlock()
 		tuples, found := undos[viewId]
@@ -41,13 +41,16 @@ func Undo(viewId int64) error {
 		return tuple.undo, nil
 	}()
 	if err != nil {
-		return err
+		Ar.EdSetStatusErr(err.Error())
+		return
 	}
-	return action.Run()
+	for _, a := range action {
+		a.Run()
+	}
 }
 
-func Redo(viewId int64) error {
-	action, err := func() (core.Action, error) {
+func Redo(viewId int64) {
+	action, err := func() ([]core.Action, error) {
 		lock.Lock()
 		defer lock.Unlock()
 		tuples, found := redos[viewId]
@@ -60,12 +63,15 @@ func Redo(viewId int64) error {
 		return tuple.do, nil
 	}()
 	if err != nil {
-		return err
+		Ar.EdSetStatusErr(err.Error())
+		return
 	}
-	return action.Run()
+	for _, a := range action {
+		a.Run()
+	}
 }
 
-func UndoAdd(viewId int64, do, undo core.Action) {
+func UndoAdd(viewId int64, do, undo []core.Action) {
 	lock.Lock()
 	defer lock.Unlock()
 	delete(redos, viewId)

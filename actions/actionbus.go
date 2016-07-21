@@ -3,9 +3,10 @@ package actions
 import (
 	"log"
 
-	"github.com/kr/pretty"
 	"github.com/tcolar/goed/core"
 )
+
+var _ core.ActionDispatcher = (*actionBus)(nil)
 
 type actionBus struct {
 	actionChan chan (core.Action)
@@ -28,12 +29,11 @@ func (a actionBus) Start() {
 		select {
 		case action := <-a.actionChan:
 			if core.Trace {
-				pretty.Logln(action)
+				log.Printf("> %#v", action)
 			}
-			err := action.Run()
-			if err != nil {
-				core.Ed.SetStatusErr(err.Error())
-				log.Println(err.Error())
+			action.Run()
+			if core.Trace {
+				log.Printf("< %#v", action)
 			}
 		case <-a.quitc:
 			break
@@ -56,7 +56,6 @@ type flushAction struct {
 	c chan (struct{})
 }
 
-func (a flushAction) Run() error {
+func (a flushAction) Run() {
 	a.c <- struct{}{}
-	return nil
 }

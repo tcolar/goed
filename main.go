@@ -14,19 +14,21 @@ import (
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/api"
+	"github.com/tcolar/goed/api/client"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/ui"
-	"gopkg.in/alecthomas/kingpin.v1"
+	kingpin "gopkg.in/alecthomas/kingpin.v1"
 )
 
 var (
-	app     = kingpin.New("goed", "A code editor")
-	gui     = kingpin.Flag("g", "Star in GUI mode..").Default("false").Bool()
-	test    = kingpin.Flag("testterm", "Prints colors to the terminal to check them.").Bool()
-	colors  = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
-	config  = kingpin.Flag("config", "Config file.").Default("config.toml").String()
-	cpuprof = kingpin.Flag("cpuprof", "Cpu profile").Default("false").Bool()
-	memprof = kingpin.Flag("memprof", "Mem profile").Default("false").Bool()
+	apiCall    = kingpin.Flag("api", "API call").Default("false").Bool()
+	gui        = kingpin.Flag("g", "Start in GUI mode..").Default("false").Bool()
+	termColors = kingpin.Flag("term-colors", "Prints colors to the terminal to check them.").Bool()
+	termEvents = kingpin.Flag("term-events", "Display received events in a view.").Bool()
+	colors     = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
+	config     = kingpin.Flag("config", "Config file.").Default("config.toml").String()
+	cpuprof    = kingpin.Flag("cpuprof", "Cpu profile").Default("false").Bool()
+	memprof    = kingpin.Flag("memprof", "Mem profile").Default("false").Bool()
 
 	locs = kingpin.Arg("location", "location to open").Strings()
 )
@@ -36,8 +38,12 @@ func main() {
 	kingpin.Version(core.Version)
 
 	kingpin.Parse()
-	if *test {
-		core.TestTerm()
+	if *apiCall {
+		client.HandleArgs(os.Args[2:])
+		return
+	}
+	if *termColors {
+		core.TermColors()
 		return
 	}
 	if *colors == 0 {
@@ -70,6 +76,7 @@ func main() {
 	id := time.Now().UnixNano()
 
 	core.Colors = *colors
+	core.ShowEvents = *termEvents
 	core.Bus = actions.NewActionBus()
 	core.InitHome(id)
 	core.ConfFile = *config
@@ -80,7 +87,7 @@ func main() {
 
 	defer func() {
 		if fail := recover(); fail != nil {
-			// writing panic to file because shell will be garbled
+			// writing panic to file because shell may be garbled
 			fmt.Printf("Panicked with %v\n", fail)
 			fmt.Printf("Writing panic to log %s \n", core.LogFile.Name())
 			data := debug.Stack()
@@ -94,22 +101,21 @@ func main() {
 		exec.Command("reset").Run()
 	}()
 
+	actions.RegisterActions()
 	apiServer.Start()
-
-	go core.Bus.Start()
 
 	core.Ed.Start(*locs)
 }
 
 func startupChecks() {
-	out, err := exec.Command("goed_api", "version").CombinedOutput()
+	out, err := exec.Command("goed", "--api", "version").CombinedOutput()
 	if err != nil {
-		fmt.Printf("Could not find/run goed_api : %s", out)
+		fmt.Printf("Could not find/run goed --api : %s", out)
 		os.Exit(1)
 	}
 	v := strings.Trim(string(out), "\n\t\r ")
 	if v != core.Version {
-		fmt.Printf("goed_api is not at the expected version. (got %s, want %s)",
+		fmt.Printf("goed --api is not at the expected version. (got %s, want %s)",
 			v, core.Version)
 		os.Exit(1)
 	}
