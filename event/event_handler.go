@@ -122,7 +122,6 @@ func handleEvent(e *Event, es *eventState) bool {
 		dirty = true
 	case EvtCopy:
 		actions.Ar.ViewCopy(curView)
-		dirty = true
 	case EvtDelete:
 		actions.Ar.ViewDeleteCur(curView)
 		dirty = true
