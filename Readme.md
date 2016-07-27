@@ -55,7 +55,7 @@ as it has very poor eventing support.
 
 For ITerm2 those settingw work best:
   - Under preferences / pointer, disable right click context menu.
-  - Under prefs / pfofiles / default / terminal set ter type to "xterm-256color"
+  - Under prefs / pfofiles / default / terminal set term type to "xterm-256color"
  
 #### GUI (Experimental)
 The eventing support in terminals varies immensely, some don't support mouse
@@ -64,6 +64,11 @@ type of advanced chording.
 
 For this reason there an **experimental** GUI (**currently very slow**),
 based on go.wde, in the works, not quite ready yet. 
+
+You can run it using `goed --g`
+There is a builtin font (LibretaionMono) but you can specify the path to a different
+one in `~/.goed/config.toml`, just make sure it's monospace and TTF.
+ie: `GuiFont="/Library/Fonts/Andale Mono.ttf"`
 
 ### Keyboard / Mouse shortcuts
 Here are the standard key shortcuts, you can modify those to your liking, note

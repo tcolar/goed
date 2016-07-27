@@ -2,3 +2,7 @@
 SyntaxHighlighting=true
 Theme="default.toml"
 MaxCmdBufferLines=3000
+# Set the path to a monospace TTF font to use a custom font
+GuiFont=""
+GuiFontSize=10
+GuiFontDpi=96

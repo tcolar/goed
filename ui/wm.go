@@ -78,7 +78,7 @@ func (e *Editor) Render() {
 	if c != nil {
 		car = *c
 	}
-	// Note theterminal inverse the colors where the cursor is
+	// Note the terminal inverts the colors where the cursor is
 	// this is why this statement might appear "backward"
 	e.TermFB(e.theme.BgCursor, e.theme.FgCursor)
 	e.TermChar(cl+v.y1-v.offy+2, cc+v.x1-v.offx+2, car)

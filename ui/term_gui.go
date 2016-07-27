@@ -17,6 +17,7 @@ import (
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
+	"github.com/tcolar/goed/ui/fonts"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 )
@@ -25,15 +26,14 @@ var _ core.Term = (*GuiTerm)(nil)
 
 var palette = xtermPalette()
 
-// TODO: font config
-var fontPath = "fonts/LiberationMono-Regular.ttf"
+// path to user specified font, or empty for builtin default
+var fontPath = ""
 
-// backup fonts
-var noto *truetype.Font
+// backup/symbols font
 var notoSymbols *truetype.Font
 
 var fontSize = 10
-var dpi = 96
+var fontDpi = 96
 
 // GuiTerm is a very minimal text terminal emulation GUI.
 type GuiTerm struct {
@@ -68,9 +68,12 @@ func (c char) equals(c2 char) bool {
 	return true
 }
 
-func NewGuiTerm(h, w int) *GuiTerm {
-	noto = parseFont("fonts/NotoSans-Regular.ttf")
-	notoSymbols = parseFont("fonts/NotoSansSymbols-Regular.ttf")
+func NewGuiTerm(h, w int, config *core.Config) *GuiTerm {
+	notoSymbols = parseBuiltinFont("fonts/NotoSansSymbols-Regular.ttf")
+
+	fontPath = config.GuiFont
+	fontSize = config.GuiFontSize
+	fontDpi = config.GuiFontDpi
 
 	win, err := wde.NewWindow(h, w)
 	win.SetTitle("GoEd")
@@ -90,16 +93,22 @@ func NewGuiTerm(h, w int) *GuiTerm {
 }
 
 func (t *GuiTerm) applyFont(fontPath string, fontSize int) {
-	t.font = parseFont(fontPath)
+	if len(fontPath) == 0 {
+		// builtin default font
+		t.font = parseBuiltinFont("fonts/LiberationMono-Bold.ttf")
+	} else {
+		// user specified font
+		t.font = parseFileFont(fontPath)
+	}
 	opts := truetype.Options{}
 	opts.Size = float64(fontSize)
 	t.face = truetype.NewFace(t.font, &opts)
 	bounds, _, _ := t.face.GlyphBounds('░')
-	t.charW = int((bounds.Max.X-bounds.Min.X)>>6) + dpi/32
-	t.charH = int((bounds.Max.Y-bounds.Min.Y)>>6) + dpi/16
+	t.charW = int((bounds.Max.X-bounds.Min.X)>>6) + fontDpi/32
+	t.charH = int((bounds.Max.Y-bounds.Min.Y)>>6) + fontDpi/16
 
 	t.ctx = freetype.NewContext()
-	t.ctx.SetDPI(float64(dpi))
+	t.ctx.SetDPI(float64(fontDpi))
 	t.ctx.SetFont(t.font)
 	t.ctx.SetFontSize(float64(fontSize))
 	t.ctx.SetHinting(font.HintingFull)
@@ -132,13 +141,27 @@ func (t *GuiTerm) resize(ww, wh int) {
 	//fmt.Printf("%v %v %v\n", t.w, t.h, t.rgba.Bounds())
 }
 
-func parseFont(fontPath string) *truetype.Font {
+func parseBuiltinFont(fontPath string) *truetype.Font {
+	fontBytes, err := fonts.Asset(fontPath)
+	if err != nil {
+		fmt.Println(err)
+		log.Println(err)
+		os.Exit(1)
+	}
+	return parseFont(fontBytes)
+}
+
+func parseFileFont(fontPath string) *truetype.Font {
 	fontBytes, err := ioutil.ReadFile(fontPath)
 	if err != nil {
 		fmt.Println(err)
 		log.Println(err)
 		os.Exit(1)
 	}
+	return parseFont(fontBytes)
+}
+
+func parseFont(fontBytes []byte) *truetype.Font {
 	font, err := freetype.ParseFont(fontBytes)
 	if err != nil {
 		fmt.Println(err)
@@ -300,7 +323,6 @@ func (t *GuiTerm) paintChar(y, x int) {
 		r.rune = ' '
 		r.bg = core.Ed.Theme().Bg
 	}
-	// TODO: attributes (bold)
 	bg := image.NewUniform(palette[r.bg.Uint16()&255])
 	fg := image.NewUniform(palette[r.fg.Uint16()&255])
 	// cursor location gets inverted colors
@@ -316,24 +338,19 @@ func (t *GuiTerm) paintChar(y, x int) {
 }
 
 // Draw the rune, if the user-picked font does not provide a glyph for the given
-// rune try to fallback to noto / notoSymbols
+// rune try to fallback to notoSymbols
 func (t *GuiTerm) drawRune(r rune, pt fixed.Point26_6) {
 	if t.font.Index(r) != 0 {
 		t.ctx.DrawString(string(r), pt)
 		return
 	}
+	// if rune not found in main font, try symbol font
 	font := t.font
-	if font.Index(r) != 0 {
-	} else if noto.Index(r) != 0 {
-		t.ctx.SetFont(noto)
-		t.ctx.SetFontSize(float64(fontSize - 3)) // "fat" font
-
-	} else if notoSymbols.Index(r) != 0 {
+	if notoSymbols.Index(r) != 0 {
 		t.ctx.SetFont(notoSymbols)
 		t.ctx.SetFontSize(float64(fontSize - 3))
 	}
 	t.ctx.DrawString(string(r), pt)
-	// restore font
 	t.ctx.SetFontSize(float64(fontSize))
 	t.ctx.SetFont(font)
 }

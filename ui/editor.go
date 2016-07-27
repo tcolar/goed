@@ -34,14 +34,15 @@ type Editor struct {
 
 func NewEditor(gui bool) *Editor {
 	var term core.Term
+	config := core.LoadConfig(core.ConfFile)
 	if gui {
-		term = NewGuiTerm(1200, 800)
+		term = NewGuiTerm(1200, 800, config)
 	} else {
 		term = NewTermBox()
 	}
 	return &Editor{
 		term:   term,
-		config: core.LoadConfig(core.ConfFile),
+		config: config,
 		views:  map[int64]*View{},
 	}
 }
