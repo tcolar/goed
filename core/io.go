@@ -19,18 +19,109 @@ import (
 var LineSep = []byte{'\n'}
 
 func CopyFile(from, to string) error {
+	_, err := copyFile(from, to, false, nil)
+	return err
+}
+
+func CopyFileSkipBom(from, to string) (bom []byte, err error) {
+	return copyFile(from, to, true, nil)
+}
+
+func CopyFileWithBom(from, to string, bom []byte) error {
+	_, err := copyFile(from, to, false, bom)
+	return err
+}
+
+func copyFile(from, to string, skipBom bool, addBom []byte) (bom []byte, err error) {
+	if skipBom {
+		bom = make([]byte, BomLen(from))
+	}
+
 	in, err := os.Open(from)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer in.Close()
 	out, err := os.Create(to)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer out.Close()
+
+	if skipBom && len(bom) > 0 {
+		// read the bom to skip it (seek doesn't seem to have any effect on copy)
+		in.Read(bom)
+	}
+
+	if len(addBom) > 0 {
+		// write bom
+		_, err := out.Write(addBom)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// write content
 	_, err = io.Copy(out, in)
-	return err
+	return bom, err
+}
+
+// Check if the file starts with a bom and if so return its length
+// https://en.wikipedia.org/wiki/Byte_order_mark
+func BomLen(from string) int {
+	in, err := os.Open(from)
+	if err != nil {
+		return 0
+	}
+	defer in.Close()
+	bom := make([]byte, 5)
+	read, _ := in.Read(bom) // @5
+	if read >= 5 {
+		if bom[0] == 0x2B && bom[1] == 0x2F && bom[2] == 0x76 && bom[3] == 0x38 && bom[4] == 0x2D {
+			return 5 // UTF-7
+		}
+	}
+	if read >= 4 {
+		if bom[0] == 0x00 && bom[1] == 0x00 && bom[2] == 0xFE && bom[3] == 0xFF {
+			return 4 // UTF-32 BE
+		}
+		if bom[0] == 0xFF && bom[1] == 0xFE && bom[2] == 0x00 && bom[3] == 0x00 {
+			return 4 // UTF-32 LE
+		}
+		if bom[0] == 0xDD && bom[1] == 0x73 && bom[2] == 0x66 && bom[3] == 0x73 {
+			return 4 // UTF-EBCDIC
+		}
+		if bom[0] == 0x84 && bom[1] == 0x31 && bom[2] == 0x95 && bom[3] == 0x33 {
+			return 4 // GB-18030
+		}
+		if bom[0] == 0x2B && bom[1] == 0x2F && bom[2] == 0x76 &&
+			(bom[3] == 0x38 || bom[3] == 0x39 || bom[3] == 0x2B || bom[3] == 0x2F) {
+			return 4 // UTF-7
+		}
+	}
+	if read >= 3 {
+		if bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF {
+			return 3 // UTF-8
+		}
+		if bom[0] == 0xF7 && bom[1] == 0x64 && bom[2] == 0x4C {
+			return 3 // UTF-1
+		}
+		if bom[0] == 0x0E && bom[1] == 0xFE && bom[2] == 0xFF {
+			return 3 // SCSU
+		}
+		if bom[0] == 0xFB && bom[1] == 0xEE && bom[2] == 0x28 {
+			return 3 // BOCU-1
+		}
+	}
+	if read >= 2 {
+		if bom[0] == 0xFE && bom[1] == 0xFF {
+			return 2 // UTF-16 BE
+		}
+		if bom[0] == 0xFF && bom[1] == 0xFE {
+			return 2 // UTF-16 LE
+		}
+	}
+	return 0
 }
 
 // Mv file moves a file by copy, then delete

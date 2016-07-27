@@ -22,6 +22,7 @@ type FileBackend struct {
 	bufferLoc string
 	file      core.Rwsc //ReaderWriterSeekerCloser
 	viewId    int64
+	bom       []byte // file byte order mark, if any
 
 	bufferSize int64 // Internal buffer size for file ops
 
@@ -101,7 +102,7 @@ func (b *FileBackend) Reload() error {
 				core.Ed.SetStatusErr("EDITING IN PLACE ! (Large file)")
 			}
 		} else {
-			err = core.CopyFile(b.srcLoc, b.bufferLoc)
+			b.bom, err = core.CopyFileSkipBom(b.srcLoc, b.bufferLoc)
 			if err != nil {
 				return err
 			}
@@ -267,7 +268,7 @@ func (f *FileBackend) Save(loc string) error {
 		}
 	}
 	f.srcLoc = loc
-	err = core.CopyFile(f.bufferLoc, loc)
+	err = core.CopyFileWithBom(f.bufferLoc, loc, f.bom)
 	// some sort of rsync would be nice ?
 	if err != nil {
 		return err
