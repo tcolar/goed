@@ -55,17 +55,10 @@ func (c *char) hash() uint64 {
 	return uint64(c.rune)<<32 | uint64(c.fg.Uint16())<<16 | uint64(c.bg.Uint16())
 }
 
-func NewGuiTerm(h, w int, config *core.Config) *GuiTerm {
+func NewGuiTerm(wh, ww int, config *core.Config) *GuiTerm {
 	notoSymbols = parseBuiltinFont("fonts/NotoSansSymbols-Regular.ttf")
 
-	win, err := wde.NewWindow(h, w)
-	win.SetTitle("GoEd")
-	if err != nil {
-		panic(err)
-	}
-
 	t := &GuiTerm{
-		win:      win,
 		fontPath: config.GuiFont,
 		fontSize: config.GuiFontSize,
 		fontDpi:  config.GuiFontDpi,
@@ -73,12 +66,12 @@ func NewGuiTerm(h, w int, config *core.Config) *GuiTerm {
 
 	t.text = [][]char{}
 
-	t.applyFont(t.fontPath, t.fontSize)
+	t.applyFont(t.fontPath, t.fontSize, wh, ww)
 
 	return t
 }
 
-func (t *GuiTerm) applyFont(fontPath string, fontSize int) {
+func (t *GuiTerm) applyFont(fontPath string, fontSize, wh, ww int) {
 	if len(fontPath) == 0 {
 		// builtin default font
 		t.font = parseBuiltinFont("fonts/LiberationMono-Bold.ttf")
@@ -99,7 +92,7 @@ func (t *GuiTerm) applyFont(fontPath string, fontSize int) {
 	t.ctx.SetFontSize(float64(fontSize))
 	t.ctx.SetHinting(font.HintingFull)
 
-	t.resize(t.win.Size())
+	t.resize(wh, ww)
 }
 
 func (t *GuiTerm) resize(ww, wh int) {
@@ -163,7 +156,6 @@ func parseFont(fontBytes []byte) *truetype.Font {
 }
 
 func (t *GuiTerm) Init() error {
-	t.win.Show()
 	return nil
 }
 
@@ -184,10 +176,16 @@ func (t *GuiTerm) Clear(fg, bg uint16) {
 }
 
 func (t *GuiTerm) Flush() {
+	if t.win == nil {
+		return
+	}
 	t.paint()
 }
 
 func (t *GuiTerm) SetCursor(x, y int) {
+	if t.win == nil {
+		return
+	}
 	px, py := t.cursorX, t.cursorY
 	t.cursorX = x
 	t.cursorY = y
@@ -248,9 +246,20 @@ func (t *GuiTerm) Listen() {
 }
 
 func (t *GuiTerm) listen() {
+	// For an unknow reason, wde won't bring the windows to the front if it's created before this
+	// so we wait ntl here to do it.
+	win, err := wde.NewWindow(t.w*t.charW, t.h*t.charH)
+	win.SetTitle("GoEd")
+	if err != nil {
+		panic(err)
+	}
+	t.win = win
+	t.win.Show()
+
 	evtState := event.NewEvent()
 	dragY, dragX := 0, 0
-	for ev := range t.win.EventChan() {
+	events := t.win.EventChan()
+	for ev := range events {
 		evtState.Type = event.Evt_None
 		evtState.Glyph = ""
 		switch e := ev.(type) {
