@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
@@ -26,14 +25,8 @@ var _ core.Term = (*GuiTerm)(nil)
 
 var palette = xtermPalette()
 
-// path to user specified font, or empty for builtin default
-var fontPath = ""
-
 // backup/symbols font
 var notoSymbols *truetype.Font
-
-var fontSize = 10
-var fontDpi = 96
 
 // GuiTerm is a very minimal text terminal emulation GUI.
 type GuiTerm struct {
@@ -47,33 +40,23 @@ type GuiTerm struct {
 	ctx              *freetype.Context
 	rgba             *image.RGBA
 	cursorX, cursorY int
+	fontPath         string
+	fontSize         int
+	fontDpi          int
 }
 
 type char struct {
 	rune
-	fg, bg core.Style
-	fresh  bool
+	fg, bg        core.Style
+	prevPaintHash uint64
 }
 
-func (c char) equals(c2 char) bool {
-	if c.rune != c2.rune {
-		return false
-	}
-	if c.fg != c2.fg {
-		return false
-	}
-	if c.bg != c2.bg {
-		return false
-	}
-	return true
+func (c *char) hash() uint64 {
+	return uint64(c.rune)<<32 | uint64(c.fg.Uint16())<<16 | uint64(c.bg.Uint16())
 }
 
 func NewGuiTerm(h, w int, config *core.Config) *GuiTerm {
 	notoSymbols = parseBuiltinFont("fonts/NotoSansSymbols-Regular.ttf")
-
-	fontPath = config.GuiFont
-	fontSize = config.GuiFontSize
-	fontDpi = config.GuiFontDpi
 
 	win, err := wde.NewWindow(h, w)
 	win.SetTitle("GoEd")
@@ -82,12 +65,15 @@ func NewGuiTerm(h, w int, config *core.Config) *GuiTerm {
 	}
 
 	t := &GuiTerm{
-		win: win,
+		win:      win,
+		fontPath: config.GuiFont,
+		fontSize: config.GuiFontSize,
+		fontDpi:  config.GuiFontDpi,
 	}
 
 	t.text = [][]char{}
 
-	t.applyFont(fontPath, fontSize)
+	t.applyFont(t.fontPath, t.fontSize)
 
 	return t
 }
@@ -104,11 +90,11 @@ func (t *GuiTerm) applyFont(fontPath string, fontSize int) {
 	opts.Size = float64(fontSize)
 	t.face = truetype.NewFace(t.font, &opts)
 	bounds, _, _ := t.face.GlyphBounds('░')
-	t.charW = int((bounds.Max.X-bounds.Min.X)>>6) + fontDpi/32
-	t.charH = int((bounds.Max.Y-bounds.Min.Y)>>6) + fontDpi/16
+	t.charW = int((bounds.Max.X-bounds.Min.X)>>6) + t.fontDpi/32
+	t.charH = int((bounds.Max.Y-bounds.Min.Y)>>6) + t.fontDpi/16
 
 	t.ctx = freetype.NewContext()
-	t.ctx.SetDPI(float64(fontDpi))
+	t.ctx.SetDPI(float64(t.fontDpi))
 	t.ctx.SetFont(t.font)
 	t.ctx.SetFontSize(float64(fontSize))
 	t.ctx.SetHinting(font.HintingFull)
@@ -138,7 +124,12 @@ func (t *GuiTerm) resize(ww, wh int) {
 	t.rgba = image.NewRGBA(image.Rect(0, 0, ww, wh))
 	t.ctx.SetClip(t.rgba.Bounds())
 	t.ctx.SetDst(t.rgba)
-	//fmt.Printf("%v %v %v\n", t.w, t.h, t.rgba.Bounds())
+	// force repaint all
+	for y, ln := range t.text {
+		for x, _ := range ln {
+			t.text[y][x].prevPaintHash = 0
+		}
+	}
 }
 
 func parseBuiltinFont(fontPath string) *truetype.Font {
@@ -187,7 +178,6 @@ func (t *GuiTerm) Clear(fg, bg uint16) {
 		for x, _ := range ln {
 			if t.text[y][x].rune != zero {
 				t.text[y][x].rune = zero
-				t.text[y][x].fresh = false
 			}
 		}
 	}
@@ -198,13 +188,19 @@ func (t *GuiTerm) Flush() {
 }
 
 func (t *GuiTerm) SetCursor(x, y int) {
-	// todo : move cursor
 	px, py := t.cursorX, t.cursorY
 	t.cursorX = x
 	t.cursorY = y
 
-	t.paintChar(py, px)
-	t.paintChar(y, x)
+	// force redraw where the cursor was/is
+	if py >= 0 && py < len(t.text) && px >= 0 && px < len(t.text[py]) {
+		t.text[py][px].prevPaintHash = 0
+		t.paintChar(py, px)
+	}
+	if py >= 0 && y < len(t.text) && x >= 0 && x < len(t.text[y]) {
+		t.text[y][x].prevPaintHash = 0
+		t.paintChar(y, x)
+	}
 
 	ny, nx := y*t.charH, x*t.charW
 	r := image.Rect(nx, ny, nx+t.charW, ny+t.charH)
@@ -217,14 +213,14 @@ func (t *GuiTerm) Char(y, x int, c rune, fg, bg core.Style) {
 	if x < 0 || y < 0 || y >= len(t.text) || x >= len(t.text[y]) {
 		return
 	}
-	ch := char{
-		rune: c,
-		fg:   fg,
-		bg:   bg,
+	cur := &t.text[y][x]
+	if cur.rune == c && cur.fg == fg && cur.bg == bg {
+		return
 	}
-	if !ch.equals(t.text[y][x]) {
-		t.text[y][x] = ch
-	}
+
+	cur.rune = c
+	cur.fg = fg
+	cur.bg = bg
 }
 
 // size in characters
@@ -294,39 +290,38 @@ func (t *GuiTerm) listen() {
 }
 
 func (t *GuiTerm) paint() {
-	start := time.Now()
 	for y, ln := range t.text {
 		for x, _ := range ln {
 			t.paintChar(y, x)
 		}
 	}
-	fmt.Printf("paint1 %v\n", time.Now().Sub(start))
 	t.win.Screen().CopyRGBA(t.rgba, t.rgba.Bounds())
 	t.win.FlushImage()
-	fmt.Printf("paint2 %v\n", time.Now().Sub(start))
-
 }
 
 func (t *GuiTerm) paintChar(y, x int) {
 	if y >= len(t.text) || x >= len(t.text[y]) {
 		return
 	}
-	r := t.text[y][x]
-	//if r.fresh {
-	//	return
-	//}
-	//t.text[y][x].fresh = true
-	//fmt.Printf("%d,%d -> %s\n", y, x, string(r.rune))
+	atCursor := y == t.cursorY && x == t.cursorX
 
-	pt := freetype.Pt(1+x*t.charW, t.charH-4+y*t.charH)
+	r := &t.text[y][x]
+
 	if r.rune < 32 {
 		r.rune = ' '
 		r.bg = core.Ed.Theme().Bg
 	}
+
+	hash := r.hash()
+	if hash == r.prevPaintHash {
+		return
+	}
+	r.prevPaintHash = hash
+
 	bg := image.NewUniform(palette[r.bg.Uint16()&255])
 	fg := image.NewUniform(palette[r.fg.Uint16()&255])
 	// cursor location gets inverted colors
-	if y == t.cursorY && x == t.cursorX {
+	if atCursor {
 		bg, fg = fg, bg
 	}
 	t.ctx.SetSrc(fg)
@@ -334,6 +329,7 @@ func (t *GuiTerm) paintChar(y, x int) {
 	ry := t.charH * y
 	rect := image.Rect(rx, ry, rx+t.charW, ry+t.charH)
 	draw.Draw(t.rgba, rect, bg, image.ZP, draw.Src)
+	pt := freetype.Pt(x*t.charW, t.charH-4+y*t.charH)
 	t.drawRune(r.rune, pt)
 }
 
@@ -348,10 +344,10 @@ func (t *GuiTerm) drawRune(r rune, pt fixed.Point26_6) {
 	font := t.font
 	if notoSymbols.Index(r) != 0 {
 		t.ctx.SetFont(notoSymbols)
-		t.ctx.SetFontSize(float64(fontSize - 3))
+		t.ctx.SetFontSize(float64(t.fontSize - 3))
 	}
 	t.ctx.DrawString(string(r), pt)
-	t.ctx.SetFontSize(float64(fontSize))
+	t.ctx.SetFontSize(float64(t.fontSize))
 	t.ctx.SetFont(font)
 }
 
