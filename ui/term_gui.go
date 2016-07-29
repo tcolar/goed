@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
@@ -28,11 +29,14 @@ var palette = xtermPalette()
 // backup/symbols font
 var notoSymbols *truetype.Font
 
+// it seem wde sometimes crash if we try to do things concurrently
+// so using a lock
+var wdeLock sync.Mutex
+
 // GuiTerm is a very minimal text terminal emulation GUI.
 type GuiTerm struct {
-	w, h int
-	text [][]char
-	//	textLock         sync.RWMutex
+	w, h             int
+	text             [][]char
 	win              wde.Window
 	font             *truetype.Font
 	charW, charH     int // size of characters
@@ -203,8 +207,10 @@ func (t *GuiTerm) SetCursor(x, y int) {
 	ny, nx := y*t.charH, x*t.charW
 	r := image.Rect(nx, ny, nx+t.charW, ny+t.charH)
 	i := t.rgba.SubImage(r).(*image.RGBA)
+	wdeLock.Lock()
 	t.win.Screen().CopyRGBA(i, r)
 	t.win.FlushImage()
+	wdeLock.Unlock()
 }
 
 func (t *GuiTerm) Char(y, x int, c rune, fg, bg core.Style) {
@@ -303,18 +309,25 @@ func (t *GuiTerm) listen() {
 }
 
 func (t *GuiTerm) paint() {
+	painted := false
 	for y, ln := range t.text {
 		for x, _ := range ln {
-			t.paintChar(y, x)
+			if t.paintChar(y, x) {
+				painted = true
+			}
 		}
 	}
-	t.win.Screen().CopyRGBA(t.rgba, t.rgba.Bounds())
-	t.win.FlushImage()
+	// Unfortunately wde only supports drawing the whole screen
+	if painted {
+		wdeLock.Lock()
+		t.win.FlushImage()
+		wdeLock.Unlock()
+	}
 }
 
-func (t *GuiTerm) paintChar(y, x int) {
+func (t *GuiTerm) paintChar(y, x int) bool {
 	if y >= len(t.text) || x >= len(t.text[y]) {
-		return
+		return false
 	}
 	atCursor := y == t.cursorY && x == t.cursorX
 
@@ -327,7 +340,7 @@ func (t *GuiTerm) paintChar(y, x int) {
 
 	hash := r.hash()
 	if hash == r.prevPaintHash {
-		return
+		return false
 	}
 	r.prevPaintHash = hash
 
@@ -344,6 +357,14 @@ func (t *GuiTerm) paintChar(y, x int) {
 	draw.Draw(t.rgba, rect, bg, image.ZP, draw.Src)
 	pt := freetype.Pt(x*t.charW, t.charH-4+y*t.charH)
 	t.drawRune(r.rune, pt)
+
+	// copy it to wde
+	wdeLock.Lock()
+	i := t.rgba.SubImage(rect).(*image.RGBA)
+	t.win.Screen().CopyRGBA(i, rect)
+	wdeLock.Unlock()
+
+	return true
 }
 
 // Draw the rune, if the user-picked font does not provide a glyph for the given
