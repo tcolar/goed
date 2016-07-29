@@ -66,7 +66,7 @@ For this reason there an **experimental** GUI (**currently very slow**),
 based on go.wde, in the works, not quite ready yet. 
 
 You can run it using `goed --g`
-There is a builtin font (LibretaionMono) but you can specify the path to a different
+There is a builtin font (LiberationMono) but you can specify the path to a different
 one in `~/.goed/config.toml`, just make sure it's monospace and TTF.
 ie: `GuiFont="/Library/Fonts/Andale Mono.ttf"`
 
@@ -78,7 +78,7 @@ termbox library used by Goed.
 
 You may use `goed --term-events` to find out what events work in your given terminal.
 
-You can customize the mouse/keyboard shortcuts in ~/.goed/bindings.toml
+You can customize the mouse/keyboard shortcuts in `~/.goed/bindings.toml`
 Here are the [standard mouse/keyboard bindings](res/default/bindings.toml)
   
 ### Terminal usage
@@ -127,7 +127,7 @@ You may create custom themes under ~/.goed/themes/ (originals under ~/.goed/defa
 You may create/override actions under ~/.goed/actions/
 
 ### Reporting issues
-Report in github, try not to create duplicates.
+Report on github, try not to create duplicates.
 
 If possible try to provide the most recent log found in ~/.goed/log/
   
