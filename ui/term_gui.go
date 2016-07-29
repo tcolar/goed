@@ -246,8 +246,8 @@ func (t *GuiTerm) Listen() {
 }
 
 func (t *GuiTerm) listen() {
-	// For an unknow reason, wde won't bring the windows to the front if it's created before this
-	// so we wait ntl here to do it.
+	// For an unknow reason, wde won't bring the windows to the front if it's created
+	// before this (OSX), so we wait until here to create it.
 	win, err := wde.NewWindow(t.w*t.charW, t.h*t.charH)
 	win.SetTitle("GoEd")
 	if err != nil {
@@ -255,7 +255,11 @@ func (t *GuiTerm) listen() {
 	}
 	t.win = win
 	t.win.Show()
+	// It seems a window maximize event BEFORE any paint causes a wde crash (OSX)
+	// so making sure paint is called at least once
+	t.paint()
 
+	// Start the event loop
 	evtState := event.NewEvent()
 	dragY, dragX := 0, 0
 	events := t.win.EventChan()
@@ -275,7 +279,7 @@ func (t *GuiTerm) listen() {
 		case wde.MouseUpEvent:
 			evtState.MouseUp(int(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
 		case wde.MouseDraggedEvent:
-			// only send drag event if moved to new text cell
+			// only send a drag event if moved to new text cell
 			y, x := e.Where.Y/t.charH, e.Where.X/t.charW
 			if y == dragY && x == dragX {
 				continue
