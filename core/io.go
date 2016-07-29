@@ -280,11 +280,10 @@ func LookupLocation(dir, loc string) (string, bool) {
 	if err == nil {
 		return f, stat.IsDir()
 	}
-	dir = filepath.Dir(dir)
-	if strings.HasSuffix(dir, string(os.PathSeparator)) { //root
-		return loc, true
+	if dir == filepath.Dir(dir) { // at root, not found
+		return loc, strings.HasSuffix(loc, string(filepath.Separator))
 	}
-	return LookupLocation(dir, loc)
+	return LookupLocation(filepath.Dir(dir), loc)
 }
 
 func Cleanup() {
