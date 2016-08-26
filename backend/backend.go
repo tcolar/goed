@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 )
 
@@ -15,9 +16,12 @@ func BufferFile(id int64) string {
 	return path.Join(core.Home, "buffers", strconv.FormatInt(id, 10))
 }
 
-// NewMemBackendCmd creates a Comand runner backed by an In-memory based backend
+// NewMemBackendCmd creates a Command runner backed by an In-memory based backend
 // if title == nil then will show the command name
 func NewMemBackendCmd(args []string, dir string, viewId int64, title *string, scrollTop bool) (*BackendCmd, error) {
+
+	actions.Ar.ViewSetType(viewId, core.ViewTypeCmdOutput)
+
 	b, err := NewMemBackend("", viewId)
 	if err != nil {
 		return nil, err

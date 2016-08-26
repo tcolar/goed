@@ -58,6 +58,7 @@ const (
 type ViewType int
 
 const (
-	ViewTypeStandard ViewType = 1
-	ViewTypeShell             = 2
+	ViewTypeStandard  ViewType = 0 // editable file
+	ViewTypeShell              = 1 // interactive shell
+	ViewTypeCmdOutput          = 2 // static command output
 )

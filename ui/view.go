@@ -429,7 +429,9 @@ func (v *View) SetTitle(title string) {
 }
 
 func (v *View) SetDirty(dirty bool) {
-	v.dirty = dirty
+	if v.Type() == core.ViewTypeStandard {
+		v.dirty = dirty
+	}
 }
 
 func (v *View) SetBackend(b core.Backend) {

@@ -181,9 +181,14 @@ func (a *ar) ViewSetScrollPos(viewId int64, ln, col int) {
 	d(viewSetScrollPos{viewId: viewId, ln: ln, col: col})
 }
 
-// se the view title (typically file path)
+// set the view title (typically file path)
 func (a *ar) ViewSetTitle(viewId int64, title string) {
 	d(viewSetTitle{viewId: viewId, title: title})
+}
+
+// set the view type, see core.vars
+func (a *ar) ViewSetType(viewId int64, viewType int) {
+	d(viewSetType{viewId: viewId, viewType: viewType})
 }
 
 // set the number of vt100 columns, this is useful so that tty programs that
@@ -729,6 +734,18 @@ func (a viewSetTitle) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetTitle(a.title)
+	}
+}
+
+type viewSetType struct {
+	viewId   int64
+	viewType int
+}
+
+func (a viewSetType) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.SetViewType(core.ViewType(a.viewType))
 	}
 }
 

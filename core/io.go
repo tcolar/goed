@@ -315,3 +315,11 @@ func RunesLen(runes []rune) int {
 	}
 	return l
 }
+
+func IsDir(loc string) bool {
+	info, err := os.Stat(loc)
+	if err == nil {
+		return info.IsDir()
+	}
+	return strings.HasSuffix(loc, string(filepath.Separator))
+}

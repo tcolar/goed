@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
 )
@@ -13,10 +14,10 @@ func exec(args []string, interactive bool) int64 {
 	}
 	v := ed.AddViewSmart(nil)
 	v.highlighter = &TermHighlighter{}
-	if interactive {
-		v.SetViewType(core.ViewTypeShell)
-	}
 	b, err := backend.NewMemBackendCmd(args, workDir, v.Id(), nil, false)
+	if interactive {
+		actions.Ar.ViewSetType(v.Id(), core.ViewTypeShell)
+	}
 	b.MaxRows = core.Ed.Config().MaxCmdBufferLines
 	if err != nil {
 		ed.SetStatusErr(err.Error())
