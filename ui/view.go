@@ -97,10 +97,11 @@ func (v *View) Render() {
 func (v *View) renderMargin() {
 	e := core.Ed
 	t := e.Theme()
-	if v.offx < 80 && v.offx+v.LastViewCol() >= 80 {
+	margin := e.Config().LineWidthIndicator
+	if v.offx < margin && v.offx+v.LastViewCol() >= margin {
 		for i := 0; i <= v.LastViewLine(); i++ {
 			e.TermFB(t.Margin.Fg, t.Margin.Bg)
-			e.TermChar(v.y1+2+i, v.x1+2+80-v.offx, t.Margin.Rune)
+			e.TermChar(v.y1+2+i, v.x1+2+margin-v.offx, t.Margin.Rune)
 			e.TermFB(t.Fg, t.Bg)
 		}
 	}

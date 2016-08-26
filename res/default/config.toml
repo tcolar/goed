@@ -6,3 +6,7 @@ MaxCmdBufferLines=3000
 GuiFont=""
 GuiFontSize=10
 GuiFontDpi=96
+# Preffered minimum view width
+MinViewWidth=80
+# eol inicator
+LineWidthIndicator=80

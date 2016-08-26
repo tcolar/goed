@@ -99,7 +99,7 @@ func (c *Cmdbar) CursorMvmt(m core.CursorMvmt) {
 		c.historyPos++
 		c.cmd = c.history[len(c.history)-c.historyPos]
 	case core.CursorMvmtDown:
-		if c.historyPos >= 1 {
+		if c.historyPos <= 1 {
 			return
 		}
 		c.historyPos--

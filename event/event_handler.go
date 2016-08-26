@@ -12,7 +12,7 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-var queue = make(chan *Event, 200)
+var queue = make(chan *Event, 500)
 var bindings map[string]EventType
 
 // Queue - Note: Queue a copy of the event
@@ -61,7 +61,7 @@ func handleEvent(e *Event, es *eventState) bool {
 		e.parseType()
 	}
 
-	log.Printf("Parsed evt: %#v", e)
+	//log.Printf("Parsed evt: %#v", e)
 	et := e.Type
 
 	es.cmdbarOn = actions.Ar.CmdbarEnabled()
@@ -283,6 +283,14 @@ func handleTermEvent(vid int64, e *Event) {
 
 	// Handle termbox special keys to VT100
 	switch {
+	case e.Type == EvtNavDown:
+		actions.Ar.EdViewNavigate(core.CursorMvmtDown)
+	case e.Type == EvtNavLeft:
+		actions.Ar.EdViewNavigate(core.CursorMvmtLeft)
+	case e.Type == EvtNavRight:
+		actions.Ar.EdViewNavigate(core.CursorMvmtRight)
+	case e.Type == EvtNavUp:
+		actions.Ar.EdViewNavigate(core.CursorMvmtUp)
 	case e.Type == EvtSelectMouse:
 		actions.Ar.ViewSetCursorPos(vid, ln, col)
 		actions.Ar.ViewClearSelections(vid)

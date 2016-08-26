@@ -10,6 +10,8 @@ type Config struct {
 	GuiFont            string // full path to a monospace TTF font
 	GuiFontSize        int
 	GuiFontDpi         int
+	MinViewWidth       int // preferred minimum view width (in characters)
+	LineWidthIndicator int // line width indicator (ie: 80 cols)
 }
 
 func LoadConfig(file string) *Config {
@@ -26,6 +28,12 @@ func LoadConfig(file string) *Config {
 	}
 	if conf.GuiFontDpi == 0 {
 		conf.GuiFontDpi = 96
+	}
+	if conf.MinViewWidth == 0 {
+		conf.MinViewWidth = 80
+	}
+	if conf.LineWidthIndicator == 0 {
+		conf.LineWidthIndicator = 80
 	}
 	return conf
 }

@@ -433,18 +433,19 @@ func (e *Editor) colFreeSpace(c *Col) int {
 // Do we have room for a new column ?
 // if so, create it and add the view to it, compress the other columns
 func (e *Editor) tryNewCol(v *View) *Col {
+	width := e.Config().MinViewWidth
 	dirs := e.ColNarrowest() // assume dir listings column
 	w := 0
 	for _, c := range e.Cols {
 		if c == dirs {
 			w += 23
 		} else {
-			w += 84
+			w += width + 4
 		}
 	}
 	_, tw := e.term.Size()
 	// if so, create it and compact the other columns
-	if tw-w < 80 {
+	if tw-w < width {
 		return nil
 	}
 	r := 0.0
@@ -452,7 +453,7 @@ func (e *Editor) tryNewCol(v *View) *Col {
 		if c == dirs {
 			c.WidthRatio = 23.0 / float64(tw)
 		} else {
-			c.WidthRatio = 84.0 / float64(tw)
+			c.WidthRatio = (4.0 + float64(width)) / float64(tw)
 		}
 		r += c.WidthRatio
 	}
