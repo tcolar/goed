@@ -11,7 +11,7 @@ type Event struct {
 	Glyph           string
 	Keys            []string
 	Combo           Combo
-	MouseBtns       map[int]bool
+	MouseBtns       map[MouseButton]bool
 	MouseY, MouseX  int
 	inDrag          bool // mouse dragging
 	dragLn, dragCol int  // selection start point
@@ -22,14 +22,14 @@ type eventState struct {
 	// state
 	movingView             bool
 	lastClickX, lastClickY int
-	lastClickBtn           int
+	lastClickBtn           MouseButton
 	lastClick              int64 // timestamp
 	cmdbarOn               bool
 }
 
 func NewEvent() *Event {
 	return &Event{
-		MouseBtns: map[int]bool{},
+		MouseBtns: map[MouseButton]bool{},
 		Keys:      []string{},
 	}
 }
@@ -65,13 +65,13 @@ func (e *Event) KeyUp(key string) {
 	e.updKey(key, false)
 }
 
-func (e *Event) MouseUp(button, y, x int) {
+func (e *Event) MouseUp(button MouseButton, y, x int) {
 	e.MouseBtns[button] = false
 	e.inDrag = false
 	// TODO some sort of endDrag event ?
 }
 
-func (e *Event) MouseDown(button, y, x int) {
+func (e *Event) MouseDown(button MouseButton, y, x int) {
 	if e.MouseBtns[button] &&
 		(!e.inDrag || e.MouseX != x || e.MouseY != y) {
 		e.inDrag = true
