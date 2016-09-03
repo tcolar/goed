@@ -2,6 +2,7 @@ package actions
 
 import (
 	"log"
+	"time"
 
 	"github.com/tcolar/goed/core"
 )
@@ -25,18 +26,32 @@ func (a actionBus) Dispatch(action core.Action) {
 }
 
 func (a actionBus) Start() {
+	// to minimize flickering we repaint as little as possible and using a ticker
+	paintTicker := time.NewTicker(16 * time.Millisecond)
+	needRender := false
 	for {
 		select {
-		case action := <-a.actionChan:
-			if core.Trace {
-				log.Printf("> %#v", action)
-			}
-			action.Run()
-			if core.Trace {
-				log.Printf("< %#v", action)
-			}
 		case <-a.quitc:
 			break
+
+		case action := <-a.actionChan:
+			switch action.(type) {
+			case edRender:
+				needRender = true
+			default:
+				if core.Trace {
+					log.Printf("> %#v", action)
+				}
+				action.Run()
+				if core.Trace {
+					log.Printf("< %#v", action)
+				}
+			}
+		case <-paintTicker.C:
+			if needRender {
+				core.Ed.Render()
+				needRender = false
+			}
 		}
 	}
 }
