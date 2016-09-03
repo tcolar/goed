@@ -25,4 +25,8 @@ _testmain.go
 *.test
 *.prof
 
-goed
+/goed
+/cmd/goed/goed
+/cmd/goed-wde/goed-wde
+/cmd/goed-termbox/goed-termbox
+/cmd/goed-tcell/goed-tcell
