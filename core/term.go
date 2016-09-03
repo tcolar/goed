@@ -5,7 +5,7 @@ import "fmt"
 // Terminal interface
 type Term interface {
 	Close()
-	Clear(fg, bg uint16)
+	Clear(fg, bg Style)
 	Char(y, x int, c rune, fg, bg Style)
 	Flush()
 	Init() error
@@ -39,7 +39,7 @@ func (t *MockTerm) Init() error {
 func (t *MockTerm) Close() {
 }
 
-func (t *MockTerm) Clear(fg, bg uint16) {
+func (t *MockTerm) Clear(fg, bg Style) {
 	t.text = [25][50]rune{}
 }
 
