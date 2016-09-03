@@ -1,3 +1,5 @@
+// Goed using WDE as a graphical backend
+// Experimental at this point, works but slow as high resolutions.
 package ui
 
 import (
@@ -14,6 +16,7 @@ import (
 	"github.com/golang/freetype/truetype"
 	wde "github.com/skelterjohn/go.wde"
 	_ "github.com/skelterjohn/go.wde/init"
+	"github.com/tcolar/goed"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
@@ -32,6 +35,15 @@ var notoSymbols *truetype.Font
 // it seem wde sometimes crash if we try to do things concurrently
 // so using a lock
 var wdeLock sync.Mutex
+
+func Main() {
+	config := goed.Initialize()
+	if config == nil {
+		return
+	}
+	term := NewGuiTerm(1200, 800, config)
+	goed.Start(term, config)
+}
 
 // GuiTerm is a very minimal text terminal emulation GUI.
 type GuiTerm struct {
@@ -168,7 +180,7 @@ func (t *GuiTerm) Close() {
 	wde.Stop()
 }
 
-func (t *GuiTerm) Clear(fg, bg uint16) {
+func (t *GuiTerm) Clear(fg, bg core.Style) {
 	zero := rune(0)
 	for y, ln := range t.text {
 		for x, _ := range ln {
@@ -197,20 +209,10 @@ func (t *GuiTerm) SetCursor(x, y int) {
 	// force redraw where the cursor was/is
 	if py >= 0 && py < len(t.text) && px >= 0 && px < len(t.text[py]) {
 		t.text[py][px].prevPaintHash = 0
-		t.paintChar(py, px)
 	}
 	if py >= 0 && y < len(t.text) && x >= 0 && x < len(t.text[y]) {
 		t.text[y][x].prevPaintHash = 0
-		t.paintChar(y, x)
 	}
-
-	ny, nx := y*t.charH, x*t.charW
-	r := image.Rect(nx, ny, nx+t.charW, ny+t.charH)
-	i := t.rgba.SubImage(r).(*image.RGBA)
-	wdeLock.Lock()
-	t.win.Screen().CopyRGBA(i, r)
-	t.win.FlushImage()
-	wdeLock.Unlock()
 }
 
 func (t *GuiTerm) Char(y, x int, c rune, fg, bg core.Style) {
@@ -281,16 +283,16 @@ func (t *GuiTerm) listen() {
 			evtState.Type = event.EvtQuit
 			return
 		case wde.MouseDownEvent:
-			evtState.MouseDown(int(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
+			evtState.MouseDown(event.MouseButton(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
 		case wde.MouseUpEvent:
-			evtState.MouseUp(int(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
+			evtState.MouseUp(event.MouseButton(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
 		case wde.MouseDraggedEvent:
 			// only send a drag event if moved to new text cell
 			y, x := e.Where.Y/t.charH, e.Where.X/t.charW
 			if y == dragY && x == dragX {
 				continue
 			}
-			evtState.MouseDown(int(e.Which), y, x)
+			evtState.MouseDown(event.MouseButton(e.Which), y, x)
 			dragX = x
 			dragY = y
 		case wde.KeyTypedEvent:
@@ -309,18 +311,48 @@ func (t *GuiTerm) listen() {
 }
 
 func (t *GuiTerm) paint() {
-	painted := false
+	rectangles := []image.Rectangle{}
+	var curRect image.Rectangle
+	any := false
 	for y, ln := range t.text {
 		for x, _ := range ln {
-			if t.paintChar(y, x) {
-				painted = true
+			if t.paintChar(y, x) { // char needs repainting
+				// Try to reduce screen flush area to a few rectangles
+				switch {
+				case !any: // no rectangle yet
+					curRect = image.Rect(x, y, x, y)
+					any = true
+				case curRect.Max.Y == y && x >= curRect.Min.X && x <= curRect.Max.X:
+					//nada, already in the rectangle
+				case y < curRect.Max.Y+3 && x > curRect.Min.X-3 && x < curRect.Max.X+3:
+					curRect.Max.Y = y
+					if x < curRect.Min.X {
+						curRect.Min.X = x
+					} else if x > curRect.Max.X {
+						curRect.Max.X = x
+					}
+				default:
+					// else start new rectangle
+					rectangles = append(rectangles, curRect)
+					curRect = image.Rect(x, y, x, y)
+				}
 			}
 		}
 	}
-	// Unfortunately wde only supports drawing the whole screen
-	if painted {
+	if any {
+		rectangles = append(rectangles, curRect)
+	}
+	// to UI coordinates
+	for _, r := range rectangles {
+		r.Min.X *= t.charW
+		r.Max.X *= (t.charW + 1)
+		r.Min.Y *= t.charH
+		r.Max.Y *= (t.charH + 1)
+	}
+	if len(rectangles) > 0 {
 		wdeLock.Lock()
-		t.win.FlushImage()
+		// unfortunately on OSX rectangles is not used and the whole screen is flushed
+		t.win.FlushImage(rectangles...)
 		wdeLock.Unlock()
 	}
 }
