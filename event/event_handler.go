@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"sync/atomic"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -14,13 +15,17 @@ import (
 
 var queue = make(chan *Event, 500)
 var bindings map[string]EventType
+var shutdown int32
 
 // Queue - Note: Queue a copy of the event
 func Queue(e Event) {
-	queue <- &e
+	if atomic.LoadInt32(&shutdown) == 0 { // protect from sending to closed queue
+		queue <- &e
+	}
 }
 
 func Shutdown() {
+	atomic.StoreInt32(&shutdown, 1)
 	close(queue)
 }
 
@@ -472,7 +477,7 @@ func builtinEvents(e *Event, es *eventState, y, x int, curView int64) bool {
 	}
 
 	// Update state (ignore mouse wheel fake clicks)
-	if !e.MouseBtns[8] && !e.MouseBtns[16] {
+	if !e.MouseBtns[MouseWheelUp] && !e.MouseBtns[MouseWheelDown] {
 		es.lastClickX = e.MouseX
 		es.lastClickY = e.MouseY
 		es.lastClick = time.Now().Unix()
