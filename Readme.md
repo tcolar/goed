@@ -57,17 +57,18 @@ For ITerm2 those settingw work best:
   - Under preferences / pointer, disable right click context menu.
   - Under prefs / pfofiles / default / terminal set term type to "xterm-256color"
  
-#### GUI (Experimental)
+#### Terminal backends
 The eventing support in terminals varies immensely, some don't support mouse
 events, some only support some CTRL, ALT sequences and almost none support any
 type of advanced chording.
 
-For this reason there an **experimental** GUI (**currently very slow**),
-based on go.wde, in the works, not quite ready yet. 
+For this reason there alternative terminal frontens see [cmd/](cmd/) 
+The default backend is goed-tcell(terminal), but there are also implmentations
+ goed-termbox(terminal) and goed-wde (GUI).
 
-You can run it using `goed --g`
-There is a builtin font (LiberationMono) but you can specify the path to a different
-one in `~/.goed/config.toml`, just make sure it's monospace and TTF.
+For the GUI version, there is a builtin font (LiberationMono) but you can specify 
+the path to a different one in `~/.goed/config.toml`, just make sure it's monospace 
+and TTF.
 ie: `GuiFont="/Library/Fonts/Andale Mono.ttf"`
 
 ### Keyboard / Mouse shortcuts
