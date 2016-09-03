@@ -57,39 +57,6 @@ func (e *Editor) WidgetAt(y, x int) Renderer {
 	return nil
 }
 
-func (e *Editor) Render() {
-	e.TermFB(e.theme.Fg, e.theme.Bg)
-	e.term.Clear(e.Bg.Uint16(), e.Bg.Uint16())
-
-	for _, c := range e.Cols {
-		for _, v := range c.Views {
-			e.ViewById(v).Render()
-		}
-	}
-
-	// cursor
-	v := viewCast(e.CurView())
-	cc, cl := v.CurCol(), v.CurLine()
-	c, _, _ := v.CurChar()
-	// With some terminals & color schemes the cursor might be "invisible" if we are at a
-	// location with no text (ie: end of line)
-	// so in that case put as space there to cause the cursor to appear.
-	var car = ' '
-	if c != nil {
-		car = *c
-	}
-	// Note the terminal inverts the colors where the cursor is
-	// this is why this statement might appear "backward"
-	e.TermFB(e.theme.BgCursor, e.theme.FgCursor)
-	e.TermChar(cl+v.y1-v.offy+2, cc+v.x1-v.offx+2, car)
-	e.TermFB(e.theme.Fg, e.theme.Bg)
-
-	e.Cmdbar.Render()
-	e.Statusbar.Render()
-
-	e.TermFlush()
-}
-
 // Renderer is the interface for a renderable UI component.
 type Renderer interface {
 	Bounds() (y1, x1, y2, x2 int)

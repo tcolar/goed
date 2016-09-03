@@ -32,14 +32,7 @@ type Editor struct {
 	views     map[int64]*View
 }
 
-func NewEditor(gui bool) *Editor {
-	var term core.Term
-	config := core.LoadConfig(core.ConfFile)
-	if gui {
-		term = NewGuiTerm(1200, 800, config)
-	} else {
-		term = NewTermBox()
-	}
+func NewEditor(term core.Term, config *core.Config) *Editor {
 	return &Editor{
 		term:   term,
 		config: config,
@@ -77,9 +70,6 @@ func (e *Editor) Start(locs []string) {
 		panic(err)
 	}
 
-	defer func() {
-		e.term.Close()
-	}()
 	e.term.SetExtendedColors(core.Colors == 256)
 	e.theme, err = core.ReadTheme(core.FindResource(path.Join("themes", e.config.Theme)))
 	if err != nil {
@@ -236,6 +226,39 @@ func (e *Editor) openFile(loc string, view core.Viewable) error {
 	return nil
 }
 
+func (e *Editor) Render() {
+	e.TermFB(e.theme.Fg, e.theme.Bg)
+	e.term.Clear(e.Bg, e.Bg)
+
+	for _, c := range e.Cols {
+		for _, v := range c.Views {
+			e.ViewById(v).Render()
+		}
+	}
+
+	// cursor
+	v := viewCast(e.CurView())
+	cc, cl := v.CurCol(), v.CurLine()
+	c, _, _ := v.CurChar()
+	// With some terminals & color schemes the cursor might be "invisible" if we are at a
+	// location with no text (ie: end of line)
+	// so in that case put as space there to cause the cursor to appear.
+	var car = ' '
+	if c != nil {
+		car = *c
+	}
+	// Note the terminal inverts the colors where the cursor is
+	// this is why this statement might appear "backward"
+	e.TermFB(e.theme.BgCursor, e.theme.FgCursor)
+	e.TermChar(cl+v.y1-v.offy+2, cc+v.x1-v.offx+2, car)
+	e.TermFB(e.theme.Fg, e.theme.Bg)
+
+	e.Cmdbar.Render()
+	e.Statusbar.Render()
+
+	e.TermFlush()
+}
+
 func (e *Editor) SetStatusErr(s string) {
 	if e.Statusbar == nil {
 		return
@@ -244,6 +267,7 @@ func (e *Editor) SetStatusErr(s string) {
 	e.Statusbar.isErr = true
 	e.Statusbar.Render()
 }
+
 func (e *Editor) SetStatus(s string) {
 	if e.Statusbar == nil {
 		return
