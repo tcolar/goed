@@ -151,17 +151,17 @@ func (t *Tcell) parseEvent(e tcell.Event, es *event.Event) {
 		t.updateMouseState(es, b&tcell.WheelRight != 0, event.MouseWheelRight, y, x)
 
 	case *tcell.EventKey:
-		if te.Key() == tcell.KeyRune {
-			es.Glyph = string(te.Rune())
-			es.KeyDown(es.Glyph)
-			return
-		}
 		m := te.Modifiers()
 		es.Combo = event.Combo{
 			LAlt:   m&tcell.ModAlt != 0,
 			LCtrl:  m&tcell.ModCtrl != 0,
 			LShift: m&tcell.ModShift != 0,
 			LSuper: m&tcell.ModMeta != 0,
+		}
+		if te.Key() == tcell.KeyRune {
+			es.Glyph = string(te.Rune())
+			es.KeyDown(es.Glyph)
+			return
 		}
 		switch te.Key() {
 		case tcell.KeyEsc:
