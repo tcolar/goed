@@ -33,9 +33,12 @@ git push origin release_$version
 echo "Pushed branch release_$version to github, merge ready !"
 
 # cross compile binaries
+cd cmd/goed/
 
 gox -osarch="darwin/amd64 darwin/386 linux/amd64 linux/386 linux/arm"\
  -output="/tmp/goed/${version}/{{.OS}}/{{.Arch}}/goed" 
+
+cd -
 
 # Publish to bintray
 echo "publish to bintray ?"

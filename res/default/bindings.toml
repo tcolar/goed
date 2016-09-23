@@ -2,13 +2,13 @@
 # See https://github.com/tcolar/goed/blob/master/event/event_type.go
 #
 # Edit in ~/.goed/bindings.toml
-# - MC1 stands for Mouse Click button 1
+# - MC1 stands for Mouse Click button 1 // 1 is left, 2 middle, 4 right
 # - MD1 stands for Mouse Drag button 1
 # - MDC1 stand for Mouse Double Click button 1
 "MC1" = "set_cursor"
-"MC16" = "scroll_down"
 "MC4" = "open_in_new_view"
 "MC8" = "scroll_up"
+"MC16" = "scroll_down"
 "MD1" = "select_mouse"
 "MDC1" = "select_word"
 "alt+down_arrow" = "nav_down"

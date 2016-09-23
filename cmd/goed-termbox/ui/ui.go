@@ -1,8 +1,10 @@
+// Goed using go-termbox (heavily patched) as the UI backend
 package ui
 
 import (
 	"log"
 
+	"github.com/tcolar/goed"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
@@ -10,6 +12,16 @@ import (
 )
 
 var _ core.Term = (*TermBox)(nil)
+
+func Main() {
+	config := goed.Initialize()
+	if config == nil {
+		return
+	}
+	term := NewTermBox()
+	defer goed.Terminate(term)
+	goed.Start(term, config)
+}
 
 // Termbox : Term implementation using termbox
 type TermBox struct {
@@ -23,8 +35,8 @@ func (t *TermBox) Init() error {
 	return termbox.Init()
 }
 
-func (t *TermBox) Clear(fg, bg uint16) {
-	termbox.Clear(termbox.Attribute(fg), termbox.Attribute(bg))
+func (t *TermBox) Clear(fg, bg core.Style) {
+	termbox.Clear(termbox.Attribute(fg.Uint16()), termbox.Attribute(bg.Uint16()))
 }
 
 func (t *TermBox) Close() {
@@ -94,8 +106,8 @@ func (t *TermBox) parseEvent(e termbox.Event, es *event.Event) {
 		LSuper: m == termbox.Meta,
 	}
 	es.Keys = []string{}
-	es.MouseBtns[8] = false  // reset wheel down, no separate "up" event
-	es.MouseBtns[16] = false // reset wheel up
+	es.MouseBtns[event.MouseWheelDown] = false // reset wheel down, no separate "up" event
+	es.MouseBtns[event.MouseWheelUp] = false   // reset wheel up
 
 	es.Type = event.Evt_None
 	switch e.Type {

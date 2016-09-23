@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Plain uint16 = iota + (1 << 8)
+	Plain uint16 = 1 << (8 + iota)
 	Bold
 	Underlined
 )
@@ -81,6 +81,18 @@ func (s Style) Uint16() uint16 {
 
 func (s Style) WithAttr(attr uint16) Style {
 	return Style{s.uint16 | attr}
+}
+
+func (s Style) Color() byte {
+	return byte(s.uint16 & 0xFF)
+}
+
+func (s Style) IsBold() bool {
+	return s.uint16&0xF00 == Bold
+}
+
+func (s Style) IsUnderlined() bool {
+	return s.uint16&0xF00 == Underlined
 }
 
 func (s *Style) UnmarshalText(text []byte) error {

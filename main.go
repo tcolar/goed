@@ -1,6 +1,6 @@
 // Goed is a terminal based editor.
 // https://github.com/tcolar/goed
-package main
+package goed
 
 import (
 	"fmt"
@@ -22,7 +22,6 @@ import (
 
 var (
 	apiCall    = kingpin.Flag("api", "API call").Default("false").Bool()
-	gui        = kingpin.Flag("g", "Start in GUI mode..").Default("false").Bool()
 	termColors = kingpin.Flag("term-colors", "Prints colors to the terminal to check them.").Bool()
 	termEvents = kingpin.Flag("term-events", "Display received events in a view.").Bool()
 	colors     = kingpin.Flag("c", "Number of colors(0,2,16,256). 0 means Detect.").Default("0").Int()
@@ -33,18 +32,18 @@ var (
 	locs = kingpin.Arg("location", "location to open").Strings()
 )
 
-func main() {
+func Initialize() *core.Config {
 
 	kingpin.Version(core.Version)
 
 	kingpin.Parse()
 	if *apiCall {
 		client.HandleArgs(os.Args[2:])
-		return
+		return nil
 	}
 	if *termColors {
 		core.TermColors()
-		return
+		return nil
 	}
 	if *colors == 0 {
 		*colors = core.DetectColors()
@@ -80,30 +79,35 @@ func main() {
 	core.Bus = actions.NewActionBus()
 	core.InitHome(id)
 	core.ConfFile = *config
-	core.Ed = ui.NewEditor(*gui)
-	apiServer := api.Api{}
 
 	startupChecks()
 
-	defer func() {
-		if fail := recover(); fail != nil {
-			// writing panic to file because shell may be garbled
-			fmt.Printf("Panicked with %v\n", fail)
-			fmt.Printf("Writing panic to log %s \n", core.LogFile.Name())
-			data := debug.Stack()
-			log.Fatal(string(data))
-		}
-		core.Cleanup()
+	return core.LoadConfig(core.ConfFile)
+}
 
-		core.Bus.Shutdown()
+func Terminate(term core.Term) {
+	if fail := recover(); fail != nil {
+		// writing panic to file because shell may be garbled
+		fmt.Printf("Panicked with %v\n", fail)
+		fmt.Printf("Writing panic to log %s \n", core.LogFile.Name())
+		data := debug.Stack()
+		log.Fatal(string(data))
+	}
+	core.Cleanup()
 
-		// attempts to reset the terminal in case we left it in a bad state
-		exec.Command("reset").Run()
-	}()
+	core.Bus.Shutdown()
 
+	if term != nil {
+		term.Close()
+	}
+}
+
+func Start(term core.Term, config *core.Config) {
+	defer Terminate(term)
+	core.Ed = ui.NewEditor(term, config)
 	actions.RegisterActions()
+	apiServer := api.Api{}
 	apiServer.Start()
-
 	core.Ed.Start(*locs)
 }
 

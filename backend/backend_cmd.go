@@ -378,6 +378,9 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 }
 
 func (b *backendAppender) Write(data []byte) (int, error) {
+	if len(data) == 0 {
+		return 0, nil
+	}
 	size, err := b.vt100(data)
 	atomic.AddInt32(&b.dirty, 1)
 	if err != nil {
@@ -387,6 +390,9 @@ func (b *backendAppender) Write(data []byte) (int, error) {
 }
 
 func (b *backendAppender) flush(data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
 	b.line, b.col = b.backend.Overwrite(b.line, b.col, string(data), b.curFg, b.curBg)
 	return nil
 }
