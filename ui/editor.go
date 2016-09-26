@@ -314,6 +314,7 @@ func (e *Editor) TermFlush() {
 	e.term.Flush()
 }
 
+// true if ok to quit
 func (e *Editor) QuitCheck() bool {
 	for _, c := range e.Cols {
 		for _, vi := range c.Views {

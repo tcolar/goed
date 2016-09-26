@@ -288,7 +288,7 @@ func (v *View) SetCursorPos(y, x int) {
 
 	// slice for the area we will be in after scrolling
 	slice := v.slice
-	if ln > slice.R2 || ln < slice.R1 {
+	if !slice.ContainsLine(ln) {
 		slice = v.backend.Slice(ln, 0, ln, -1)
 	}
 
@@ -325,14 +325,13 @@ func (v *View) SetCursorPos(y, x int) {
 
 	v.CursorY = ln - v.offy
 	v.CursorX = col - v.offx
-
 	v.updateCursor(slice)
 }
 
 // Update the editor cursor to be this view current cursor
 func (v *View) updateCursor(slice *core.Slice) {
 	v.NormalizeCursor(slice)
-	if v.CursorY < slice.R1 || v.CursorY > slice.R2 {
+	if !slice.ContainsLine(v.CursorY) {
 		v.SyncSlice()
 	}
 	core.Ed.SetCursor(v.y1+2+v.CursorY, v.x1+2+v.CursorX)

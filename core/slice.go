@@ -31,3 +31,10 @@ func (s *Slice) Normalize() {
 		s.C1, s.C2 = s.C2, s.C1
 	}
 }
+
+func (s *Slice) ContainsLine(lnIndex int) bool {
+	if s.R1 == 0 && s.R2 == 0 && s.C1 == 0 && s.C2 == 0 {
+		return false
+	}
+	return lnIndex >= s.R1 && lnIndex <= s.R2
+}

@@ -167,7 +167,7 @@ func (v *View) LineCount() int {
 // Line return the line at the given index
 func (v *View) Line(slice *core.Slice, lnIndex int) []rune {
 	s := slice
-	if lnIndex < s.R1 || lnIndex > s.R2 {
+	if !s.ContainsLine(lnIndex) {
 		s = v.backend.Slice(lnIndex, 0, lnIndex, -1)
 	}
 	index := lnIndex - s.R1
@@ -180,7 +180,7 @@ func (v *View) Line(slice *core.Slice, lnIndex int) []rune {
 // LineLen returns the length onf a line (raw runes length)
 func (v *View) LineLen(slice *core.Slice, lnIndex int) int {
 	s := slice
-	if lnIndex < s.R1 || lnIndex > s.R2 {
+	if !s.ContainsLine(lnIndex) {
 		s = v.backend.Slice(lnIndex, 0, lnIndex, -1)
 	}
 	return len(v.Line(s, lnIndex))
@@ -190,7 +190,7 @@ func (v *View) LineLen(slice *core.Slice, lnIndex int) int {
 // ie: a tab uses multiple columns
 func (v *View) lineCols(slice *core.Slice, lnIndex int) int {
 	s := slice
-	if lnIndex < s.R1 || lnIndex > s.R2 {
+	if !s.ContainsLine(lnIndex) {
 		s = v.backend.Slice(lnIndex, 0, lnIndex, -1)
 	}
 	return v.lineColsTo(s, lnIndex, v.LineLen(s, lnIndex))
@@ -216,7 +216,7 @@ func (v *View) lineColsTo(s *core.Slice, lnIndex, to int) int {
 // LineRunesTo returns the number of raw runes to the given line column
 func (v View) LineRunesTo(slice *core.Slice, lnIndex, column int) int {
 	s := slice
-	if lnIndex < s.R1 || lnIndex > s.R2 {
+	if !s.ContainsLine(lnIndex) {
 		s = v.backend.Slice(lnIndex, 0, lnIndex, -1)
 	}
 	runes := 0
@@ -237,7 +237,7 @@ func (v View) LineRunesTo(slice *core.Slice, lnIndex, column int) int {
 // Also returns the position of the char in the text buffer (text position)
 func (v *View) CursorChar(slice *core.Slice, cursorY, cursorX int) (r *rune, textY, textX int) {
 	s := slice
-	if cursorY > slice.R2 || cursorY < slice.R1 {
+	if !s.ContainsLine(cursorY) {
 		s = v.backend.Slice(cursorY, 0, cursorY, -1)
 	}
 	x, y := v.LineRunesTo(s, cursorY, cursorX), cursorY

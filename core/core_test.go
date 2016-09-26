@@ -80,7 +80,7 @@ func (cs *CoreSuite) TestTheme(t *C) {
 	assert.Eq(t, sb, sr)
 	s = NewStyle(0x41)
 	s = s.WithAttr(Bold)
-	assert.Eq(t, s, NewStyle(0x0141))
+	assert.Eq(t, s, NewStyle(0x0241))
 }
 
 func (cs *CoreSuite) TestIsText(t *C) {
