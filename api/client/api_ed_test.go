@@ -93,14 +93,17 @@ func (s *ApiSuite) TestEdOpen(t *C) {
 }
 
 func (s *ApiSuite) TestEdQuitCheck(t *C) {
-	views := actions.Ar.EdViews()
-	actions.Ar.ViewSetDirty(views[0], true)
-	res, err := Action(s.id, []string{"ed_quit_check"})
+	res, err := Action(s.id, []string{"ed_open", "testopen.txt", "-1", "test_data", "true"})
+	assert.Nil(t, err)
+	assert.Eq(t, len(res), 1)
+	vid := actions.Ar.EdCurView()
+	actions.Ar.ViewSetDirty(vid, true)
+	res, err = Action(s.id, []string{"ed_quit_check"})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 1)
 	assert.Eq(t, "false", res[0])
 
-	actions.Ar.ViewSetDirty(views[0], false)
+	actions.Ar.ViewSetDirty(vid, false)
 	res, err = Action(s.id, []string{"ed_quit_check"})
 	assert.Nil(t, err)
 	assert.Eq(t, len(res), 1)
