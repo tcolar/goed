@@ -44,15 +44,15 @@ cd -
 echo "publish to bintray ?"
 read should_publish
 
-curl -T /tmp/goed/$version/linux/amd64/goed -utcolar:$BINTRAY_KEY\
+curl -T /tmp/goed/$version/linux/amd64/goed -utcolar:$BINTRAY_KEY -H "X-Bintray-Version:$version"\
  https://api.bintray.com/content/tcolar/Goed/Goed/$version/linux_amd64/goed
-curl -T /tmp/goed/$version/linux/386/goed -utcolar:$BINTRAY_KEY\
+curl -T /tmp/goed/$version/linux/386/goed -utcolar:$BINTRAY_KEY -H "X-Bintray-Version:$version"\
  https://api.bintray.com/content/tcolar/Goed/Goed/$version/linux_386/goed
-curl -T /tmp/goed/$version/linux/arm/goed -utcolar:$BINTRAY_KEY\
+curl -T /tmp/goed/$version/linux/arm/goed -utcolar:$BINTRAY_KEY -H "X-Bintray-Version:$version"\
  https://api.bintray.com/content/tcolar/Goed/Goed/$version/linux_arm/goed
-curl -T /tmp/goed/$version/darwin/amd64/goed -utcolar:$BINTRAY_KEY\
+curl -T /tmp/goed/$version/darwin/amd64/goed -utcolar:$BINTRAY_KEY -H "X-Bintray-Version:$version"\
  https://api.bintray.com/content/tcolar/Goed/Goed/$version/darwin_amd64/goed
-curl -T /tmp/goed/$version/darwin/386/goed -utcolar:$BINTRAY_KEY\
+curl -T /tmp/goed/$version/darwin/386/goed -utcolar:$BINTRAY_KEY -H "X-Bintray-Version:$version"\
  https://api.bintray.com/content/tcolar/Goed/Goed/$version/darwin_386/goed
  
 curl -X POST -utcolar:$BINTRAY_KEY\
