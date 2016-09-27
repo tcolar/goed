@@ -85,7 +85,10 @@ func (v *View) SelectionCopy(s *core.Selection) {
 		text += "\n"
 	}
 	core.Ed.SetStatus(fmt.Sprintf("Copied %d lines to clipboard.", len(t)))
-	core.ClipboardWrite(text)
+	err := core.ClipboardWrite(text)
+	if err != nil {
+		core.Ed.SetStatusErr(err.Error())
+	}
 }
 
 func (v *View) SelectionDelete(s *core.Selection) {

@@ -12,10 +12,11 @@ func ClipboardRead() (string, error) {
 	}
 }
 
-func ClipboardWrite(s string) {
+func ClipboardWrite(s string) error {
 	if Testing {
 		mockCbText = s
+		return nil
 	} else {
-		clipboard.WriteAll(s)
+		return clipboard.WriteAll(s)
 	}
 }
