@@ -274,6 +274,9 @@ func (t *GuiTerm) listen() {
 	for ev := range events {
 		evtState.Type = event.Evt_None
 		evtState.Glyph = ""
+		evtState.MouseBtns[event.MouseWheelDown] = false // reset wheel down, no separate "up" event
+		evtState.MouseBtns[event.MouseWheelUp] = false   // reset wheel up
+
 		switch e := ev.(type) {
 		case wde.ResizeEvent:
 			t.resize(e.Width, e.Height)
@@ -286,6 +289,18 @@ func (t *GuiTerm) listen() {
 			evtState.MouseDown(event.MouseButton(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
 		case wde.MouseUpEvent:
 			evtState.MouseUp(event.MouseButton(e.Which), e.Where.Y/t.charH, e.Where.X/t.charW)
+		case wde.ScrollEvent:
+			mb := event.MouseWheelDown
+			d := e.Delta
+			switch {
+			case d.Y > 0:
+				mb = event.MouseWheelUp
+			case d.X > 0:
+				mb = event.MouseWheelRight
+			case d.X < 0:
+				mb = event.MouseWheelLeft
+			}
+			evtState.MouseDown(mb, e.Where.Y/t.charH, e.Where.X/t.charW)
 		case wde.MouseDraggedEvent:
 			// only send a drag event if moved to new text cell
 			y, x := e.Where.Y/t.charH, e.Where.X/t.charW
