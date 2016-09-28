@@ -513,3 +513,5 @@ func (m *FileBackend) SetVtCols(cols int) { // N/A
 }
 
 func (m *FileBackend) SendBytes(data []byte) {}
+
+func (m *FileBackend) OnActivate() {}

@@ -223,6 +223,7 @@ func (e *Editor) openFile(loc string, view core.Viewable) error {
 	view.SetBackend(b)
 	e.SetStatus(fmt.Sprintf("%v  [%d]", view.WorkDir(), view.Id()))
 	view.SetDirty(false)
+	e.ViewActivate(view.Id())
 	return nil
 }
 

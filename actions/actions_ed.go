@@ -209,7 +209,6 @@ func (a edOpen) Run() {
 	if err != nil {
 		core.Ed.SetStatusErr(fmt.Sprintf("EdOpen error : %s\n", err.Error()))
 	}
-	Ar.EdActivateView(vid)
 	Ar.EdRender()
 }
 

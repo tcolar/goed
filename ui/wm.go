@@ -614,6 +614,7 @@ func (e *Editor) ViewActivate(viewId int64) {
 	e.CurCol = e.ViewColumn(e.curViewId)
 	v.updateCursor(v.Slice())
 	e.SetStatus(fmt.Sprintf("%s [%d]", v.WorkDir(), viewId))
+	v.Backend().OnActivate()
 }
 
 func (e *Editor) ViewById(id int64) core.Viewable {

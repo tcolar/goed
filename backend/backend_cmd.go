@@ -21,14 +21,15 @@ var _ core.Backend = (*BackendCmd)(nil)
 // whose content will be the the output of the command. (VT100 support)
 type BackendCmd struct {
 	*MemBackend
-	dir       string
-	runner    *exec.Cmd
-	pty       *os.File
-	title     *string
-	Starter   CmdStarter
-	scrollTop bool // whether to scroll back to top once command completed
-	MaxRows   int  // ring buffer size
-	head      int
+	dir           string
+	runner        *exec.Cmd
+	pty           *os.File
+	title         *string
+	Starter       CmdStarter
+	scrollTop     bool // whether to scroll back to top once command completed
+	MaxRows       int  // ring buffer size
+	head          int
+	refreshCursor int32
 }
 
 func (c *BackendCmd) Reload() error {
@@ -323,6 +324,10 @@ func (s *MemCmdStarter) Start(c *BackendCmd) error {
 	return c.stream()
 }
 
+func (c *BackendCmd) OnActivate() {
+	atomic.AddInt32(&c.refreshCursor, 1)
+}
+
 func (c *BackendCmd) stream() error {
 	t := core.Ed.Theme()
 	w := backendAppender{backend: c, viewId: c.ViewId(), curFg: t.Fg, curBg: t.Bg}
@@ -336,7 +341,7 @@ func (c *BackendCmd) stream() error {
 
 	go func() {
 		io.Copy(&w, c.pty)
-		log.Println("copy done")
+		log.Println("Command stream closed")
 	}()
 
 	err = c.runner.Wait()
@@ -357,23 +362,28 @@ type backendAppender struct {
 // refresh the view if needed(dirty) but no more than every so often
 // this greatly enhances performance and responsivness
 func (b *backendAppender) refresher(endc chan struct{}) {
+	t := time.NewTicker(50 * time.Millisecond)
 	for {
 		select {
 		case <-endc:
 			actions.Ar.EdRender()
 			return
-		default:
-			if atomic.SwapInt32(&b.dirty, 0) > 0 {
-				// In case of view size change, adjust tty setting and wrap value.
-				// TODO : No easy way to do that if the terminal is currently
+		case <-t.C:
+			if atomic.SwapInt32(&b.dirty, 0) > 0 || atomic.SwapInt32(&b.backend.refreshCursor, 0) > 0 {
+				// TODO : In case of view size change, adjust tty setting and wrap value.
+				// No easy way to do that if the terminal is currently
 				// in an interactive program
 				//if v != nil && (rows != v.LastViewLine() || cols != v.LastViewCol()) {
 				// refresh view
-				actions.Ar.ViewSetCursorPos(b.viewId, b.line+1, b.col+1)
+
+				// if view is active ... place cursot at end
+				// on actiavte, set cursor at end
+				if actions.Ar.EdCurView() == b.viewId {
+					actions.Ar.ViewSetCursorPos(b.viewId, b.line+1, b.col+1)
+				}
 				actions.Ar.EdRender()
 			}
 		}
-		time.Sleep(50 * time.Millisecond)
 	}
 }
 

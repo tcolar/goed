@@ -51,7 +51,7 @@ func (us *UiSuite) TestWm(t *C) {
 	assert.Eq(t, Ed.ViewById(v.Id()), v)
 	assert.Eq(t, Ed.ViewByLoc(""), int64(-1))
 	assert.Eq(t, Ed.ViewByLoc(v.Backend().SrcLoc()), v.Id())
-	assert.Eq(t, Ed.CurView(), v)
+	assert.Eq(t, Ed.CurViewId(), v2.Id())
 	Ed.ViewActivate(v2.Id())
 	assert.Eq(t, Ed.CurView(), v2)
 

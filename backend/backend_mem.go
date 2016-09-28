@@ -298,6 +298,8 @@ func (b *MemBackend) Wipe() {
 
 func (m *MemBackend) SendBytes(data []byte) {}
 
+func (m *MemBackend) OnActivate() {}
+
 type color struct {
 	fg, bg core.Style
 }
