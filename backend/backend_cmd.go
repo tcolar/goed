@@ -373,11 +373,9 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 				// TODO : In case of view size change, adjust tty setting and wrap value.
 				// No easy way to do that if the terminal is currently
 				// in an interactive program
-				//if v != nil && (rows != v.LastViewLine() || cols != v.LastViewCol()) {
+				// if v != nil && (rows != v.LastViewLine() || cols != v.LastViewCol()) {
 				// refresh view
 
-				// if view is active ... place cursot at end
-				// on actiavte, set cursor at end
 				if actions.Ar.EdCurView() == b.viewId {
 					actions.Ar.ViewSetCursorPos(b.viewId, b.line+1, b.col+1)
 				}
