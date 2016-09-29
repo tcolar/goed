@@ -47,16 +47,17 @@ In theory it should work with any terminal, however the level of support for thi
 like mouse support or extended colors vary a lot.
 
 #### Terminal - Linux
-I recommend GnomeTerminal as it has the best support, but Konsole or Lxterminal
+I recommend **GnomeTerminal** as it has the best support, but Konsole or Lxterminal
 should work as well.
 
 #### Terminal - OSX
-I highly recommend a real mouse(2+ buttons) and using ITerm2, **do not bother wth Term.app** 
+I highly recommend a real mouse(2+ buttons) and **use ITerm2, do not bother wth Term.app** 
 as it has very poor eventing support.
 
-For ITerm2 those settingw work best:
-  - Under preferences / pointer, disable right click context menu.
-  - Under prefs / profiles / default / terminal set term type to "xterm-256color"
+For the best experience, use those **ITerm2 settings**:
+  - Under preferences / pointer, disable "right click context menu".
+  - Under preferences / profiles / default / terminal, set term type to "xterm-256color"
+  - Under preferences / profiles / dfeault / text, set a nice TTF mono font (ie: 12pt Monaco)
  
 #### Terminal frontends
 The eventing support in terminals varies immensely, some don't support mouse
@@ -82,6 +83,26 @@ You may use `goed --term-events` to find out what events work in your given term
 
 You can customize the mouse/keyboard shortcuts in `~/.goed/bindings.toml`
 Here are the [standard mouse/keyboard bindings](res/default/bindings.toml)
+
+### UI Usage (Mouse)
+Each "view" in the UI has a "handle" on the top left corner, either `✔ ` or `✗`, depending if the file
+is clean or dirty. The top of the view contains the view title "title bar". The left of the view contains
+the "scroll bar".
+
+There is no real "drag and drop" because very few terminal support that properly, so it's more of a
+2 steps operation "select then drop".
+
+- **Moving a view**: 1) click the handle of the view you want to move 2) click where you want to move it to, either
+somewhere on the top "title bar" to create a new column, or on an existing view  "scroll bar" to move the view into 
+that view's column.
+
+- **Swapping viws** : Double click the "handle" of a view, whichever view was active at the time will swap position
+with this view.
+
+- **Closing a view/column** : Click the `✕` button on the view top right.
+
+- **Opening a new view** : Typically just open an existing file/folder by right clicking it's path. 
+To create a new file the simplest is to open a terminal "Ctrl+T" and "open" the file. `o /tmp/test.txt`.
   
 ### Terminal usage
 
@@ -119,26 +140,6 @@ Currently it supports a few things:
 Anything else will just be executed (via shell) into a new view.
 
 Eventually this will allow for custom defined actions based on patterns.
-
-### UI Usage (Mouse)
-Each "view" in the UI has a "handle" on the top left corner, either `✔ ` or `✗`, depending if the file
-is clean or dirty. The top of the view contains the view title "title bar". The left of the view contains
-the "scroll bar".
-
-There is no real "drag and drop" because very few terminal support that properly, so it's more of a
-2 steps operation "select then drop".
-
-- **Moving a view**: 1) click the handle of the view you want to move 2) click where you want to move it to, either
-somewhere on the top "title bar" to create a new column, or on an existing view  "scroll bar" to move the view into 
-that view's column.
-
-- **Swapping viws** : Double click the "handle" of a view, whichever view was active at the time will swap position
-with this view.
-
-- **Closing a view/column** : Click the `✕` button on the view top right.
-
-- **Opening a new view** : Typically just open an existing file/folder by right clicking it's path. 
-To create a new file the simplest is to open a terminal "Ctrl+T" and "open" the file. `o /tmp/test.txt`.
 
 ### Configuration
 The config file can be edited at ~/.goed/config.toml (The original is under ~/.goed/default/) 
