@@ -40,6 +40,7 @@ goed <path(s)>
 Quick start:
 - Use right click or Ctrl+N to open a dir/file.
 - Use CTRL+T to start a terminal view ($SHELL)
+- Use the mouse to resize / move / close views (See "UI" section bellow.)
 
 ### Terminal use
 In theory it should work with any terminal, however the level of support for things 
@@ -55,16 +56,16 @@ as it has very poor eventing support.
 
 For ITerm2 those settingw work best:
   - Under preferences / pointer, disable right click context menu.
-  - Under prefs / pfofiles / default / terminal set term type to "xterm-256color"
+  - Under prefs / profiles / default / terminal set term type to "xterm-256color"
  
-#### Terminal backends
+#### Terminal frontends
 The eventing support in terminals varies immensely, some don't support mouse
 events, some only support some CTRL, ALT sequences and almost none support any
 type of advanced chording.
 
-For this reason there alternative terminal frontens see [cmd/](cmd/) 
-The default backend is goed-tcell(terminal), but there are also implmentations
- goed-termbox(terminal) and goed-wde (GUI).
+For this reason there are alternative terminal frontends see [cmd/](cmd/) 
+The default frontend is goed-tcell(terminal), but there are other implementations
+ goed-termbox (terminal) and goed-wde (GUI) that can be built with build.sh.
 
 For the GUI version, there is a builtin font (LiberationMono) but you can specify 
 the path to a different one in `~/.goed/config.toml`, just make sure it's monospace 
@@ -94,10 +95,11 @@ Note that while in a terminal a limited number of global shortcuts are enabled.
 ### Terminal actions
 
 The Terminal provides a few builtin shortcuts, such as:
-  - `sz` : Set the shell tty rows/cols to match the current goed view size.
   - `o <path>` : To open a given path/location in goed (or just right click it)
-  - `s [-i] <pattern> [path]` : Search text (grep -rn[i] <pattern> [path])
+  - `s <pattern> [path]` : Search text (grep -rni <pattern> [path])
   - `f <pattern> [path]` : Find files (find <path> -name *pattern*) 
+  - `clear` : can be used to fully reset a terminal content.
+  - `sz` : Set the shell tty rows/cols to match the current goed view size (should happen automatically).
   
 See [res/default/actions](res/default/actions) for more info.
 
@@ -117,6 +119,26 @@ Currently it supports a few things:
 Anything else will just be executed (via shell) into a new view.
 
 Eventually this will allow for custom defined actions based on patterns.
+
+### UI Usage (Mouse)
+Each "view" in the UI has a "handle" on the top left corner, either `✔ ` or `✗`, depending if the file
+is clean or dirty. The top of the view contains the view title "title bar". The left of the view contains
+the "scroll bar".
+
+There is no real "drag and drop" because very few terminal support that properly, so it's more of a
+2 steps operation "select then drop".
+
+- **Moving a view**: 1) click the handle of the view you want to move 2) click where you want to move it to, either
+somewhere on the top "title bar" to create a new column, or on an existing view  "scroll bar" to move the view into 
+that view's column.
+
+- **Swapping viws** : Double click the "handle" of a view, whichever view was active at the time will swap position
+with this view.
+
+- **Closing a view/column** : Click the `✕` button on the view top right.
+
+- **Opening a new view** : Typically just open an existing file/folder by right clicking it's path. 
+To create a new file the simplest is to open a terminal "Ctrl+T" and "open" the file. `o /tmp/test.txt`.
 
 ### Configuration
 The config file can be edited at ~/.goed/config.toml (The original is under ~/.goed/default/) 
