@@ -28,3 +28,6 @@ fn o {goed_open $*} # open a file/dir
 fn s {search_text.sh $*}
 fn f {find_files.sh $*} 
 fn sz {vt100_size.sh} 
+
+vt100_size.sh
+

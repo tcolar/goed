@@ -24,3 +24,4 @@ alias s="search_text.sh"
 alias f="find_files.sh"
 alias sz="vt100_size.sh"
 
+vt100_size.sh

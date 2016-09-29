@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -328,6 +329,29 @@ func (c *BackendCmd) OnActivate() {
 	atomic.AddInt32(&c.refreshCursor, 1)
 }
 
+func (c *BackendCmd) WaitRunning(t time.Duration) bool {
+	end := time.Now().Add(t).Unix()
+	for c.runner == nil || c.runner.Process == nil {
+		if time.Now().Unix() > end {
+			return false
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return true
+}
+
+// check if the shell is currently running any subcommands
+func (c *BackendCmd) SubCmdRunning() bool {
+	if c.runner == nil || c.runner.Process == nil {
+		return false
+	}
+	out, err := exec.Command("pgrep", "-P", strconv.Itoa(c.runner.Process.Pid)).CombinedOutput()
+	if err != nil {
+		return false
+	}
+	return len(out) > 0
+}
+
 func (c *BackendCmd) stream() error {
 	t := core.Ed.Theme()
 	w := backendAppender{backend: c, viewId: c.ViewId(), curFg: t.Fg, curBg: t.Bg}
@@ -363,6 +387,7 @@ type backendAppender struct {
 // this greatly enhances performance and responsivness
 func (b *backendAppender) refresher(endc chan struct{}) {
 	t := time.NewTicker(50 * time.Millisecond)
+	l, c, m, d := actions.Ar.ViewBounds(b.viewId)
 	for {
 		select {
 		case <-endc:
@@ -370,15 +395,16 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 			return
 		case <-t.C:
 			if atomic.SwapInt32(&b.dirty, 0) > 0 || atomic.SwapInt32(&b.backend.refreshCursor, 0) > 0 {
-				// TODO : In case of view size change, adjust tty setting and wrap value.
-				// No easy way to do that if the terminal is currently
-				// in an interactive program
-				// if v != nil && (rows != v.LastViewLine() || cols != v.LastViewCol()) {
-				// refresh view
-
 				if actions.Ar.EdCurView() == b.viewId {
 					actions.Ar.ViewSetCursorPos(b.viewId, b.line+1, b.col+1)
 				}
+				actions.Ar.EdRender()
+			}
+			// If view was resized, do a stty resize
+			l2, c2, m2, d2 := actions.Ar.ViewBounds(b.viewId)
+			if !b.backend.SubCmdRunning() && m-l != m2-l2 || d-c != d2-c2 {
+				l, c, m, d = l2, c2, m2, d2
+				b.backend.Insert(1, 1, "sz\n")
 				actions.Ar.EdRender()
 			}
 		}

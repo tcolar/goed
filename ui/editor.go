@@ -334,15 +334,28 @@ func (e *Editor) StartTermView(args []string) int64 {
 	if v == nil || v.backend == nil {
 		return -1
 	}
+	// source the goed shell script onc eterminal has launched
 	b := v.backend.(*backend.BackendCmd)
-	time.Sleep(500 * time.Millisecond)
 	ext := ".sh"
 	if os.Getenv("SHELL") == "rc" {
 		ext = ".rc"
 	}
 	cmd := ". $HOME/.goed/default/actions/goed" +
 		fmt.Sprintf("%s %d %d\n", ext, core.InstanceId, v.Id())
-	b.SendBytes([]byte(cmd))
+	go func(cmd string) {
+		started := b.WaitRunning(time.Minute)
+		if !started {
+			return
+		}
+		end := time.Now().Add(time.Hour).Unix()
+		for time.Now().Unix() < end {
+			if !b.SubCmdRunning() {
+				b.SendBytes([]byte(cmd))
+				return
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}(cmd)
 	return vid
 }
 
