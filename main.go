@@ -7,9 +7,11 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"runtime/debug"
 	"runtime/pprof"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/tcolar/goed/actions"
@@ -81,6 +83,10 @@ func Initialize() *core.Config {
 	core.ConfFile = *config
 
 	startupChecks()
+
+	// capture the error stream (hopefully empty) so it does not get dumped onto our terminal UI.
+	logFile, _ := os.Create(path.Join(core.Home, "logs", "stderr.txt"))
+	syscall.Dup2(int(logFile.Fd()), 2)
 
 	return core.LoadConfig(core.ConfFile)
 }
