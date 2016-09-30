@@ -110,8 +110,26 @@ func (v *View) renderMargin() {
 func (v *View) renderScroll() {
 	e := core.Ed
 	t := e.Theme()
+	viewLines := v.y2 - v.y1 - 1
+	textLines := v.LineCount()
+	topLine := v.slice.R1
 	e.TermFB(t.Scrollbar.Fg, t.Scrollbar.Bg)
 	e.TermFill(t.Scrollbar.Rune, v.y1+1, v.x1, v.y2, v.x1)
+	if textLines < viewLines || viewLines <= 0 {
+		return // no scrollbar needed
+	}
+	size := int(float64(viewLines) * (float64(viewLines) / float64(textLines)))
+	loc := int(float64(viewLines) * (float64(topLine) / float64(textLines)))
+	if size < 2 {
+		size = 2 // minimum scrollbar handle size
+	}
+	if topLine > 0 && loc == 0 {
+		loc = 1 // if we are past first page make sure the scroll bar shows a bit of scrolling
+	} else if topLine > textLines-viewLines {
+		loc = viewLines - size // if on last page, make sure scrolbar hugs bottom
+	}
+	e.TermFB(t.ScrollTab.Fg, t.ScrollTab.Bg)
+	e.TermFill(t.ScrollTab.Rune, v.y1+1+loc, v.x1, v.y1+1+loc+size, v.x1)
 }
 
 func (v *View) renderIsDirty() {
