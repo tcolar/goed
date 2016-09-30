@@ -36,8 +36,11 @@ type BackendCmd struct {
 func (c *BackendCmd) Reload() error {
 	args, dir := c.runner.Args, c.runner.Dir
 	c.stop()
+	c.MemBackend.lock.Lock()
+	c.runner = nil
 	c.runner = exec.Command(args[0], args[1:]...)
 	c.runner.Dir = dir
+	c.MemBackend.lock.Unlock()
 	c.MemBackend.Close()
 	os.Remove(c.BufferLoc())
 	c.MemBackend.Reload()
@@ -86,6 +89,8 @@ func (b *BackendCmd) Close() error {
 }
 
 func (b *BackendCmd) Running() bool {
+	b.MemBackend.lock.Lock()
+	defer b.MemBackend.lock.Unlock()
 	return b.runner != nil && b.runner.Process != nil
 }
 
@@ -125,9 +130,10 @@ func (c *BackendCmd) Start(viewId int64) {
 }
 
 func (c *BackendCmd) stop() {
+	c.MemBackend.lock.Lock()
+	defer c.MemBackend.lock.Unlock()
 	if c.runner != nil && c.runner.Process != nil {
 		c.runner.Process.Kill()
-		c.runner.Process = nil
 	}
 	// Somehow this hangs on OsX
 	/*if c.pty != nil {
@@ -226,7 +232,11 @@ func (b *BackendCmd) Overwrite(row, col int, text string, fg, bg core.Style) (at
 }
 
 func (b *BackendCmd) Slice(row, col, row2, col2 int) *core.Slice {
-	if b.MaxRows <= 0 || b.head == 0 {
+	notRb := false
+	b.MemBackend.lock.Lock()
+	notRb = b.MaxRows <= 0 || b.head == 0
+	b.MemBackend.lock.Unlock()
+	if notRb {
 		return b.MemBackend.Slice(row, col, row2, col2)
 	}
 	// Otherwise ringbuffer
@@ -331,7 +341,14 @@ func (c *BackendCmd) OnActivate() {
 
 func (c *BackendCmd) WaitRunning(t time.Duration) bool {
 	end := time.Now().Add(t).Unix()
-	for c.runner == nil || c.runner.Process == nil {
+	for {
+		c.MemBackend.lock.Lock()
+		stopped := c.runner == nil || c.runner.Process == nil
+		c.MemBackend.lock.Unlock()
+
+		if !stopped {
+			break
+		}
 		if time.Now().Unix() > end {
 			return false
 		}
@@ -342,10 +359,18 @@ func (c *BackendCmd) WaitRunning(t time.Duration) bool {
 
 // check if the shell is currently running any subcommands
 func (c *BackendCmd) SubCmdRunning() bool {
-	if c.runner == nil || c.runner.Process == nil {
+	var pid int
+	c.MemBackend.lock.Lock()
+	stopped := c.runner == nil || c.runner.Process == nil
+	if !stopped {
+		pid = c.runner.Process.Pid
+	}
+	c.MemBackend.lock.Unlock()
+	if stopped {
 		return false
 	}
-	out, err := exec.Command("pgrep", "-P", strconv.Itoa(c.runner.Process.Pid)).CombinedOutput()
+
+	out, err := exec.Command("pgrep", "-P", strconv.Itoa(pid)).CombinedOutput()
 	if err != nil {
 		return false
 	}
@@ -358,7 +383,9 @@ func (c *BackendCmd) stream() error {
 	endc := make(chan struct{}, 1)
 	go w.refresher(endc)
 	var err error
+	c.MemBackend.lock.Lock()
 	c.pty, err = pty.Start(c.runner)
+	c.MemBackend.lock.Unlock()
 	if err != nil {
 		return err
 	}
@@ -396,7 +423,10 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 		case <-t.C:
 			if atomic.SwapInt32(&b.dirty, 0) > 0 || atomic.SwapInt32(&b.backend.refreshCursor, 0) > 0 {
 				if actions.Ar.EdCurView() == b.viewId {
-					actions.Ar.ViewSetCursorPos(b.viewId, b.line+1, b.col+1)
+					b.backend.MemBackend.lock.Lock()
+					ln, col := b.line+1, b.col+1
+					b.backend.MemBackend.lock.Unlock()
+					actions.Ar.ViewSetCursorPos(b.viewId, ln, col)
 				}
 				actions.Ar.EdRender()
 			}
@@ -427,6 +457,10 @@ func (b *backendAppender) flush(data []byte) error {
 	if len(data) == 0 {
 		return nil
 	}
-	b.line, b.col = b.backend.Overwrite(b.line, b.col, string(data), b.curFg, b.curBg)
+	ln, col := b.backend.Overwrite(b.line, b.col, string(data), b.curFg, b.curBg)
+	b.backend.MemBackend.lock.Lock()
+	b.line, b.col = ln, col
+	b.backend.MemBackend.lock.Unlock()
+
 	return nil
 }

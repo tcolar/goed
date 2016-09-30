@@ -17,10 +17,9 @@ var queue = make(chan *Event, 500)
 var bindings map[string]EventType
 var shutdown int32
 
-// Queue - Note: Queue a copy of the event
-func Queue(e Event) {
+func Queue(e *Event) {
 	if atomic.LoadInt32(&shutdown) == 0 { // protect from sending to closed queue
-		queue <- &e
+		queue <- e
 	}
 }
 

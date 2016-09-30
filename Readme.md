@@ -96,7 +96,7 @@ There is no real "drag and drop" because very few terminal support that properly
 somewhere on the top "title bar" to create a new column, or on an existing view  "scroll bar" to move the view into 
 that view's column.
 
-- **Swapping viws** : Double click the "handle" of a view, whichever view was active at the time will swap position
+- **Swapping views** : Double click the "handle" of a view, whichever view was active at the time will swap position
 with this view.
 
 - **Closing a view/column** : Click the `✕` button on the view top right.

@@ -34,6 +34,29 @@ func NewEvent() *Event {
 	}
 }
 
+func (e *Event) Clone() *Event {
+	clone := Event{
+		Type:      e.Type,
+		Glyph:     e.Glyph,
+		Keys:      make([]string, len(e.Keys)),
+		Combo:     e.Combo,
+		MouseBtns: map[MouseButton]bool{},
+		MouseX:    e.MouseX,
+		MouseY:    e.MouseY,
+		inDrag:    e.inDrag,
+		dragLn:    e.dragLn,
+		dragCol:   e.dragCol,
+		dblClick:  e.dblClick,
+	}
+	for k, v := range e.MouseBtns {
+		clone.MouseBtns[k] = v
+	}
+	for i, k := range e.Keys {
+		clone.Keys[i] = k
+	}
+	return &clone
+}
+
 func (e *Event) hasMouse() bool {
 	for _, on := range e.MouseBtns {
 		if on {

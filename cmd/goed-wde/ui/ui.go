@@ -192,16 +192,22 @@ func (t *GuiTerm) Clear(fg, bg core.Style) {
 }
 
 func (t *GuiTerm) Flush() {
+	wdeLock.Lock()
 	if t.win == nil {
+		wdeLock.Unlock()
 		return
 	}
+	wdeLock.Unlock()
 	t.paint()
 }
 
 func (t *GuiTerm) SetCursor(x, y int) {
+	wdeLock.Lock()
 	if t.win == nil {
+		wdeLock.Unlock()
 		return
 	}
+	wdeLock.Unlock()
 	px, py := t.cursorX, t.cursorY
 	t.cursorX = x
 	t.cursorY = y
@@ -261,7 +267,9 @@ func (t *GuiTerm) listen() {
 	if err != nil {
 		panic(err)
 	}
+	wdeLock.Lock()
 	t.win = win
+	wdeLock.Unlock()
 	t.win.Show()
 	// It seems a window maximize event BEFORE any paint causes a wde crash (OSX)
 	// so making sure paint is called at least once
@@ -321,7 +329,7 @@ func (t *GuiTerm) listen() {
 		default:
 			continue
 		}
-		event.Queue(*evtState)
+		event.Queue(evtState.Clone())
 	}
 }
 

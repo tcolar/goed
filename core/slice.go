@@ -1,8 +1,11 @@
 package core
 
+import "sync"
+
 // Slice represents a "matrix" of text (runes)
 // coordinates are of a rectangle (unlike a selection whihc is ptA to ptB)
 type Slice struct {
+	sync.RWMutex
 	text           [][]rune
 	R1, C1, R2, C2 int //bounds
 }

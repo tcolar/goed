@@ -87,7 +87,7 @@ func (t *TermBox) Listen() {
 		if es.Type == event.EvtQuit {
 			return
 		}
-		event.Queue(*es)
+		event.Queue(es.Clone())
 	}
 }
 

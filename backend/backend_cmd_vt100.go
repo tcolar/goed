@@ -25,6 +25,24 @@ func (b *backendAppender) vt100(data []byte) (int, error) {
 	return len(data), err
 }
 
+func (b *backendAppender) setCol(col int) {
+	if col < 0 {
+		col = 0
+	}
+	b.backend.MemBackend.lock.Lock()
+	defer b.backend.MemBackend.lock.Unlock()
+	b.col = col
+}
+
+func (b *backendAppender) setLine(line int) {
+	if line < 0 {
+		line = 0
+	}
+	b.backend.MemBackend.lock.Lock()
+	defer b.backend.MemBackend.lock.Unlock()
+	b.line = line
+}
+
 func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	t := core.Ed.Theme()
 
@@ -39,10 +57,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	// "backspace" (move left)
 	if b.consume(data, i, 8) {
 		b.flush(data[from:start])
-		b.col--
-		if b.col < 0 {
-			b.col = 0
-		}
+		b.setCol(b.col - 1)
 		return true
 	}
 	// horizontal tab
@@ -65,22 +80,22 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	*i = start // \r\n
 	if b.consume(data, i, 13) && b.consume(data, i, 10) {
 		b.flush(data[from:start])
-		b.line++
-		b.col = 0
+		b.setLine(b.line + 1)
+		b.setCol(0)
 		return true
 	}
 	*i = start
 	if b.consume(data, i, 10) { // \n
 		b.flush(data[from:start])
-		b.line++
-		b.col = 0
+		b.setLine(b.line + 1)
+		b.setCol(0)
 		return true
 	}
 	*i = start
 	if b.consume(data, i, 13) { // \r
 		b.flush(data[from:start])
 		//b.line++
-		b.col = 0
+		b.setCol(0)
 		return true
 	}
 	// Other unhandled control characters, skip them
@@ -131,9 +146,9 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	if b.consume(data, i, 'A') || (b.consumeNb(data, i) && b.consume(data, i, 'A')) {
 		b.flush(data[from:start])
 		nb, _ := b.readNb(data, start+2, 1)
-		b.line -= nb
-		if b.line < 0 {
-			b.line = 0
+		b.setLine(b.line - nb)
+		if b.line-nb < 0 {
+			b.setCol(0)
 		}
 		return true
 	}
@@ -142,7 +157,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	if b.consume(data, i, 'B') || (b.consumeNb(data, i) && b.consume(data, i, 'B')) {
 		b.flush(data[from:start])
 		nb, _ := b.readNb(data, start+2, 1)
-		b.line += nb
+		b.setLine(b.line + nb)
 		return true
 	}
 	*i = start + 2
@@ -150,7 +165,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	if b.consume(data, i, 'C') || (b.consumeNb(data, i) && b.consume(data, i, 'C')) {
 		b.flush(data[from:start])
 		nb, _ := b.readNb(data, start+2, 1)
-		b.col += nb
+		b.setCol(b.col + nb)
 		return true
 	}
 	*i = start + 2
@@ -158,10 +173,7 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	if b.consume(data, i, 'D') || (b.consumeNb(data, i) && b.consume(data, i, 'D')) {
 		b.flush(data[from:start])
 		nb, _ := b.readNb(data, start+2, 1)
-		b.col -= nb
-		if b.col < 0 {
-			b.col = 0
-		}
+		b.setCol(b.col - nb)
 		return true
 	}
 	*i = start + 2
@@ -169,8 +181,8 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	if b.consume(data, i, 'E') || (b.consumeNb(data, i) && b.consume(data, i, 'E')) {
 		b.flush(data[from:start])
 		nb, _ := b.readNb(data, start+2, 1)
-		b.line += nb
-		b.col = 0
+		b.setLine(b.line + nb)
+		b.setCol(0)
 		return true
 	}
 	*i = start + 2
@@ -178,11 +190,8 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	if b.consume(data, i, 'F') || (b.consumeNb(data, i) && b.consume(data, i, 'F')) {
 		b.flush(data[from:start])
 		nb, _ := b.readNb(data, start+2, 1)
-		b.line -= nb
-		if b.line < 0 {
-			b.line = 0
-		}
-		b.col = 0
+		b.setLine(b.line - nb)
+		b.setCol(0)
 		return true
 	}
 	*i = start + 2
@@ -190,13 +199,8 @@ func (b *backendAppender) consumeVt100(data []byte, from int, i *int) bool {
 	if b.consume(data, i, 'H') || (b.consumeNbTuple(data, i) && b.consume(data, i, 'H')) {
 		b.flush(data[from:start])
 		row, col, _ := b.readNbTuple(data, start+2, 1, 1)
-		b.line, b.col = row-1, col-1
-		if b.line < 0 {
-			b.line = 0
-		}
-		if b.col < 0 {
-			b.col = 0
-		}
+		b.setLine(row - 1)
+		b.setCol(col - 1)
 		return true
 	}
 	*i = start + 2

@@ -42,6 +42,8 @@ func (m *MemBackend) SetVtCols(cols int) {
 
 func (m *MemBackend) ColorAt(ln, col int) (fg, bg core.Style) {
 	t := core.Ed.Theme()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	if ln >= len(m.colors) {
 		return t.Fg, t.Bg
 	}
