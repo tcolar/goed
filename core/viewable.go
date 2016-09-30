@@ -45,6 +45,7 @@ type Viewable interface {
 	// keeps scrolling until x and y are set to 0.
 	SetAutoScroll(y, x int, isSelect bool)
 	SetCursorPos(y, x int)
+	SetScrollPct(ypct int)
 	SetScrollPos(y, x int)
 	SetTitle(title string)
 	SetViewType(t ViewType)

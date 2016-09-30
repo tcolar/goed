@@ -452,9 +452,15 @@ func stretchSelection(vid int64, mvmt core.CursorMvmt) {
 }
 
 // Builtin UI mouse events that are not configurable (Click location based)
-// return true if the event matched a builitn and was consumed
+// return true if the event matched a builtin and was consumed
 func builtinEvents(e *Event, es *eventState, y, x int, curView int64) bool {
-	if !e.hasMouse() || e.inDrag {
+	if !e.hasMouse() {
+		return false
+	}
+
+	y1, _, y2, x2 := actions.Ar.ViewBounds(curView)
+
+	if e.inDrag {
 		return false
 	}
 
@@ -495,11 +501,38 @@ func builtinEvents(e *Event, es *eventState, y, x int, curView int64) bool {
 	}
 
 	// close button (left click on 'x')
-	y1, _, _, x2 := actions.Ar.ViewBounds(curView)
 	if e.MouseBtns[1] && e.MouseX+1 == x2-1 && e.MouseY+1 == y1 {
 		actions.Ar.EdDelView(curView, true)
 		return true
 	}
+
+	// scroll(kinda)bar/ click or "drag"
+	//
+	// commenting out "drag & scroll" for now, because terminals don't send mouseup events it does not work too well
+	if e.MouseBtns[1] && (x == 1 && y > 1) /*|| es.scrollingView > 0*/ {
+		pct := 0
+		/*if es.scrollingView != 0 && es.scrollingView != curView {
+			vy, _, _, _ := actions.Ar.ViewBounds(es.scrollingView)
+			if y2 > vy {
+				pct = 100
+			} else {
+				pct = 0
+			}
+		} else */
+		if y >= y2 {
+			pct = 100
+		} else if y > 2 {
+			pct = 100 * (y - 1) / (y2 - y1)
+		}
+		/*if es.scrollingView == 0 {
+			// when dragging, pointer might wander over other views
+			es.scrollingView = curView
+		}*/
+		actions.Ar.ViewSetScrollPct( /*es.scrollingView*/ curView, pct)
+		actions.Ar.EdRender()
+		return true
+	}
+	//es.scrollingView = 0
 
 	return false
 }

@@ -176,6 +176,11 @@ func (a *ar) ViewSetDirty(viewId int64, on bool) {
 	d(viewSetDirty{viewId: viewId, on: on})
 }
 
+// set scrolling offsets as percentage (of text)
+func (a *ar) ViewSetScrollPct(viewId int64, ypct int) {
+	d(viewSetScrollPct{viewId: viewId, ypct: ypct})
+}
+
 // set scrolling offsets (1 indexed)
 func (a *ar) ViewSetScrollPos(viewId int64, ln, col int) {
 	d(viewSetScrollPos{viewId: viewId, ln: ln, col: col})
@@ -701,18 +706,6 @@ func (a viewSetCursorPos) Run() {
 	}
 }
 
-type viewSetScrollPos struct {
-	viewId  int64
-	ln, col int
-}
-
-func (a viewSetScrollPos) Run() {
-	v := core.Ed.ViewById(a.viewId)
-	if v != nil {
-		v.SetScrollPos(a.ln-1, a.col-1)
-	}
-}
-
 type viewSetDirty struct {
 	viewId int64
 	on     bool
@@ -722,6 +715,30 @@ func (a viewSetDirty) Run() {
 	v := core.Ed.ViewById(a.viewId)
 	if v != nil {
 		v.SetDirty(a.on)
+	}
+}
+
+type viewSetScrollPct struct {
+	viewId int64
+	ypct   int
+}
+
+func (a viewSetScrollPct) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.SetScrollPct(a.ypct)
+	}
+}
+
+type viewSetScrollPos struct {
+	viewId  int64
+	ln, col int
+}
+
+func (a viewSetScrollPos) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v != nil {
+		v.SetScrollPos(a.ln-1, a.col-1)
 	}
 }
 

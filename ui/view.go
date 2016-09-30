@@ -541,3 +541,14 @@ func (v *View) Text(ln1, col1, ln2, col2 int) [][]rune {
 func (v *View) Type() core.ViewType {
 	return v.viewType
 }
+
+func (v *View) SetScrollPct(ypct int) {
+	if ypct < 0 {
+		ypct = 0
+	}
+	if ypct > 100 {
+		ypct = 100
+	}
+	lc := v.LineCount() - v.LastViewLine()
+	v.SetScrollPos(lc*ypct/100, 0)
+}
