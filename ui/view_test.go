@@ -48,6 +48,7 @@ func (us *UiSuite) TestView(t *C) {
 	assert.Eq(t, v.runeSize('\t'), tabSize)
 	assert.Eq(t, v.strSize("abc"), 3)
 	assert.Eq(t, v.strSize("a\tb\tc"), 3+2*tabSize)
+	assert.Eq(t, v.strSize("\t根真"), tabSize+4) // 2 dbl wide chars
 	v.MoveCursor(0, 0)
 	assertCursor(t, v, 0, 0, 0, 0)
 	v.MoveCursor(0, 5)
@@ -79,6 +80,29 @@ func (us *UiSuite) TestView(t *C) {
 	assertCursor(t, v, 1, 0, 0, 0)
 	v.MoveCursorRoll(0, -2)
 	assertCursor(t, v, 0, 10, 0, 0)
+}
+
+func (us *UiSuite) TestViewWideRunes(t *C) {
+	var err error
+	Ed := core.Ed.(*Editor)
+	v := Ed.NewView("")
+	v.SetBounds(0, 0, 25, 40)
+
+	_, err = Ed.Open("../test_data/utf8.txt", v.Id(), "", false)
+	assert.Nil(t, err)
+
+	assert.Eq(t, core.RunesToString(v.Text(3, 7, 3, 8)), ".根")
+	assert.Eq(t, core.RunesToString(v.Text(3, 10, 3, 11)), "姿ル")
+	assert.Eq(t, core.RunesToString(v.Text(3, 11, 3, 12)), "ル.")
+	v.MoveCursor(3, 11)
+	v.Backspace()
+	assert.Eq(t, core.RunesToString(v.Text(3, 0, 3, 11)), "Wide : .根真ル.")
+	v.Insert(3, 10, "ル~", false)
+	assert.Eq(t, core.RunesToString(v.Text(3, 0, 3, 13)), "Wide : .根真ル~ル.")
+	s := core.NewSelection(3, 9, 3, 10)
+	v.selections = append(v.selections, *s)
+	v.InsertCur("厚*#@")
+	assert.Eq(t, core.RunesToString(v.Text(3, 0, 3, 15)), "Wide : .根厚*#@~ル.")
 }
 
 func assertCursor(t *C, v *View, y, x, offsetY, offsetX int) {

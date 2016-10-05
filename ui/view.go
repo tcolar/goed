@@ -215,15 +215,15 @@ func (v *View) renderText() {
 			if c == '\t' {
 				e.TermFB(t.TabChar.Fg, bg)
 				e.TermStr(y, x, tab)
-				x += tabSize - 1
+				x += tabSize
 				e.TermFB(fg, bg)
 			} else {
 				if e.Config().SyntaxHighlighting && !inSelection {
 					v.highlighter.ApplyHighlight(v, v.offy, lnc, start+colc)
 				}
 				e.TermChar(y, x, c)
+				x += v.runeSize(c)
 			}
-			x++
 			if x > v.x2-1 {
 				// More text to our right
 				e.TermFB(t.MoreTextSide.Fg, t.MoreTextSide.Bg)
