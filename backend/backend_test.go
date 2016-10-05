@@ -104,6 +104,10 @@ func (bs *BackendSuite) testBackend(t *C, b core.Backend, id int64) {
 	// Test file MD5
 }
 
+// 1 byte, 2 byte, 3 bytes runes
+// total 3 chars, 6 bytes [97, 194 174, 226 136 128]
+var wideRunes = "a®∀"
+
 func (bs *BackendSuite) insertionTests(t *C, b core.Backend) {
 	whole := core.RunesToString(*b.Slice(0, 0, -1, -1).Text())
 
@@ -116,6 +120,7 @@ func (bs *BackendSuite) insertionTests(t *C, b core.Backend) {
 	bs.testInsertRm(t, b, "\n-\n-", 2, 4, 0, "ab\n-\n-cdefghijklmnopqrstuvwxyz")
 	bs.testInsertRm(t, b, "^\n^", 1, 3, 0, "ab^\n^cdefghijklmnopqrstuvwxyz")
 	bs.testInsertRm(t, b, "#\n##\n\n#", 3, 5, 0, "ab#\n##\n\n#cdefghijklmnopqrstuvwxyz")
+	bs.testInsertRm(t, b, wideRunes, 0, 2, 4, "aba®∀cdefghijklmnopqrstuvwxyz")
 	whole2 := core.RunesToString(*b.Slice(0, 0, -1, -1).Text())
 	assert.Eq(t, whole2, whole)
 }
@@ -129,6 +134,7 @@ func (bs *BackendSuite) testInsertRm(t *C, b core.Backend, add string, lns, rl, 
 	s := core.RunesToString(*b.Slice(2, 0, 2+lns, 30).Text())
 	assert.Eq(t, s, expected)
 	assert.Eq(t, b.LineCount(), lines+lns)
+
 	err = b.Remove(2, 2, rl, rc)
 	assert.Nil(t, err)
 	s = core.RunesToString(*b.Slice(2, 0, 2, 30).Text())

@@ -166,7 +166,7 @@ func (f *FileBackend) Insert(row, col int, text string) error {
 		return err
 	}
 	// Make a hole in the file by shifting content after insertion point to the right
-	err = f.shiftFileBits(ln)
+	err = f.shiftFileBytes(ln)
 	if err != nil {
 		return err
 	}
@@ -183,19 +183,20 @@ func (f *FileBackend) Insert(row, col int, text string) error {
 func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
-	err := f.seek(row2, col2)
+	err := f.seek(row2, col2) // beginning of last char to be removed
 	if err != nil {
 		return err
 	}
+	f.readRune() // move to end of last char (rune could be more than 1 byte - UTF8)
 	end := f.offset
 	if end >= f.length {
 		end = f.length - 1
 	}
-	err = f.seek(row1, col1)
+	err = f.seek(row1, col1) // start of first character
 	if err != nil {
 		return err
 	}
-	ln := end - f.offset + 1
+	ln := end - f.offset // read bytes to be removed (to count newlines, could optimize)
 	if ln < 0 {
 		return nil
 	}
@@ -205,7 +206,7 @@ func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {
 	if err != nil {
 		return err
 	}
-	err = f.shiftFileBits(-int64(n))
+	err = f.shiftFileBytes(-int64(n)) // delete the bytes to be removed
 	if err != nil {
 		return err
 	}
@@ -460,9 +461,9 @@ func (f *FileBackend) size() int64 {
 	return f.length
 }
 
-// Shift the bits in a file by "shift" value (can be negative).
+// Shift the bytes in a file by "shift" value (can be negative).
 // Will either expand the file and create a hole, or shrink it.
-func (f *FileBackend) shiftFileBits(shift int64) error {
+func (f *FileBackend) shiftFileBytes(shift int64) error {
 	size := f.size()
 	buf := make([]byte, f.bufferSize)
 	end := size
