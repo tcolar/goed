@@ -1,0 +1,5 @@
+foo bar 123
+hello world
+UTF8 : a®∀  // 1 byte, 2 bytes, 3 bytes
+Wide : .根真姿ル. // wide runes
+the end
