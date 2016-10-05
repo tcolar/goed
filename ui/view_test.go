@@ -155,7 +155,7 @@ func (us *UiSuite) TestViewSelections(t *C) {
 }
 
 func (us *UiSuite) TestViewEdition(t *C) {
-	// Note: more tests done directly on backemds
+	// Note: more tests done directly on backends
 	var err error
 	Ed := core.Ed.(*Editor)
 	v := Ed.NewView("")
