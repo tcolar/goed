@@ -528,6 +528,7 @@ func builtinEvents(e *Event, es *eventState, y, x int, curView int64) bool {
 			// when dragging, pointer might wander over other views
 			es.scrollingView = curView
 		}*/
+		fmt.Println(pct)
 		actions.Ar.ViewSetScrollPct( /*es.scrollingView*/ curView, pct)
 		actions.Ar.EdRender()
 		return true

@@ -62,3 +62,10 @@ const (
 	ViewTypeShell              = 1 // interactive shell
 	ViewTypeCmdOutput          = 2 // static command output
 )
+
+type Endianness byte
+
+const (
+	LittleEndian Endianness = iota
+	BigEndian
+)

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,7 +33,8 @@ func CopyFileWithBom(from, to string, bom []byte) error {
 
 func copyFile(from, to string, skipBom bool, addBom []byte) (bom []byte, err error) {
 	if skipBom {
-		bom = make([]byte, BomLen(from))
+		bomLen, _, _ := CheckBom(from)
+		bom = make([]byte, bomLen)
 	}
 
 	in, err := os.Open(from)
@@ -66,64 +66,6 @@ func copyFile(from, to string, skipBom bool, addBom []byte) (bom []byte, err err
 	return bom, err
 }
 
-// Check if the file starts with a bom and if so return its length
-// https://en.wikipedia.org/wiki/Byte_order_mark
-func BomLen(from string) int {
-	in, err := os.Open(from)
-	if err != nil {
-		return 0
-	}
-	defer in.Close()
-	bom := make([]byte, 5)
-	read, _ := in.Read(bom) // @5
-	if read >= 5 {
-		if bom[0] == 0x2B && bom[1] == 0x2F && bom[2] == 0x76 && bom[3] == 0x38 && bom[4] == 0x2D {
-			return 5 // UTF-7
-		}
-	}
-	if read >= 4 {
-		if bom[0] == 0x00 && bom[1] == 0x00 && bom[2] == 0xFE && bom[3] == 0xFF {
-			return 4 // UTF-32 BE
-		}
-		if bom[0] == 0xFF && bom[1] == 0xFE && bom[2] == 0x00 && bom[3] == 0x00 {
-			return 4 // UTF-32 LE
-		}
-		if bom[0] == 0xDD && bom[1] == 0x73 && bom[2] == 0x66 && bom[3] == 0x73 {
-			return 4 // UTF-EBCDIC
-		}
-		if bom[0] == 0x84 && bom[1] == 0x31 && bom[2] == 0x95 && bom[3] == 0x33 {
-			return 4 // GB-18030
-		}
-		if bom[0] == 0x2B && bom[1] == 0x2F && bom[2] == 0x76 &&
-			(bom[3] == 0x38 || bom[3] == 0x39 || bom[3] == 0x2B || bom[3] == 0x2F) {
-			return 4 // UTF-7
-		}
-	}
-	if read >= 3 {
-		if bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF {
-			return 3 // UTF-8
-		}
-		if bom[0] == 0xF7 && bom[1] == 0x64 && bom[2] == 0x4C {
-			return 3 // UTF-1
-		}
-		if bom[0] == 0x0E && bom[1] == 0xFE && bom[2] == 0xFF {
-			return 3 // SCSU
-		}
-		if bom[0] == 0xFB && bom[1] == 0xEE && bom[2] == 0x28 {
-			return 3 // BOCU-1
-		}
-	}
-	if read >= 2 {
-		if bom[0] == 0xFE && bom[1] == 0xFF {
-			return 2 // UTF-16 BE
-		}
-		if bom[0] == 0xFF && bom[1] == 0xFE {
-			return 2 // UTF-16 LE
-		}
-	}
-	return 0
-}
-
 // Mv file moves a file by copy, then delete
 // because os.Rename does not always work
 func MvFile(from, to string) error {
@@ -131,67 +73,6 @@ func MvFile(from, to string) error {
 		return err
 	}
 	return os.Remove(from)
-}
-
-// CountLines does a quick (buffered) line(\n) count of a file.
-func CountLines(r io.Reader) (int, error) {
-	buf := make([]byte, 8192)
-	count := 0
-
-	for {
-		c, err := r.Read(buf)
-		if err != nil {
-			if err == io.EOF {
-				return count, nil
-			}
-			return count, err
-		}
-		count += bytes.Count(buf[:c], LineSep)
-	}
-}
-
-// StringToRunes transforms a string into a rune matrix.
-func StringToRunes(s string) [][]rune {
-	b := []byte(s)
-	lines := bytes.Split(b, []byte("\n"))
-	runes := [][]rune{}
-	for i, l := range lines {
-		if len(l) > 0 && l[len(l)-1] == '\r' {
-			l = l[:len(l)-1]
-		}
-		if i != len(lines)-1 ||
-			(len(l) != 0 || strings.HasSuffix(s, "\n")) {
-			runes = append(runes, bytes.Runes(l))
-		}
-	}
-	return runes
-}
-
-// RunesToString transforms a rune matrix as a string.
-func RunesToString(runes [][]rune) string {
-	r := []rune{}
-	for i, line := range runes {
-		if i != 0 && i != len(runes) {
-			r = append(r, '\n')
-		}
-		r = append(r, line...)
-	}
-	return string(r)
-}
-
-// IsTextFile checks if a filke appears to be text or not(binary)
-func IsTextFile(file string) bool {
-	f, err := os.Open(file)
-	defer f.Close()
-	if err != nil {
-		return true // new file ?
-	}
-	buf := make([]byte, 1024)
-	c, err := f.Read(buf)
-	if err != nil {
-		return true
-	}
-	return utf8.Valid(buf[:c])
 }
 
 // InitHome initializes the ~/.goed directory structure

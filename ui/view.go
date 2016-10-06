@@ -212,18 +212,25 @@ func (v *View) renderText() {
 				}
 				e.TermFB(fg, bg)
 			}
-			if c == '\t' {
+			if c == '\t' { // tab
 				e.TermFB(t.TabChar.Fg, bg)
 				e.TermStr(y, x, tab)
-				x += tabSize
 				e.TermFB(fg, bg)
-			} else {
+			} else if c == '\r' { // windows carriage return
+				e.TermFB(t.TabChar.Fg, bg)
+				e.TermChar(y, x, '↵')
+				e.TermFB(fg, bg)
+			} else if c < 32 { // other unprintable control char
+				e.TermFB(t.TabChar.Fg, bg)
+				e.TermChar(y, x, '�')
+				e.TermFB(fg, bg)
+			} else { // normal char
 				if e.Config().SyntaxHighlighting && !inSelection {
 					v.highlighter.ApplyHighlight(v, v.offy, lnc, start+colc)
 				}
 				e.TermChar(y, x, c)
-				x += v.runeSize(c)
 			}
+			x += v.runeSize(c)
 			if x > v.x2-1 {
 				// More text to our right
 				e.TermFB(t.MoreTextSide.Fg, t.MoreTextSide.Bg)
