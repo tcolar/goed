@@ -222,7 +222,7 @@ func (v *View) renderText() {
 				e.TermFB(fg, bg)
 			} else if c < 32 { // other unprintable control char
 				e.TermFB(t.TabChar.Fg, bg)
-				e.TermChar(y, x, '�')
+				e.TermChar(y, x, 0x1A) // ASCII substitute char (invisible)
 				e.TermFB(fg, bg)
 			} else { // normal char
 				if e.Config().SyntaxHighlighting && !inSelection {
