@@ -31,15 +31,22 @@ func CountLines(r io.Reader) (int, error) {
 	}
 }
 
-func HasWindowsNewLine(r io.Reader) bool {
+// Check if the file appears to use CRLF line breaks
+// by looking for line breaks in the first 1000 bytes.
+func UsesCrLf(file string) bool {
+	f, err := os.Open(file)
+	if err != nil {
+		return false // new, will use \n
+	}
+	defer f.Close()
 	buf := make([]byte, 1000)
-	c, _ := r.Read(buf)
+	c, _ := f.Read(buf)
 	lf := bytes.Count(buf[:c], LineSep)
 	crlf := bytes.Count(buf[:c], []byte{'\r', '\n'})
-	if crlf > lf/2 {
+	if crlf > lf/2 { // if there are line breaks and at least 1/2 are "\r\n", use that
 		return true
 	}
-	return false
+	return false // default to "\n"
 }
 
 // StringToRunes transforms a string into a rune matrix.
@@ -77,29 +84,29 @@ type TextInfo struct {
 
 // ReadTextInfo checks if a file appears to be text or not(binary)
 // Returns nil if the file appears binary or some unsupported encoding.
-func ReadTextInfo(file string, srcHasWindowsNewLines bool) *TextInfo {
+func ReadTextInfo(file string, usesCrLf bool) *TextInfo {
 	// if it's a new/empty file, it can be a UTF8 text file
 	if stats, err := os.Stat(file); os.IsNotExist(err) || stats.Size() == 0 {
-		return CrLfTextInfo(nil, srcHasWindowsNewLines)
+		return CrLfTextInfo(nil, usesCrLf)
 	}
 	// if starts with a BOM, Vey High odds it's a text file
 	bomEnc := BomEncoding(file)
 	if bomEnc != nil {
-		return CrLfTextInfo(bomEnc, srcHasWindowsNewLines)
+		return CrLfTextInfo(bomEnc, usesCrLf)
 	}
 	f, err := os.Open(file)
 	defer f.Close()
 	if err != nil {
-		return CrLfTextInfo(nil, srcHasWindowsNewLines)
+		return CrLfTextInfo(nil, usesCrLf)
 	}
 	// does it only contain ut8 characters ? -> likely utf8
 	buf := make([]byte, 1024)
 	c, err := f.Read(buf)
 	if err != nil {
-		return CrLfTextInfo(unicode.UTF8, srcHasWindowsNewLines)
+		return CrLfTextInfo(unicode.UTF8, usesCrLf)
 	}
 	if utf8.Valid(buf[:c]) {
-		return CrLfTextInfo(unicode.UTF8, srcHasWindowsNewLines)
+		return CrLfTextInfo(unicode.UTF8, usesCrLf)
 	}
 	// ok, so it's either utf16 without bom or binary (or some other unsuported encoding)
 	// trying to determine
@@ -119,27 +126,27 @@ func ReadTextInfo(file string, srcHasWindowsNewLines bool) *TextInfo {
 		}
 	}
 	if countNewLinesLe >= 4 {
-		return CrLfTextInfo(unicode.UTF16(unicode.LittleEndian, unicode.UseBOM), srcHasWindowsNewLines) // likely utf16 LittleEndian text
+		return CrLfTextInfo(unicode.UTF16(unicode.LittleEndian, unicode.UseBOM), usesCrLf) // likely utf16 LittleEndian text
 	}
 	if countNewLinesBe >= 4 {
-		return CrLfTextInfo(unicode.UTF16(unicode.BigEndian, unicode.UseBOM), srcHasWindowsNewLines) // likely utf16 BigEndian text
+		return CrLfTextInfo(unicode.UTF16(unicode.BigEndian, unicode.UseBOM), usesCrLf) // likely utf16 BigEndian text
 	}
 	if oddNulls > c/2 {
-		return CrLfTextInfo(unicode.UTF16(unicode.LittleEndian, unicode.UseBOM), srcHasWindowsNewLines) // likely utf16 LittleEndian (lots of little endian ascii bytes)
+		return CrLfTextInfo(unicode.UTF16(unicode.LittleEndian, unicode.UseBOM), usesCrLf) // likely utf16 LittleEndian (lots of little endian ascii bytes)
 	}
 	if evenNulls > c/2 {
-		return CrLfTextInfo(unicode.UTF16(unicode.BigEndian, unicode.UseBOM), srcHasWindowsNewLines) // likely utf16 BigEndian text (tots of gib endian ascii bytes)
+		return CrLfTextInfo(unicode.UTF16(unicode.BigEndian, unicode.UseBOM), usesCrLf) // likely utf16 BigEndian text (tots of gib endian ascii bytes)
 	}
 	// doesn't look like text
 	if c < 1000 {
-		return CrLfTextInfo(unicode.UTF8, srcHasWindowsNewLines) // probably binary but file is small, not too risky to try it as a text file
+		return CrLfTextInfo(unicode.UTF8, usesCrLf) // probably binary but file is small, not too risky to try it as a text file
 	}
 	return nil // all else failed, assume binary / unsupported
 }
 
 // return TextInfo with extra CrLf encoding/decoding if needed
-func CrLfTextInfo(enc encoding.Encoding, srcHasWindowsNewLines bool) *TextInfo {
-	if !srcHasWindowsNewLines {
+func CrLfTextInfo(enc encoding.Encoding, usesCrLf bool) *TextInfo {
+	if !usesCrLf {
 		return &TextInfo{
 			Enc: enc,
 		}

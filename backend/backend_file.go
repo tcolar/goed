@@ -90,19 +90,18 @@ func (b *FileBackend) Reload() error {
 		newFile = true
 	}
 	if !newFile && len(b.srcLoc) > 0 && fb != b.srcLoc {
+		usesCrLf := core.UsesCrLf(b.srcLoc)
 		f, err := os.Open(b.srcLoc)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
-		hasWindowsNewLines := core.HasWindowsNewLine(f)
-		f.Seek(0, 0)
 		stat, err := f.Stat()
 		if err != nil {
 			return err
 		}
 		b.length = stat.Size()
-		b.textInfo = core.ReadTextInfo(b.srcLoc, hasWindowsNewLines)
+		b.textInfo = core.ReadTextInfo(b.srcLoc, usesCrLf)
 		if b.textInfo == nil {
 			return fmt.Errorf("Unsupported encoding ? Binary file ? %s", b.srcLoc)
 		}
