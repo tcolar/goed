@@ -13,57 +13,47 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"golang.org/x/text/encoding"
 )
 
 var LineSep = []byte{'\n'}
 
+func CopyToUTF8(from, to string, srcEnc encoding.Encoding) error {
+	return copyFile(from, to, srcEnc, nil)
+}
+
+func CopyFromUTF8(from, to string, dstEnc encoding.Encoding) error {
+	return copyFile(from, to, nil, dstEnc)
+}
+
 func CopyFile(from, to string) error {
-	_, err := copyFile(from, to, false, nil)
-	return err
+	return copyFile(from, to, nil, nil)
 }
 
-func CopyFileSkipBom(from, to string) (bom []byte, err error) {
-	return copyFile(from, to, true, nil)
-}
-
-func CopyFileWithBom(from, to string, bom []byte) error {
-	_, err := copyFile(from, to, false, bom)
-	return err
-}
-
-func copyFile(from, to string, skipBom bool, addBom []byte) (bom []byte, err error) {
-	if skipBom {
-		bomLen, _, _ := CheckBom(from)
-		bom = make([]byte, bomLen)
-	}
-
+func copyFile(from, to string, srcEnc, dstEnc encoding.Encoding) error {
 	in, err := os.Open(from)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer in.Close()
 	out, err := os.Create(to)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer out.Close()
 
-	if skipBom && len(bom) > 0 {
-		// read the bom to skip it (seek doesn't seem to have any effect on copy)
-		in.Read(bom)
-	}
-
-	if len(addBom) > 0 {
-		// write bom
-		_, err := out.Write(addBom)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// write content
-	_, err = io.Copy(out, in)
-	return bom, err
+	var r io.Reader = in
+	var w io.Writer = out
+	if srcEnc != nil {
+		r = srcEnc.NewDecoder().Reader(in)
+	}
+	if dstEnc != nil {
+		w = dstEnc.NewEncoder().Writer(out)
+	}
+	_, err = io.Copy(w, r)
+	return err
 }
 
 // Mv file moves a file by copy, then delete

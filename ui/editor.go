@@ -213,9 +213,6 @@ func (e *Editor) openDir(loc string, view core.Viewable) error {
 
 // OpenFile opens a file in the editor
 func (e *Editor) openFile(loc string, view core.Viewable) error {
-	if !core.IsTextFile(loc) {
-		return fmt.Errorf("Binary file ? %s", loc)
-	}
 	b, err := backend.NewFileBackend(loc, view.Id())
 	if err != nil {
 		return err

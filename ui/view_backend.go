@@ -264,12 +264,6 @@ func (v *View) runeSize(r rune) int {
 	if r == '\t' {
 		return tabSize
 	}
-	if r != '\n' && r < 32 { // displayed as ↵ or �
-		return 2
-	}
-	if r == '↵' || r == '�' {
-		return 2
-	}
 	// various Asian chars that are printed "double wide" (2 term cells)
 	if r >= 0x1100 &&
 		(r <= 0x115f || r == 0x2329 || r == 0x232a ||

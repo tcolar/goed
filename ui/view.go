@@ -216,10 +216,6 @@ func (v *View) renderText() {
 				e.TermFB(t.TabChar.Fg, bg)
 				e.TermStr(y, x, tab)
 				e.TermFB(fg, bg)
-			} else if c == '\r' { // windows carriage return
-				e.TermFB(t.TabChar.Fg, bg)
-				e.TermChar(y, x, '↵')
-				e.TermFB(fg, bg)
 			} else if c < 32 { // other unprintable control char
 				e.TermFB(t.TabChar.Fg, bg)
 				e.TermChar(y, x, 0x1A) // ASCII substitute char (invisible)

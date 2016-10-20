@@ -84,7 +84,6 @@ func (cs *CoreSuite) TestTheme(t *C) {
 }
 
 func (cs *CoreSuite) TestIsText(t *C) {
-	assert.True(t, IsTextFile("../test_data/empty.txt"))
-	assert.True(t, IsTextFile("../test_data/test.txt"))
-	assert.False(t, IsTextFile("../test_data/test.bin"))
+	assert.NotNil(t, ReadTextInfo("../test_data/empty.txt", false))
+	assert.NotNil(t, ReadTextInfo("../test_data/test.txt", false))
 }

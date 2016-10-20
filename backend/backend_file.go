@@ -2,12 +2,15 @@ package backend
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path"
 	"strings"
 	"sync"
 	"unicode/utf8"
+
+	"golang.org/x/text/encoding/unicode"
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
@@ -22,7 +25,7 @@ type FileBackend struct {
 	bufferLoc string
 	file      core.Rwsc //ReaderWriterSeekerCloser
 	viewId    int64
-	bom       []byte // file byte order mark, if any
+	textInfo  *core.TextInfo
 
 	bufferSize int64 // Internal buffer size for file ops
 
@@ -45,6 +48,7 @@ func NewFileBackend(loc string, viewId int64) (*FileBackend, error) {
 		col:        0,
 		prevCol:    0,
 		bufferSize: 65536,
+		textInfo:   core.CrLfTextInfo(unicode.UTF8, false),
 	}
 	err := b.Reload()
 	return b, err
@@ -91,18 +95,24 @@ func (b *FileBackend) Reload() error {
 			return err
 		}
 		defer f.Close()
+		hasWindowsNewLines := core.HasWindowsNewLine(f)
+		f.Seek(0, 0)
 		stat, err := f.Stat()
 		if err != nil {
 			return err
 		}
 		b.length = stat.Size()
+		b.textInfo = core.ReadTextInfo(b.srcLoc, hasWindowsNewLines)
+		if b.textInfo == nil {
+			return fmt.Errorf("Unsupported encoding ? Binary file ? %s", b.srcLoc)
+		}
 		if b.length > 10000000 {
 			b.bufferLoc = b.srcLoc
 			if core.Ed != nil {
 				core.Ed.SetStatusErr("EDITING IN PLACE ! (Large file)")
 			}
 		} else {
-			b.bom, err = core.CopyFileSkipBom(b.srcLoc, b.bufferLoc)
+			err = core.CopyToUTF8(b.srcLoc, b.bufferLoc, b.textInfo.Enc)
 			if err != nil {
 				return err
 			}
@@ -189,15 +199,15 @@ func (f *FileBackend) Remove(row1, col1, row2, col2 int) error {
 	}
 	f.readRune() // move to end of last char (rune could be more than 1 byte - UTF8)
 	end := f.offset
-	if end >= f.length {
-		end = f.length - 1
+	if end > f.length {
+		end = f.length
 	}
 	err = f.seek(row1, col1) // start of first character
 	if err != nil {
 		return err
 	}
 	ln := end - f.offset // read bytes to be removed (to count newlines, could optimize)
-	if ln < 0 {
+	if ln <= 0 {
 		return nil
 	}
 	buf := make([]byte, ln)
@@ -269,7 +279,8 @@ func (f *FileBackend) Save(loc string) error {
 		}
 	}
 	f.srcLoc = loc
-	err = core.CopyFileWithBom(f.bufferLoc, loc, f.bom)
+
+	err = core.CopyFromUTF8(f.bufferLoc, loc, f.textInfo.Enc)
 	// some sort of rsync would be nice ?
 	if err != nil {
 		return err
@@ -510,9 +521,9 @@ func (f *FileBackend) shiftFileBytes(shift int64) error {
 	return nil
 }
 
-func (m *FileBackend) SetVtCols(cols int) { // N/A
+func (b *FileBackend) SetVtCols(cols int) { // N/A
 }
 
-func (m *FileBackend) SendBytes(data []byte) {}
+func (b *FileBackend) SendBytes(data []byte) {}
 
-func (m *FileBackend) OnActivate() {}
+func (b *FileBackend) OnActivate() {}
