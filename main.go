@@ -59,7 +59,12 @@ func Initialize() *core.Config {
 			log.Fatal(err)
 		}
 		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
+		go func() {
+			time.Sleep(3 * time.Minute)
+			pprof.StopCPUProfile()
+			f.Close()
+			os.Exit(0)
+		}()
 	}
 	if *memprof == true {
 		f, err := os.Create("prof.mprof")

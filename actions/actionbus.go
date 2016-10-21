@@ -2,12 +2,14 @@ package actions
 
 import (
 	"log"
+	"sync/atomic"
 	"time"
 
 	"github.com/tcolar/goed/core"
 )
 
 var _ core.ActionDispatcher = (*actionBus)(nil)
+var latestRenderAction int64
 
 type actionBus struct {
 	actionChan chan (core.Action)
@@ -26,18 +28,21 @@ func (a actionBus) Dispatch(action core.Action) {
 }
 
 func (a actionBus) Start() {
-	// to minimize flickering we repaint as little as possible and using a ticker
-	paintTicker := time.NewTicker(16 * time.Millisecond)
-	needRender := false
+	pause := 10 * time.Millisecond
+	// handle events
 	for {
 		select {
 		case <-a.quitc:
 			break
 
 		case action := <-a.actionChan:
-			switch action.(type) {
+			switch a := action.(type) {
 			case edRender:
-				needRender = true
+				time.Sleep(pause)
+				// If we have a bunch of render pending, only need to hoor the most recent.
+				if a.time == atomic.LoadInt64(&latestRenderAction) {
+					core.Ed.Render()
+				}
 			default:
 				if core.Trace {
 					log.Printf("> %#v", action)
@@ -46,11 +51,6 @@ func (a actionBus) Start() {
 				if core.Trace {
 					log.Printf("< %#v", action)
 				}
-			}
-		case <-paintTicker.C:
-			if needRender {
-				core.Ed.Render()
-				needRender = false
 			}
 		}
 	}

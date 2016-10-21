@@ -359,9 +359,10 @@ func (e *Editor) StartTermView(args []string) int64 {
 // Handle selection auto scrolling of views
 func (e *Editor) autoScroller() {
 	action := autoScrollAction{}
+	pause := 200 * time.Millisecond
 	for {
-		time.Sleep(200 * time.Millisecond)
 		core.Bus.Dispatch(action)
+		time.Sleep(pause)
 	}
 }
 
