@@ -34,7 +34,7 @@ type FileBackend struct {
 	offset           int64
 	lnCount          int
 	length           int64
-	lock             sync.Mutex
+	lock sync.Mutex
 }
 
 // NewFileBackend creates a backend from a copy of the file in the buffer dir.

@@ -411,16 +411,16 @@ type backendAppender struct {
 }
 
 // refresh the view if needed(dirty) but no more than every so often
-// this greatly enhances performance and responsivness
+// this greatly enhances performance and responsiveness
 func (b *backendAppender) refresher(endc chan struct{}) {
-	t := time.NewTicker(50 * time.Millisecond)
+	pause := 50 * time.Millisecond
 	l, c, m, d := actions.Ar.ViewBounds(b.viewId)
 	for {
 		select {
 		case <-endc:
 			actions.Ar.EdRender()
 			return
-		case <-t.C:
+		default:
 			if atomic.SwapInt32(&b.dirty, 0) > 0 || atomic.SwapInt32(&b.backend.refreshCursor, 0) > 0 {
 				if actions.Ar.EdCurView() == b.viewId {
 					b.backend.MemBackend.lock.Lock()
@@ -432,11 +432,14 @@ func (b *backendAppender) refresher(endc chan struct{}) {
 			}
 			// If view was resized, do a stty resize
 			l2, c2, m2, d2 := actions.Ar.ViewBounds(b.viewId)
-			if !b.backend.SubCmdRunning() && m-l != m2-l2 || d-c != d2-c2 {
-				l, c, m, d = l2, c2, m2, d2
-				b.backend.Insert(1, 1, "sz\n")
-				actions.Ar.EdRender()
+			if m-l != m2-l2 || d-c != d2-c2 {
+				if !b.backend.SubCmdRunning() { // "heavy" call, do only as secondary check
+					l, c, m, d = l2, c2, m2, d2
+					b.backend.Insert(1, 1, "sz\n")
+					actions.Ar.EdRender()
+				}
 			}
+			time.Sleep(pause)
 		}
 	}
 }

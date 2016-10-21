@@ -2,6 +2,8 @@ package actions
 
 import (
 	"fmt"
+	"sync/atomic"
+	"time"
 
 	"github.com/tcolar/goed/core"
 )
@@ -68,7 +70,9 @@ func (a *ar) EdQuitCheck() bool {
 
 // Render/repaint the editor UI
 func (a *ar) EdRender() {
-	d(edRender{})
+	now := time.Now().UnixNano()
+	atomic.StoreInt64(&latestRenderAction, now)
+	d(edRender{time: now})
 }
 
 // resize the editor
@@ -237,10 +241,12 @@ func (a edQuitCheck) Run() {
 	a.answer <- core.Ed.QuitCheck()
 }
 
-type edRender struct{}
+type edRender struct {
+	time int64
+}
 
 func (a edRender) Run() {
-	core.Ed.Render()
+	// Not used, see actionBus.Start()
 }
 
 type edResize struct {
