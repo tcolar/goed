@@ -7,6 +7,7 @@ import (
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/ui/widgets"
 )
 
 var _ core.Commander = (*Cmdbar)(nil)
@@ -14,7 +15,7 @@ var _ core.Commander = (*Cmdbar)(nil)
 // Cmdbar is the CommandBar widget
 // It's sort of a temporary crutch as of now.
 type Cmdbar struct {
-	Widget
+	widgets.BaseWidget
 	cmd        []rune
 	history    [][]rune
 	cursorX    int
@@ -25,7 +26,8 @@ func (c *Cmdbar) Render() {
 	ed := core.Ed
 	t := ed.Theme()
 	ed.TermFB(t.Cmdbar.Fg, t.Cmdbar.Bg)
-	ed.TermFill(t.Cmdbar.Rune, c.y1, c.x1, c.y2, c.x2)
+	y1, x1, y2, x2 := c.Bounds()
+	ed.TermFill(t.Cmdbar.Rune, y1, x1, y2, x2)
 	fg := t.CmdbarText
 	bg := t.Cmdbar.Bg
 	if ed.CmdOn() {
@@ -36,13 +38,13 @@ func (c *Cmdbar) Render() {
 		if ed.CmdOn() && i == c.cursorX+2 {
 			ed.TermFB(t.FgCursor, t.BgCursor)
 		}
-		ed.TermChar(c.y1, c.x1+i, r)
+		ed.TermChar(y1, x1+i, r)
 		if ed.CmdOn() && i == c.cursorX+2 {
 			ed.TermFB(fg, bg)
 		}
 	}
 	ed.TermFB(t.CmdbarText, t.Cmdbar.Bg)
-	ed.TermStr(c.y1, c.x2-11, fmt.Sprintf("|GoEd %s", core.Version))
+	ed.TermStr(y1, x2-11, fmt.Sprintf("|GoEd %s", core.Version))
 }
 
 func (e *Editor) CmdbarToggle() {

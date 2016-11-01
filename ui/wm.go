@@ -49,7 +49,8 @@ func (e *Editor) WidgetAt(y, x int) Renderer {
 	for _, c := range e.Cols {
 		for _, vid := range c.Views {
 			v, found := e.views[vid]
-			if found && x >= v.x1 && x <= v.x2 && y >= v.y1 && y <= v.y2 {
+			y1, x1, y2, x2 := v.Bounds()
+			if found && x >= x1 && x <= x2 && y >= y1 && y <= y2 {
 				return v
 			}
 		}
@@ -130,7 +131,9 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 	v1i, _ := e.ViewIndex(v1.Id())
 	v2i, c2i := e.ViewIndex(v2.Id())
 
-	onSep := x2 == v2.x1 // dropped on a column "scrollbar"
+	v2y1, v2x1, v2y2, v2x2 := v2.Bounds()
+
+	onSep := x2 == v2x1 // dropped on a column "scrollbar"
 	if x1 == x2 && y1 == y2 {
 		// noop
 		e.SetStatus("")
@@ -145,7 +148,7 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 				v1.HeightRatio -= ratio
 				e.views[c1.Views[v1i-1]].HeightRatio += ratio // giving space to prev view
 			}
-		} else if c1i == c2i && v2i == v1i-1 && y2 != v2.y1 {
+		} else if c1i == c2i && v2i == v1i-1 && y2 != v2y1 {
 			// Expanding the view
 			ratio := float64(y1-y2) / float64(h-2)
 			v1.HeightRatio += ratio
@@ -163,7 +166,7 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 		} else {
 			// moved to a different column
 			// taking space out of target view
-			ratio := float64(y2-v2.y1) / float64(v2.y2-v2.y1)
+			ratio := float64(y2-v2y1) / float64(v2y2-v2y1)
 			e.DelView(v1.Id(), false)
 			v1.HeightRatio = v2.HeightRatio * (1.0 - ratio)
 			v2.HeightRatio *= ratio
@@ -173,9 +176,9 @@ func (e *Editor) ViewMove(y1, x1, y2, x2 int) {
 		}
 	} else {
 		// Moving a whole column or a view to it's own column
-		if y2 == 1 && v1i > 0 && x2 > v2.x1 && x2 < v2.x2 {
+		if y2 == 1 && v1i > 0 && x2 > v2x1 && x2 < v2x2 {
 			// Moving a view to it's own column
-			ratio := float64(x2-v2.x1) / float64(v2.x2-v2.x1)
+			ratio := float64(x2-v2x1) / float64(v2x2-v2x1)
 			nc := e.AddCol(c2, 1.0-ratio)
 			e.DelView(v1.Id(), false)
 			nc.Views[0] = v1.Id()
@@ -469,10 +472,8 @@ func (e *Editor) InsertView(view, toView *View, ratio float64) {
 }
 
 func (e *Editor) ReplaceView(oldView, newView *View) {
-	newView.x1 = oldView.x1
-	newView.x2 = oldView.x2
-	newView.y1 = oldView.y1
-	newView.y2 = oldView.y2
+	y1, x1, y2, x2 := oldView.Bounds()
+	newView.SetBounds(y1, x1, y2, x2)
 	newView.HeightRatio = oldView.HeightRatio
 	col := e.ViewColumn(oldView.Id())
 	i, _ := e.ViewIndex(oldView.Id())
@@ -654,8 +655,10 @@ func (e *Editor) SwapViews(vv1, vv2 int64) {
 	i2, _ := e.ViewIndex(v2.Id())
 	c1.Views[i1], c2.Views[i2] = vv2, vv1
 	v1.HeightRatio, v2.HeightRatio = v2.HeightRatio, v1.HeightRatio
-	v1.y1, v1.x1, v2.y1, v2.x1 = v2.y1, v2.x1, v1.y1, v1.x1
-	v1.y2, v1.x2, v2.y2, v2.x2 = v2.y2, v2.x2, v1.y2, v1.x2
+	v1y1, v1x1, v1y2, v1x2 := v1.Bounds()
+	v2y1, v2x1, v2y2, v2x2 := v2.Bounds()
+	v1.SetBounds(v2y1, v2x1, v2y2, v2x2)
+	v2.SetBounds(v1y1, v1x1, v1y2, v1x2)
 }
 
 func (e *Editor) Views() (views []int64) {

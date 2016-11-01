@@ -4,6 +4,7 @@
 // res/Readme.md
 // res/actions/Readme.md
 // res/default/actions/find_files.sh
+// res/default/actions/goed.fish
 // res/default/actions/goed.rc
 // res/default/actions/goed.sh
 // res/default/actions/goed_helper.ank
@@ -161,6 +162,26 @@ func resDefaultActionsFind_filesSh() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "res/default/actions/find_files.sh", size: 213, mode: os.FileMode(493), modTime: time.Unix(1464737891, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _resDefaultActionsGoedFish = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x5c\x91\xcd\xae\xda\x30\x10\x85\xd7\xf8\x29\x46\x0e\x0b\x90\x0a\x81\x07\xc8\x02\x95\x08\x58\x14\xaa\x82\xda\x45\x85\x2c\x37\xb6\xc9\xa8\xb9\x36\x8a\x27\x04\x78\xfa\x9b\x3f\x74\x13\xb6\xe7\x78\xbe\x39\x73\x1c\xc0\xc6\x69\x05\x13\x83\x53\x9f\x4e\x1e\x53\x40\x8b\xc4\x98\xd7\x04\xb3\x3b\x6c\x0e\xf1\x5a\xec\xf6\xc7\xd3\x6a\xff\x3d\x86\xb1\xcc\x2f\xfe\xef\xe2\x3c\x70\x7f\xef\xe2\x3f\x9d\xb3\x3c\x33\x16\xc0\x51\xcb\x3c\x49\xe1\x52\x63\x93\xc2\x93\xfb\x08\xff\x15\x98\x11\x5a\x20\xe7\x32\x0f\x06\x73\x4f\xf0\x82\xfc\x5c\x9d\xb6\x30\xde\x1e\x7e\xc4\xe1\xbc\x9e\x09\x65\x42\xe8\xac\x0f\x07\xa2\xd2\x46\x16\x19\xf5\xcc\x7a\x8e\x31\x53\xd8\x46\x69\xd6\x89\x44\xb1\x51\x00\x89\xaa\x8e\x20\x07\x12\x14\xe6\x3a\x21\x97\x3f\xbe\x81\xb4\x0a\xac\x23\x34\x8f\x36\x99\x33\x40\xa9\x06\xab\xcb\xfa\x15\x1b\xbd\x22\x56\xc3\xf5\x31\x37\x36\x6a\x9e\xcd\x66\xf2\x8a\x70\x43\x5d\x8a\x2a\xaf\x28\x5d\xfe\x5f\x54\xef\x61\xfc\xd6\xcc\x57\x15\x7c\x72\x2d\xd5\x94\x33\x5d\x2d\xec\xe5\x73\x03\xa0\xbb\x6a\xfb\xce\xe8\x06\xdb\xf5\x75\xcb\x2d\xa1\xab\x29\x5e\xef\x4e\x87\x5f\xc0\x7b\x10\xad\x90\xde\x21\x1d\x23\x68\x4d\x59\x75\x9d\x69\xc6\x64\x86\xd2\x57\xa7\x45\xbc\xab\x89\xbf\x34\x1f\x71\xdf\xfc\x97\x20\x7d\xa7\xb9\x4f\x79\x67\x98\x88\x1b\xb4\x4a\xd4\x00\xdf\xd3\xfd\x33\xe2\x37\x5a\x2e\x16\xc2\xe3\x53\x37\x06\x9b\x87\x03\x85\x7d\x06\x00\x00\xff\xff\xf1\x60\x7e\x7d\x54\x02\x00\x00")
+
+func resDefaultActionsGoedFishBytes() ([]byte, error) {
+	return bindataRead(
+		_resDefaultActionsGoedFish,
+		"res/default/actions/goed.fish",
+	)
+}
+
+func resDefaultActionsGoedFish() (*asset, error) {
+	bytes, err := resDefaultActionsGoedFishBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "res/default/actions/goed.fish", size: 596, mode: os.FileMode(488), modTime: time.Unix(1477326112, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -405,7 +426,7 @@ func resDefaultThemesDefaultToml() (*asset, error) {
 	return a, nil
 }
 
-var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\x37\x37\x30\x37\x37\xb7\x30\xe5\x02\x04\x00\x00\xff\xff\x44\x59\x5e\x81\x0b\x00\x00\x00")
+var _resResources_versionTxt = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x32\x34\x31\xb7\x30\x30\xb4\x34\x32\x37\xe1\x02\x04\x00\x00\xff\xff\xda\x90\x8e\x14\x0b\x00\x00\x00")
 
 func resResources_versionTxtBytes() ([]byte, error) {
 	return bindataRead(
@@ -420,7 +441,7 @@ func resResources_versionTxt() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1477077785, 0)}
+	info := bindataFileInfo{name: "res/resources_version.txt", size: 11, mode: os.FileMode(420), modTime: time.Unix(1478019274, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -501,6 +522,7 @@ var _bindata = map[string]func() (*asset, error){
 	"res/Readme.md": resReadmeMd,
 	"res/actions/Readme.md": resActionsReadmeMd,
 	"res/default/actions/find_files.sh": resDefaultActionsFind_filesSh,
+	"res/default/actions/goed.fish": resDefaultActionsGoedFish,
 	"res/default/actions/goed.rc": resDefaultActionsGoedRc,
 	"res/default/actions/goed.sh": resDefaultActionsGoedSh,
 	"res/default/actions/goed_helper.ank": resDefaultActionsGoed_helperAnk,
@@ -566,6 +588,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"default": &bintree{nil, map[string]*bintree{
 			"actions": &bintree{nil, map[string]*bintree{
 				"find_files.sh": &bintree{resDefaultActionsFind_filesSh, map[string]*bintree{}},
+				"goed.fish": &bintree{resDefaultActionsGoedFish, map[string]*bintree{}},
 				"goed.rc": &bintree{resDefaultActionsGoedRc, map[string]*bintree{}},
 				"goed.sh": &bintree{resDefaultActionsGoedSh, map[string]*bintree{}},
 				"goed_helper.ank": &bintree{resDefaultActionsGoed_helperAnk, map[string]*bintree{}},

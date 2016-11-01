@@ -1,9 +1,11 @@
 package core
 
+import "github.com/tcolar/goed/ui/widgets"
+
 // Viewable is the interface to a View
 type Viewable interface {
+	widgets.Widget
 	Backspace()
-	Bounds() (y1, x1, y2, x2 int)
 	Backend() Backend
 	ClearSelections()
 	Copy()
@@ -30,8 +32,6 @@ type Viewable interface {
 	Paste()
 	// Reload reloads the view data from it's source (backend)
 	Reload()
-	// Render forec re=-rendering the view UI.
-	Render()
 	// Reset reinitializes the view to it's startup state.
 	Reset()
 	Save() // Save from buffer to src

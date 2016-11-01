@@ -8,6 +8,7 @@ import (
 
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/ui/widgets"
 )
 
 const tabSize = 4
@@ -16,7 +17,7 @@ var _ core.Viewable = (*View)(nil)
 
 // View represents an individual view pane(file) in the editor.
 type View struct {
-	Widget
+	widgets.BaseWidget
 	id      int64
 	dirty   bool
 	backend core.Backend
@@ -74,17 +75,18 @@ func (v *View) Render() {
 	e := core.Ed
 	t := e.Theme()
 	e.TermFB(t.Viewbar.Fg, t.Viewbar.Bg)
-	e.TermFill(t.Viewbar.Rune, v.y1, v.x1+1, v.y1, v.x2)
+	y1, x1, _, x2 := v.Bounds()
+	e.TermFill(t.Viewbar.Rune, y1, x1+1, y1, x2)
 	fg := t.ViewbarText
 	if v.Id() == e.CurViewId() {
 		fg = fg.WithAttr(core.Bold)
 	}
 	e.TermFB(fg, t.Viewbar.Bg)
 	ti := v.Title()
-	if v.x2-v.x1 > 4 && v.x1+len(ti) > v.x2-4 {
-		ti = ti[:v.x2-v.x1-4]
+	if x2-x1 > 4 && x1+len(ti) > x2-4 {
+		ti = ti[:x2-x1-4]
 	}
-	e.TermStr(v.y1, v.x1+2, ti)
+	e.TermStr(y1, x1+2, ti)
 	v.renderClose()
 	v.renderScroll()
 	v.renderIsDirty()
@@ -97,11 +99,12 @@ func (v *View) Render() {
 func (v *View) renderMargin() {
 	e := core.Ed
 	t := e.Theme()
+	y1, x1, _, _ := v.Bounds()
 	margin := e.Config().LineWidthIndicator
 	if v.offx < margin && v.offx+v.LastViewCol() >= margin {
 		for i := 0; i <= v.LastViewLine(); i++ {
 			e.TermFB(t.Margin.Fg, t.Margin.Bg)
-			e.TermChar(v.y1+2+i, v.x1+2+margin-v.offx, t.Margin.Rune)
+			e.TermChar(y1+2+i, x1+2+margin-v.offx, t.Margin.Rune)
 			e.TermFB(t.Fg, t.Bg)
 		}
 	}
@@ -110,11 +113,12 @@ func (v *View) renderMargin() {
 func (v *View) renderScroll() {
 	e := core.Ed
 	t := e.Theme()
-	viewLines := v.y2 - v.y1 - 1
+	y1, x1, y2, _ := v.Bounds()
+	viewLines := y2 - y1 - 1
 	textLines := v.LineCount()
 	topLine := v.slice.R1
 	e.TermFB(t.Scrollbar.Fg, t.Scrollbar.Bg)
-	e.TermFill(t.Scrollbar.Rune, v.y1+1, v.x1, v.y2, v.x1)
+	e.TermFill(t.Scrollbar.Rune, y1+1, x1, y2, x1)
 	if textLines < viewLines || viewLines <= 0 {
 		return // no scrollbar needed
 	}
@@ -129,7 +133,7 @@ func (v *View) renderScroll() {
 		loc = viewLines - size // if on last page, make sure scrolbar hugs bottom
 	}
 	e.TermFB(t.ScrollTab.Fg, t.ScrollTab.Bg)
-	e.TermFill(t.ScrollTab.Rune, v.y1+1+loc, v.x1, v.y1+1+loc+size, v.x1)
+	e.TermFill(t.ScrollTab.Rune, y1+1+loc, x1, y1+1+loc+size, x1)
 }
 
 func (v *View) renderIsDirty() {
@@ -139,21 +143,24 @@ func (v *View) renderIsDirty() {
 	if v.Dirty() {
 		style = t.FileDirty
 	}
+	y1, x1, _, _ := v.Bounds()
 	e.TermFB(style.Fg, style.Bg)
-	e.TermChar(v.y1, v.x1, style.Rune)
+	e.TermChar(y1, x1, style.Rune)
 }
 
 func (v *View) renderClose() {
 	e := core.Ed
 	t := e.Theme()
+	y1, _, _, x2 := v.Bounds()
 	e.TermFB(t.Close.Fg, t.Close.Bg)
-	e.TermChar(v.y1, v.x2-1, t.Close.Rune)
+	e.TermChar(y1, x2-1, t.Close.Rune)
 }
 
 func (v *View) renderText() {
 	e := core.Ed
 	t := e.Theme()
-	y := v.y1 + 2
+	y1, x1, y2, x2 := v.Bounds()
+	y := y1 + 2
 	fg := t.Fg
 	bg := t.Bg
 	e.TermFB(fg, bg)
@@ -165,7 +172,7 @@ func (v *View) renderText() {
 	if v.offy > 0 {
 		// More text above
 		e.TermFB(t.MoreTextUp.Fg, t.MoreTextUp.Bg)
-		e.TermChar(y-1, v.x1+1, t.MoreTextUp.Rune)
+		e.TermChar(y-1, x1+1, t.MoreTextUp.Rune)
 		e.TermFB(fg, bg)
 	}
 	// Note: using full lines
@@ -174,7 +181,7 @@ func (v *View) renderText() {
 		v.highlighter.UpdateHighlights(v)
 	}
 	for lnc, l := range *v.slice.Text() {
-		x := v.x1 + 2
+		x := x1 + 2
 		if v.offx >= len(l) {
 			y++
 			continue
@@ -199,8 +206,8 @@ func (v *View) renderText() {
 			}
 		}
 		for colc, c := range l[start:] {
-			sy := v.offy + y - 2 - v.y1
-			sx := v.offx + x - 2 - v.x1
+			sy := v.offy + y - 2 - y1
+			sx := v.offx + x - 2 - x1
 			sx = v.LineRunesTo(v.slice, sy, sx)
 			selected, _ := v.Selected(sx, sy)
 			if selected != inSelection {
@@ -227,7 +234,7 @@ func (v *View) renderText() {
 				e.TermChar(y, x, c)
 			}
 			x += v.runeSize(c)
-			if x > v.x2-1 {
+			if x > x2-1 {
 				// More text to our right
 				e.TermFB(t.MoreTextSide.Fg, t.MoreTextSide.Bg)
 				e.TermChar(y, x-1, t.MoreTextSide.Rune)
@@ -236,26 +243,28 @@ func (v *View) renderText() {
 			}
 		}
 		y++
-		if y > v.y2-1 {
+		if y > y2-1 {
 			break
 		}
 	}
 	if v.offy+v.LastViewLine() < v.LineCount()-1 {
 		// More text below
 		e.TermFB(t.MoreTextDown.Fg, t.MoreTextDown.Bg)
-		e.TermChar(y, v.x1+1, t.MoreTextDown.Rune)
+		e.TermChar(y, x1+1, t.MoreTextDown.Rune)
 		e.TermFB(fg, t.Bg)
 	}
 }
 
 // LastViewLines returns the last Line of this view (~ number of visible lines)
 func (v *View) LastViewLine() int {
-	return v.y2 - v.y1 - 3
+	y1, _, y2, _ := v.Bounds()
+	return y2 - y1 - 3
 }
 
 // LastViewCol returns the last column of this view (~ number of visible columns)
 func (v *View) LastViewCol() int {
-	return v.x2 - v.x1 - 3
+	_, x1, _, x2 := v.Bounds()
+	return x2 - x1 - 3
 }
 
 // Same as MoveCursor but with "rolling" to next/prev line if overflowed.
@@ -355,7 +364,8 @@ func (v *View) updateCursor(slice *core.Slice) {
 	if !slice.ContainsLine(v.CursorY) {
 		v.SyncSlice()
 	}
-	core.Ed.SetCursor(v.y1+2+v.CursorY, v.x1+2+v.CursorX)
+	y1, x1, _, _ := v.Bounds()
+	core.Ed.SetCursor(y1+2+v.CursorY, x1+2+v.CursorX)
 }
 
 func (v *View) NormalizeCursor(slice *core.Slice) {

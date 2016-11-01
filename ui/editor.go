@@ -248,7 +248,8 @@ func (e *Editor) Render() {
 	// Note the terminal inverts the colors where the cursor is
 	// this is why this statement might appear "backward"
 	e.TermFB(e.theme.BgCursor, e.theme.FgCursor)
-	e.TermChar(cl+v.y1-v.offy+2, cc+v.x1-v.offx+2, car)
+	y1, x1, _, _ := v.Bounds()
+	e.TermChar(cl+y1-v.offy+2, cc+x1-v.offx+2, car)
 	e.TermFB(e.theme.Fg, e.theme.Bg)
 
 	e.Cmdbar.Render()
@@ -336,6 +337,9 @@ func (e *Editor) StartTermView(args []string) int64 {
 	ext := ".sh"
 	if os.Getenv("SHELL") == "rc" {
 		ext = ".rc"
+	}
+	if os.Getenv("SHELL") == "fish" {
+		ext = ".fish"
 	}
 	cmd := ". $HOME/.goed/default/actions/goed" +
 		fmt.Sprintf("%s %d %d\n", ext, core.InstanceId, v.Id())
