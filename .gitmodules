@@ -1,0 +1,57 @@
+[submodule "vendor/gopkg.in/alecthomas/kingpin.v1"]
+	path = vendor/gopkg.in/alecthomas/kingpin.v1
+	url = https://gopkg.in/alecthomas/kingpin.v1
+[submodule "vendor/github.com/alecthomas/units"]
+	path = vendor/github.com/alecthomas/units
+	url = https://github.com/alecthomas/units
+[submodule "vendor/github.com/mattn/anko"]
+	path = vendor/github.com/mattn/anko
+	url = https://github.com/mattn/anko
+[submodule "vendor/gopkg.in/check.v1"]
+	path = vendor/gopkg.in/check.v1
+	url = https://gopkg.in/check.v1
+[submodule "vendor/github.com/kr/pty"]
+	path = vendor/github.com/kr/pty
+	url = https://github.com/kr/pty
+[submodule "vendor/golang.org/x/text"]
+	path = vendor/golang.org/x/text
+	url = https://go.googlesource.com/text
+[submodule "vendor/github.com/tcolar/tcell"]
+	path = vendor/github.com/tcolar/tcell
+	url = https://github.com/tcolar/tcell
+[submodule "vendor/github.com/gdamore/encoding"]
+	path = vendor/github.com/gdamore/encoding
+	url = https://github.com/gdamore/encoding
+[submodule "vendor/github.com/lucasb-eyer/go-colorful"]
+	path = vendor/github.com/lucasb-eyer/go-colorful
+	url = https://github.com/lucasb-eyer/go-colorful
+[submodule "vendor/github.com/mattn/go-runewidth"]
+	path = vendor/github.com/mattn/go-runewidth
+	url = https://github.com/mattn/go-runewidth
+[submodule "vendor/github.com/gdamore/tcell"]
+	path = vendor/github.com/gdamore/tcell
+	url = https://github.com/gdamore/tcell
+[submodule "vendor/github.com/tcolar/termbox-go"]
+	path = vendor/github.com/tcolar/termbox-go
+	url = https://github.com/tcolar/termbox-go
+[submodule "vendor/github.com/golang/freetype"]
+	path = vendor/github.com/golang/freetype
+	url = https://github.com/golang/freetype
+[submodule "vendor/golang.org/x/image"]
+	path = vendor/golang.org/x/image
+	url = https://go.googlesource.com/image
+[submodule "vendor/github.com/skelterjohn/go.wde"]
+	path = vendor/github.com/skelterjohn/go.wde
+	url = https://github.com/skelterjohn/go.wde
+[submodule "vendor/github.com/BurntSushi/toml"]
+	path = vendor/github.com/BurntSushi/toml
+	url = https://github.com/BurntSushi/toml
+[submodule "vendor/github.com/atotto/clipboard"]
+	path = vendor/github.com/atotto/clipboard
+	url = https://github.com/atotto/clipboard
+[submodule "vendor/github.com/fsnotify/fsnotify"]
+	path = vendor/github.com/fsnotify/fsnotify
+	url = https://github.com/fsnotify/fsnotify
+[submodule "vendor/golang.org/x/sys"]
+	path = vendor/golang.org/x/sys
+	url = https://go.googlesource.com/sys
