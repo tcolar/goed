@@ -1,10 +1,8 @@
 package core
 
-import "github.com/tcolar/goed/ui/widgets"
-
 // Viewable is the interface to a View
 type Viewable interface {
-	widgets.Widget
+	Widget
 	Backspace()
 	Backend() Backend
 	ClearSelections()
