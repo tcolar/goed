@@ -565,6 +565,7 @@ func (e *Editor) TerminateView(vid int64) {
 	if !found {
 		return
 	}
+	e.fileWatcher.Unwatch(vid, v.Backend().SrcLoc())
 	delete(e.views, vid)
 	// This probably way overkill, but without nugging the GC it tends to not
 	// be very agressive and leave the memory allocated quite a while.
@@ -627,19 +628,19 @@ func (e *Editor) ViewById(id int64) core.Viewable {
 	return v
 }
 
-// ViewByLoc returns the view matching the given location
-// or -1 if no match
-func (e *Editor) ViewByLoc(loc string) int64 {
+// ViewsByLoc returns the view(s) matching the given location
+func (e *Editor) ViewsByLoc(loc string) []int64 {
 	if len(loc) == 0 {
-		return -1
+		return []int64{}
 	}
 	loc, _ = filepath.Abs(loc)
+	vids := []int64{}
 	for _, v := range e.views {
 		if v != nil && v.backend != nil && v.backend.SrcLoc() == loc {
-			return v.Id()
+			vids = append(vids, v.Id())
 		}
 	}
-	return -1
+	return vids
 }
 
 // SwapView swaps 2 views (UI wise)

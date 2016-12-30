@@ -243,9 +243,9 @@ func (v *View) OpenSelection(newView bool) {
 	col--
 	isDir := false
 	loc, isDir = core.LookupLocation(v.WorkDir(), strings.TrimSpace(loc))
-	vid := ed.ViewByLoc(loc)
-	if vid >= 0 {
-		vv := ed.ViewById(vid)
+	vids := ed.ViewsByLoc(loc)
+	if len(vids) > 0 {
+		vv := ed.ViewById(vids[0])
 		if vv != nil {
 			// Already open
 			vv.SetCursorPos(line, col)

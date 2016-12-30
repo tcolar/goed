@@ -91,7 +91,10 @@ func (s *ApiSuite) TestEdit(c *C) {
 	// at which time the open action should be completed
 	loc, _ := filepath.Abs("test_data/fooedit")
 	for vid == -1 {
-		vid = actions.Ar.EdViewByLoc(loc)
+		vids := actions.Ar.EdViewsByLoc(loc)
+		if len(vids) > 0 {
+			vid = vids[0]
+		}
 		time.Sleep(100 * time.Millisecond)
 	}
 	assert.False(c, done)
@@ -107,7 +110,7 @@ func (s *ApiSuite) TestOpen(c *C) {
 	err := Open(s.id, "test_data", "empty.txt")
 	assert.Nil(c, err)
 	loc, _ := filepath.Abs("./test_data/empty.txt")
-	vid := actions.Ar.EdViewByLoc(loc)
+	vid := actions.Ar.EdViewsByLoc(loc)[0]
 	assert.NotEq(c, vid, "-1")
 	actions.Ar.EdDelView(vid, true)
 }

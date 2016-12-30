@@ -10,6 +10,7 @@ type Editable interface {
 	DelView(viewId int64, terminate bool)
 	DelViewCheck(viewId int64, terminate bool)
 	Dispatch(action Action)
+	FileEvent(op FileOp, loc string)
 	// CmdOn indicates whether the CommandBar is currently active
 	CmdOn() bool
 	// Open opens a file in the given view (new view if viewid<0)
@@ -42,7 +43,7 @@ type Editable interface {
 	ViewAt(ln, col int) int64
 	// ViewByLoc finds if there is an existing view for the given file (loc)
 	ViewById(id int64) Viewable
-	ViewByLoc(loc string) int64
+	ViewsByLoc(loc string) []int64
 	ViewIndex(id int64) (row, col int) // column, row **index** in the editor UI
 	// Move a view
 	ViewMove(y1, x1, y2, x2 int)

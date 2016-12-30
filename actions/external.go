@@ -33,13 +33,17 @@ func ExecScript(script string) {
 		file.Write([]byte{'\n'})
 		file.Write(out)
 		file.Close()
-		errv := Ar.EdViewByLoc(fp)
-		Ar.EdOpen(fp, errv, "", true)
+		errv := Ar.EdViewsByLoc(fp)
+		vid := int64(-1)
+		if len(errv) > 0 {
+			vid = errv[0]
+		}
+		Ar.EdOpen(fp, vid, "", true)
 	} else {
 		// no error
-		errv := Ar.EdViewByLoc(fp)
-		if errv > 0 {
-			Ar.EdDelView(errv, false)
+		errv := Ar.EdViewsByLoc(fp)
+		if len(errv) > 0 {
+			Ar.EdDelView(errv[0], false)
 		}
 	}
 	Ar.EdRender()

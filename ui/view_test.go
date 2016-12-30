@@ -301,7 +301,7 @@ func testChar(t *C, v *View, y, x int, c rune) {
 	// Test mock term matches after rendering
 	term := Ed.term.(*core.MockTerm)
 	v.Render()
-	tc := term.CharAt(y+v.y1+2, x+v.x1+2)
+	tc := term.CharAt(y+v.Y1()+2, x+v.X1()+2)
 	assert.Eq(t, tc, c)
 }
 

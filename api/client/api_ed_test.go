@@ -87,7 +87,7 @@ func (s *ApiSuite) TestEdOpen(t *C) {
 	assert.Eq(t, actions.Ar.ViewTitle(vid), "testopen.txt")
 
 	loc, _ := filepath.Abs("../test_data/theme.toml") // should no longer be found
-	assert.Eq(t, actions.Ar.EdViewByLoc(loc), int64(-1))
+	assert.Eq(t, len(actions.Ar.EdViewsByLoc(loc)), 0)
 
 	actions.Ar.EdDelView(actions.Ar.EdCurView(), true)
 }
