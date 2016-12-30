@@ -33,17 +33,17 @@ func Listen() {
 	var fp string
 	var file *os.File
 	defer file.Close()
+	var vid int64
 	if core.ShowEvents {
 		fp = path.Join(core.Home, "events.txt")
 		file, _ = os.Create(fp)
+		vid = actions.Ar.EdOpen(fp, -1, "", true)
 	}
 	es := &eventState{}
-
 	for e := range queue {
 		if core.ShowEvents {
-			fmt.Fprintf(file, "Chord:'%s'\nKeys:%#v, Combos:%#v\nMouse: Y:%d X:%d Btns:%#v\n", e.String(), e.Keys, e.Combo, e.MouseY, e.MouseX, e.MouseBtns)
-			eventv := actions.Ar.EdViewByLoc(fp)
-			actions.Ar.EdOpen(fp, eventv, "", true)
+			evt := fmt.Sprintf("Chord:'%s'\nKeys:%#v, Combos:%#v\nMouse: Y:%d X:%d Btns:%#v\n", e.String(), e.Keys, e.Combo, e.MouseY, e.MouseX, e.MouseBtns)
+			actions.Ar.ViewInsert(vid, 1, 1, evt, false)
 		}
 		if done := handleEvent(e, es); done {
 			return
