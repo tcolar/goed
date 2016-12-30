@@ -52,6 +52,7 @@ func (e *Editor) NewView(loc string) *View {
 	}
 	e.views[v.id] = v
 	v.backend, _ = backend.NewMemBackend(loc, v.Id())
+	e.fileWatcher.Watch(v.Id(), v.Backend().SrcLoc())
 	return v
 }
 

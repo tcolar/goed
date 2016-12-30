@@ -19,24 +19,26 @@ var _ core.Editable = (*Editor)(nil)
 
 // Editor is goed's main Editor pane (singleton)
 type Editor struct {
-	Cmdbar    *Cmdbar
-	config    *core.Config
-	Statusbar *Statusbar
-	Fg, Bg    core.Style
-	theme     *core.Theme
-	Cols      []*Col
-	curViewId int64
-	CurCol    *Col
-	cmdOn     bool
-	term      core.Term
-	views     map[int64]*View
+	Cmdbar      *Cmdbar
+	config      *core.Config
+	Statusbar   *Statusbar
+	Fg, Bg      core.Style
+	theme       *core.Theme
+	Cols        []*Col
+	curViewId   int64
+	CurCol      *Col
+	cmdOn       bool
+	term        core.Term
+	views       map[int64]*View
+	fileWatcher *event.FileWatcher
 }
 
 func NewEditor(term core.Term, config *core.Config) *Editor {
 	return &Editor{
-		term:   term,
-		config: config,
-		views:  map[int64]*View{},
+		term:        term,
+		config:      config,
+		views:       map[int64]*View{},
+		fileWatcher: event.NewFileWatcher(),
 	}
 }
 
@@ -58,6 +60,9 @@ func (e *Editor) Commandbar() core.Commander {
 }
 
 func (e *Editor) Quit() {
+	if e.fileWatcher != nil {
+		e.fileWatcher.Stop()
+	}
 	event.Shutdown()
 	e.term.Close()
 	os.Exit(0)
@@ -127,6 +132,10 @@ func (e *Editor) Start(locs []string) {
 	actions.Ar.EdResize(e.term.Size())
 
 	actions.Ar.EdRender()
+
+	if e.fileWatcher != nil {
+		go e.fileWatcher.Start()
+	}
 
 	go core.Bus.Start()
 
@@ -206,6 +215,7 @@ func (e *Editor) openDir(loc string, view core.Viewable) error {
 	if err != nil {
 		return err
 	}
+	actions.Ar.ViewSetType(v.Id(), core.ViewTypeDirListing)
 	view.SetBackend(backend)
 	e.SetStatus(fmt.Sprintf("%v", view.WorkDir()))
 	return nil
@@ -324,6 +334,12 @@ func (e *Editor) QuitCheck() bool {
 		}
 	}
 	return true
+}
+
+func (e *Editor) FileEvent(op core.FileOp, loc string) {
+	for _, v := range e.views {
+		v.fileEvent(op, loc)
+	}
 }
 
 func (e *Editor) StartTermView(args []string) int64 {

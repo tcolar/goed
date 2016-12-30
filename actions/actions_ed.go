@@ -8,7 +8,7 @@ import (
 	"github.com/tcolar/goed/core"
 )
 
-// blocks until any previosuly submited action has completed
+// blocks until any previously submitted action has completed
 func (a *ar) EdActionBusFlush() {
 	core.Bus.Flush()
 }
@@ -37,6 +37,12 @@ func (a *ar) EdDelCol(colIndex int, check bool) {
 // unless called twice in a row.
 func (a *ar) EdDelView(viewId int64, check bool) {
 	d(edDelView{viewId: viewId, check: check, terminate: true})
+}
+
+// Receives a file event, topically for files being watched, so the editor can
+// take an appropriate action (for example reload or close the file view).
+func (a *ar) EdFileEvent(op core.FileOp, loc string) {
+	d(edFileEvent{op: op, loc: loc})
 }
 
 // Open a file/dir(loc) in the editor
@@ -107,12 +113,11 @@ func (a *ar) EdTermFlush() {
 	d(edTermFlush{})
 }
 
-// returns the viewId of the view that holds a file/dir of the given path.
-// or -1 if not found.
-func (a *ar) EdViewByLoc(loc string) int64 {
-	vid := make(chan (int64), 1)
-	d(edViewByLoc{loc: loc, vid: vid})
-	return <-vid
+// returns the view ids of the view(s) that holds a file/dir of the given path.
+func (a *ar) EdViewsByLoc(loc string) []int64 {
+	vids := make(chan ([]int64), 1)
+	d(edViewsByLoc{loc: loc, vids: vids})
+	return <-vids
 }
 
 // move a view to the new coordinates (UI position, 1 indexed)
@@ -198,6 +203,15 @@ func (a edDelView) Run() {
 	} else {
 		core.Ed.DelView(a.viewId, a.terminate)
 	}
+}
+
+type edFileEvent struct {
+	op  core.FileOp
+	loc string
+}
+
+func (a edFileEvent) Run() {
+	core.Ed.FileEvent(a.op, a.loc)
 }
 
 type edOpen struct {
@@ -323,14 +337,14 @@ func (a edViewAt) Run() {
 	a.answer <- int64(x)
 }
 
-type edViewByLoc struct {
-	loc string
-	vid chan int64
+type edViewsByLoc struct {
+	loc  string
+	vids chan []int64
 }
 
-func (a edViewByLoc) Run() {
-	vid := core.Ed.ViewByLoc(a.loc)
-	a.vid <- vid
+func (a edViewsByLoc) Run() {
+	vids := core.Ed.ViewsByLoc(a.loc)
+	a.vids <- vids
 }
 
 type edViewIndex struct {
