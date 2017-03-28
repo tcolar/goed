@@ -9,6 +9,8 @@ type Backend interface {
 	SrcLoc() string
 	// BufferLoc is the location of the "copy" the backend works directly on.
 	BufferLoc() string
+	// BufferOffset is the current offset in the buffer file (bytes)
+	BufferOffset() int
 
 	Insert(line, col int, text string) error
 	Append(text string) error

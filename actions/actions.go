@@ -91,7 +91,7 @@ func registerAction(m reflect.Method) {
 	actions[toCamel(m.Name)] = proto
 }
 
-// dispath an action to the evnt bus
+// dispath an action to the event bus
 func d(action core.Action) {
 	core.Bus.Dispatch(action)
 }

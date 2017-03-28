@@ -2,8 +2,6 @@ package widgets
 
 import "github.com/tcolar/goed/core"
 
-//var _ core.Widget = (*BaseWidget)(nil)
-
 // Widget represents a UI component of the editor.
 type BaseWidget struct {
 	x1, x2, y1, y2 int
@@ -47,10 +45,6 @@ func (w *BaseWidget) GetParent() core.Widget {
 func (w *BaseWidget) SetParent(parent core.Widget) {
 	w.parent = parent
 }
-
-//func (w *BaseWidget) Render() {
-// TODO
-//}
 
 func (w *BaseWidget) Move(y, x int) {
 	w.x1 += x
