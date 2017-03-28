@@ -62,27 +62,6 @@ func (cs *CoreSuite) TestStringToRunes(t *C) {
 	assert.DeepEq(t, StringToRunes(s), r)
 }
 
-func (cs *CoreSuite) TestTheme(t *C) {
-	th, err := ReadTheme("../test_data/theme.toml")
-	assert.Nil(t, err)
-	s := NewStyle(0)
-	s.UnmarshalText([]byte("99663311"))
-	assert.Eq(t, th.Bg, s)
-	sb := th.Statusbar
-	s.UnmarshalText([]byte("EB070000"))
-	s2 := NewStyle(0)
-	s.UnmarshalText([]byte("EB000000"))
-	sr := StyledRune{
-		Rune: '❊',
-		Bg:   s,
-		Fg:   s2,
-	}
-	assert.Eq(t, sb, sr)
-	s = NewStyle(0x41)
-	s = s.WithAttr(Bold)
-	assert.Eq(t, s, NewStyle(0x0241))
-}
-
 func (cs *CoreSuite) TestIsText(t *C) {
 	assert.NotNil(t, ReadTextInfo("../test_data/empty.txt", false))
 	assert.NotNil(t, ReadTextInfo("../test_data/test.txt", false))

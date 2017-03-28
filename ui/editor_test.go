@@ -4,6 +4,7 @@ import (
 	"github.com/tcolar/goed/assert"
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/ui/style"
 	. "gopkg.in/check.v1"
 )
 
@@ -13,8 +14,8 @@ func (us *UiSuite) TestRingBuffer(t *C) {
 	title := "foo"
 	b, _ := backend.NewMemBackendCmd([]string{"echo", "1"}, ".", v.Id(), &title, false)
 	b.MaxRows = 5
-	fg := core.NewStyle(1)
-	bg := core.NewStyle(2)
+	fg := style.NewStyle(1)
+	bg := style.NewStyle(2)
 
 	l, r := b.Overwrite(0, 0, "1", fg, bg)
 	assert.Eq(t, b.Head(), 0)
@@ -27,8 +28,8 @@ func (us *UiSuite) TestRingBuffer(t *C) {
 	assert.Eq(t, c1, fg)
 	assert.Eq(t, c2, bg)
 
-	fg = core.NewStyle(98)
-	bg = core.NewStyle(99)
+	fg = style.NewStyle(98)
+	bg = style.NewStyle(99)
 
 	l, r = b.Overwrite(1, 0, "22\n333\n4444\n55555\n666666", fg, bg)
 	assert.Eq(t, l, 4)

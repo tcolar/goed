@@ -7,6 +7,7 @@ import (
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/assert"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/core/term"
 	. "gopkg.in/check.v1"
 )
 
@@ -299,7 +300,7 @@ func testChar(t *C, v *View, y, x int, c rune) {
 	c2, _, _ := v.CursorChar(v.slice, y, x)
 	assert.Eq(t, *c2, c)
 	// Test mock term matches after rendering
-	term := Ed.term.(*core.MockTerm)
+	term := Ed.term.(*term.MockTerm)
 	v.Render()
 	tc := term.CharAt(y+v.Y1()+2, x+v.X1()+2)
 	assert.Eq(t, tc, c)
