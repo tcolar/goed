@@ -395,8 +395,16 @@ func (c *BackendCmd) stream() error {
 		log.Println("Command stream closed")
 	}()
 
+	defer func() {
+		// sometimes runner.Wait may panic because the underlying command may die or get killed
+		// we don't want Goed to crash becasue of that
+		if e := recover(); e != nil {
+			err = e.(error)
+		}
+		close(endc)
+	}()
 	err = c.runner.Wait()
-	close(endc)
+
 	time.Sleep(50 * time.Millisecond)
 	actions.Ar.EdRender()
 	return err
