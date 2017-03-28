@@ -1,5 +1,10 @@
 package core
 
+import (
+	"github.com/tcolar/goed/ui/style"
+	"github.com/tcolar/goed/ui/theme"
+)
+
 // Editable provides editor features entry poins.
 type Editable interface {
 	Commandbar() Commander
@@ -33,12 +38,12 @@ type Editable interface {
 	SwapViews(v1, v2 int64)
 	Start(locs []string)
 	TermChar(y, x int, c rune)
-	TermFB(fg, bg Style)
+	TermFB(fg, bg style.Style)
 	TermFill(c rune, y1, x1, y2, x2 int)
 	TermFlush()
 	TermStr(y, x int, s string)
 	TermStrv(y, x int, s string)
-	Theme() *Theme
+	Theme() *theme.Theme
 	ViewActivate(v int64)
 	ViewAt(ln, col int) int64
 	// ViewByLoc finds if there is an existing view for the given file (loc)

@@ -12,7 +12,10 @@ import (
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/core/term"
 	"github.com/tcolar/goed/event"
+	"github.com/tcolar/goed/ui/style"
+	"github.com/tcolar/goed/ui/theme"
 )
 
 var _ core.Editable = (*Editor)(nil)
@@ -22,18 +25,18 @@ type Editor struct {
 	Cmdbar      *Cmdbar
 	config      *core.Config
 	Statusbar   *Statusbar
-	Fg, Bg      core.Style
-	theme       *core.Theme
+	Fg, Bg      style.Style
+	theme       *theme.Theme
 	Cols        []*Col
 	curViewId   int64
 	CurCol      *Col
 	cmdOn       bool
-	term        core.Term
+	term        term.Term
 	views       map[int64]*View
 	fileWatcher *event.FileWatcher
 }
 
-func NewEditor(term core.Term, config *core.Config) *Editor {
+func NewEditor(term term.Term, config *core.Config) *Editor {
 	return &Editor{
 		term:        term,
 		config:      config,
@@ -45,7 +48,7 @@ func NewEditor(term core.Term, config *core.Config) *Editor {
 // Editor with Mock terminal for testing
 func NewMockEditor() *Editor {
 	return &Editor{
-		term:   core.NewMockTerm(),
+		term:   term.NewMockTerm(),
 		config: core.LoadConfig("config.toml"),
 		views:  map[int64]*View{},
 	}
@@ -75,10 +78,14 @@ func (e *Editor) Start(locs []string) {
 		panic(err)
 	}
 
-	e.term.SetExtendedColors(core.Colors == 256)
-	e.theme, err = core.ReadTheme(core.FindResource(path.Join("themes", e.config.Theme)))
+	e.term.SetExtendedColors(style.Colors == 256)
+	e.theme, err = theme.ReadTheme(core.FindResource(path.Join("themes", e.config.Theme)))
 	if err != nil {
-		panic(err)
+		// try the default theme
+		e.theme, err = theme.ReadTheme(core.FindResource(path.Join("default", "themes", "default.toml")))
+		if err != nil {
+			panic(err)
+		}
 	}
 	e.Fg = e.theme.Fg
 	e.Bg = e.theme.Bg
@@ -291,7 +298,7 @@ func (e *Editor) Config() core.Config {
 	return *e.config
 }
 
-func (e *Editor) Theme() *core.Theme {
+func (e *Editor) Theme() *theme.Theme {
 	return e.theme
 }
 

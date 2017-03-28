@@ -1,12 +1,16 @@
-package core
+package term
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/tcolar/goed/ui/style"
+)
 
 // Terminal interface
 type Term interface {
 	Close()
-	Clear(fg, bg Style)
-	Char(y, x int, c rune, fg, bg Style)
+	Clear(fg, bg style.Style)
+	Char(y, x int, c rune, fg, bg style.Style)
 	Flush()
 	Init() error
 	Listen()
@@ -39,7 +43,7 @@ func (t *MockTerm) Init() error {
 func (t *MockTerm) Close() {
 }
 
-func (t *MockTerm) Clear(fg, bg Style) {
+func (t *MockTerm) Clear(fg, bg style.Style) {
 	t.text = [25][50]rune{}
 }
 
@@ -56,7 +60,7 @@ func (t *MockTerm) SetCursor(y, x int) {
 	t.cursorX, t.cursorY = x, y
 }
 
-func (t *MockTerm) Char(y, x int, c rune, fg, bg Style) {
+func (t *MockTerm) Char(y, x int, c rune, fg, bg style.Style) {
 	if x < 0 || y < 0 {
 		return
 	}

@@ -6,12 +6,13 @@ import (
 
 	"github.com/tcolar/goed"
 	"github.com/tcolar/goed/actions"
-	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/core/term"
 	"github.com/tcolar/goed/event"
+	"github.com/tcolar/goed/ui/style"
 	termbox "github.com/tcolar/termbox-go"
 )
 
-var _ core.Term = (*TermBox)(nil)
+var _ term.Term = (*TermBox)(nil)
 
 func Main() {
 	config := goed.Initialize()
@@ -35,7 +36,7 @@ func (t *TermBox) Init() error {
 	return termbox.Init()
 }
 
-func (t *TermBox) Clear(fg, bg core.Style) {
+func (t *TermBox) Clear(fg, bg style.Style) {
 	termbox.Clear(termbox.Attribute(fg.Uint16()), termbox.Attribute(bg.Uint16()))
 }
 
@@ -57,7 +58,7 @@ func (t *TermBox) SetCursor(y, x int) {
 	termbox.SetCursor(y, x)
 }
 
-func (t *TermBox) Char(y, x int, c rune, fg, bg core.Style) {
+func (t *TermBox) Char(y, x int, c rune, fg, bg style.Style) {
 	termbox.SetCell(x, y, c, termbox.Attribute(fg.Uint16()), termbox.Attribute(bg.Uint16()))
 }
 

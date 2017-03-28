@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/ui/style"
 )
 
 var _ core.Backend = (*MemBackend)(nil)
@@ -40,7 +41,7 @@ func (m *MemBackend) SetVtCols(cols int) {
 	m.vtCols = cols
 }
 
-func (m *MemBackend) ColorAt(ln, col int) (fg, bg core.Style) {
+func (m *MemBackend) ColorAt(ln, col int) (fg, bg style.Style) {
 	t := core.Ed.Theme()
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -305,5 +306,5 @@ func (m *MemBackend) OnActivate() {}
 func (m *MemBackend) BufferOffset() int64 { return 0 /*TODO*/ }
 
 type color struct {
-	fg, bg core.Style
+	fg, bg style.Style
 }

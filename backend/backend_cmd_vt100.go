@@ -5,6 +5,7 @@ import (
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/ui/style"
 )
 
 // TODO : Handle VT100 codes
@@ -328,19 +329,19 @@ func (b *backendAppender) applyColors(colors ...int) {
 			b.curFg = t.Fg
 			b.curBg = t.Bg
 		case color == 1: // bold
-			b.curFg = b.curFg.WithAttr(core.Bold)
+			b.curFg = b.curFg.WithAttr(style.Bold)
 		case color == 39: // reset fg
 			b.curFg = t.Fg
 		case color == 49: // reset bg
 			b.curBg = t.Bg
 		case color >= 30 && color <= 37: // set fg
-			b.curFg = core.NewStyle(uint16(color - 30 + 8))
+			b.curFg = style.NewStyle(uint16(color - 30 + 8))
 		case color >= 40 && color <= 47: // set bg
-			b.curBg = core.NewStyle(uint16(color - 40 + 8))
+			b.curBg = style.NewStyle(uint16(color - 40 + 8))
 		case color >= 90 && color <= 97:
-			b.curFg = core.NewStyle(uint16(color - 90 + 8))
+			b.curFg = style.NewStyle(uint16(color - 90 + 8))
 		case color >= 100 && color <= 107:
-			b.curBg = core.NewStyle(uint16(color - 100 + 8))
+			b.curBg = style.NewStyle(uint16(color - 100 + 8))
 		}
 	}
 }

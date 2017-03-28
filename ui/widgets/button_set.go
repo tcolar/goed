@@ -1,6 +1,6 @@
 package widgets
 
-import "github.com/tcolar/goed/core"
+import "github.com/tcolar/goed/ui/style"
 
 type ButtonSet struct {
 	BaseWidget
@@ -10,8 +10,8 @@ type ButtonSet struct {
 
 func NewButtonSet() *ButtonSet {
 	bw := BaseWidget{}
-	bw.Bg = core.NewStyle(0)
-	bw.Fg = core.NewStyle(0x0F)
+	bw.Bg = style.NewStyle(0)
+	bw.Fg = style.NewStyle(0x0F)
 	bs := &ButtonSet{
 		BaseWidget: bw,
 	}

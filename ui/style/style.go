@@ -1,67 +1,18 @@
-package core
+package style
 
 import (
-	"path"
 	"strconv"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/BurntSushi/toml"
 )
+
+var Colors = 256
 
 const (
 	Plain uint16 = 1 << (8 + iota)
 	Bold
 	Underlined
 )
-
-// Theme represents a goed theme data.
-type Theme struct {
-	Bg       Style // default to term bg
-	Fg       Style // default to term fg
-	BgSelect Style // default to term bg
-	FgSelect Style // default to term fg
-	BgCursor Style
-	FgCursor Style
-
-	Comment                            Style
-	String                             Style
-	Number                             Style
-	Keyword1, Keyword2, Keyword3       Style
-	Symbol1, Symbol2, Symbol3          Style
-	Separator1, Separator2, Separator3 Style
-
-	FileClean        StyledRune
-	FileDirty        StyledRune
-	Scrollbar        StyledRune
-	ScrollTab        StyledRune
-	Statusbar        StyledRune
-	StatusbarText    Style
-	StatusbarTextErr Style
-	Cmdbar           StyledRune
-	CmdbarText       Style
-	CmdbarTextOn     Style
-	Viewbar          StyledRune
-	ViewbarText      Style
-	MoreTextSide     StyledRune
-	MoreTextUp       StyledRune
-	MoreTextDown     StyledRune
-	TabChar          StyledRune
-	Margin           StyledRune
-	Close            StyledRune
-}
-
-func ReadDefaultTheme() (*Theme, error) {
-	return ReadTheme(path.Join(Home, "default", "themes", "default.toml"))
-}
-
-func ReadTheme(loc string) (*Theme, error) {
-	var theme Theme
-	if _, err := toml.DecodeFile(loc, &theme); err != nil {
-		return ReadDefaultTheme()
-	}
-	return &theme, nil
-}
 
 // The format of a style as stored in a file is 4 bytes, HexaDecimal as follows:
 // color, attr

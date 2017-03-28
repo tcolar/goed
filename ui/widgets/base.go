@@ -1,12 +1,12 @@
 package widgets
 
-import "github.com/tcolar/goed/core"
+import "github.com/tcolar/goed/ui/style"
 
 // Widget represents a UI component of the editor.
 type BaseWidget struct {
 	x1, x2, y1, y2 int
-	Bg, Fg         core.Style
-	parent         core.Widget
+	Bg, Fg         style.Style
+	parent         Widget
 }
 
 func (w *BaseWidget) Bounds() (y1, x1, y2, x2 int) {
@@ -25,7 +25,7 @@ func (w *BaseWidget) SetBounds(y1, x1, y2, x2 int) {
 	w.y2 = y2
 }
 
-func GetTermWidget(w core.Widget) *TermWidget {
+func GetTermWidget(w Widget) *TermWidget {
 	ww := w
 	for {
 		if ww == nil {
@@ -38,11 +38,11 @@ func GetTermWidget(w core.Widget) *TermWidget {
 	}
 }
 
-func (w *BaseWidget) GetParent() core.Widget {
+func (w *BaseWidget) GetParent() Widget {
 	return w.parent
 }
 
-func (w *BaseWidget) SetParent(parent core.Widget) {
+func (w *BaseWidget) SetParent(parent Widget) {
 	w.parent = parent
 }
 

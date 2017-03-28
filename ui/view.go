@@ -8,6 +8,7 @@ import (
 
 	"github.com/tcolar/goed/backend"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/ui/style"
 	"github.com/tcolar/goed/ui/widgets"
 )
 
@@ -80,7 +81,7 @@ func (v *View) Render() {
 	e.TermFill(t.Viewbar.Rune, y1, x1+1, y1, x2)
 	fg := t.ViewbarText
 	if v.Id() == e.CurViewId() {
-		fg = fg.WithAttr(core.Bold)
+		fg = fg.WithAttr(style.Bold)
 	}
 	e.TermFB(fg, t.Viewbar.Bg)
 	ti := v.Title()

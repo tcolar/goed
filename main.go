@@ -18,7 +18,9 @@ import (
 	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/api/client"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/core/term"
 	"github.com/tcolar/goed/ui"
+	"github.com/tcolar/goed/ui/style"
 	kingpin "gopkg.in/alecthomas/kingpin.v1"
 )
 
@@ -44,11 +46,11 @@ func Initialize() *core.Config {
 		return nil
 	}
 	if *termColors {
-		core.TermColors()
+		term.TermColors()
 		return nil
 	}
 	if *colors == 0 {
-		*colors = core.DetectColors()
+		*colors = term.DetectColors()
 	}
 	if *colors != 256 && *colors != 16 {
 		*colors = 2
@@ -81,7 +83,7 @@ func Initialize() *core.Config {
 
 	id := time.Now().UnixNano()
 
-	core.Colors = *colors
+	style.Colors = *colors
 	core.ShowEvents = *termEvents
 	core.Bus = actions.NewActionBus()
 	core.InitHome(id)
@@ -96,7 +98,7 @@ func Initialize() *core.Config {
 	return core.LoadConfig(core.ConfFile)
 }
 
-func Terminate(term core.Term) {
+func Terminate(term term.Term) {
 	if fail := recover(); fail != nil {
 		// writing panic to file because shell may be garbled
 		fmt.Printf("Panicked with %v\n", fail)
@@ -113,7 +115,7 @@ func Terminate(term core.Term) {
 	}
 }
 
-func Start(term core.Term, config *core.Config) {
+func Start(term term.Term, config *core.Config) {
 	defer Terminate(term)
 	core.Ed = ui.NewEditor(term, config)
 	actions.RegisterActions()

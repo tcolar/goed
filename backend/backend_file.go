@@ -14,6 +14,7 @@ import (
 
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/ui/style"
 )
 
 var _ core.Backend = (*FileBackend)(nil)
@@ -69,7 +70,7 @@ func (f *FileBackend) Close() error {
 	return nil
 }
 
-func (f *FileBackend) ColorAt(ln, col int) (fg, bg core.Style) {
+func (f *FileBackend) ColorAt(ln, col int) (fg, style style.Style) {
 	return core.Ed.Theme().Fg, core.Ed.Theme().Bg
 }
 

@@ -19,13 +19,15 @@ import (
 	"github.com/tcolar/goed"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/core/term"
 	"github.com/tcolar/goed/event"
 	"github.com/tcolar/goed/ui/fonts"
+	"github.com/tcolar/goed/ui/style"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 )
 
-var _ core.Term = (*GuiTerm)(nil)
+var _ term.Term = (*GuiTerm)(nil)
 
 var palette = xtermPalette()
 
@@ -63,7 +65,7 @@ type GuiTerm struct {
 
 type char struct {
 	rune
-	fg, bg        core.Style
+	fg, bg        style.Style
 	prevPaintHash uint64
 }
 
@@ -180,7 +182,7 @@ func (t *GuiTerm) Close() {
 	wde.Stop()
 }
 
-func (t *GuiTerm) Clear(fg, bg core.Style) {
+func (t *GuiTerm) Clear(fg, bg style.Style) {
 	zero := rune(0)
 	for y, ln := range t.text {
 		for x, _ := range ln {
@@ -221,7 +223,7 @@ func (t *GuiTerm) SetCursor(x, y int) {
 	}
 }
 
-func (t *GuiTerm) Char(y, x int, c rune, fg, bg core.Style) {
+func (t *GuiTerm) Char(y, x int, c rune, fg, bg style.Style) {
 	if x < 0 || y < 0 || y >= len(t.text) || x >= len(t.text[y]) {
 		return
 	}

@@ -12,9 +12,6 @@ var ShowEvents = false
 // Ed is thew editor singleton
 var Ed Editable
 
-// Colors is the number of colors to use in the terminal
-var Colors int
-
 // Home represent the goed "home" folder.
 var Home string
 

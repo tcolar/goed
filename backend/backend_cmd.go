@@ -14,6 +14,7 @@ import (
 	"github.com/kr/pty"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/ui/style"
 )
 
 var _ core.Backend = (*BackendCmd)(nil)
@@ -48,7 +49,7 @@ func (c *BackendCmd) Reload() error {
 	return nil
 }
 
-func (b *BackendCmd) ColorAt(ln, col int) (fg, bg core.Style) {
+func (b *BackendCmd) ColorAt(ln, col int) (fg, bg style.Style) {
 	if b.MaxRows > 0 {
 		ln = (ln + b.head) % b.MaxRows
 	}
@@ -172,7 +173,7 @@ func (b *BackendCmd) adjustHead(row int) {
 	}
 }
 
-func (b *BackendCmd) Overwrite(row, col int, text string, fg, bg core.Style) (atRow, atCol int) {
+func (b *BackendCmd) Overwrite(row, col int, text string, fg, bg style.Style) (atRow, atCol int) {
 	if len(text) == 0 {
 		return row, col
 	}
@@ -414,8 +415,8 @@ type backendAppender struct {
 	backend      *BackendCmd
 	viewId       int64
 	line, col    int
-	dirty        int32      // >0 if dirty
-	curFg, curBg core.Style // current terminal color attributes
+	dirty        int32       // >0 if dirty
+	curFg, curBg style.Style // current terminal color attributes
 }
 
 // refresh the view if needed(dirty) but no more than every so often

@@ -1,6 +1,10 @@
 package core
 
-import "io"
+import (
+	"io"
+
+	"github.com/tcolar/goed/ui/style"
+)
 
 // Backend represent the backend(data operations) of a View.
 // Backend implements the low level data handling.
@@ -39,7 +43,7 @@ type Backend interface {
 	Reload() error
 
 	// return the color style at a specific location (mem backends)
-	ColorAt(ln, col int) (fg, bg Style)
+	ColorAt(ln, col int) (fg, bg style.Style)
 
 	//Sync() error         // sync from source ?
 	//IsStale() bool       // whether the source as changed under us (fsnotify)

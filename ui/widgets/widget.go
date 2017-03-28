@@ -1,4 +1,4 @@
-package core
+package widgets
 
 type Widget interface {
 	// Get the widget bounds (within parent)

@@ -1,9 +1,9 @@
 package ui
 
-import "github.com/tcolar/goed/core"
+import "github.com/tcolar/goed/ui/style"
 
 // TermFB sets the "active" forground and backgrounds colors.
-func (e *Editor) TermFB(fg, bg core.Style) {
+func (e *Editor) TermFB(fg, bg style.Style) {
 	e.Fg = fg
 	e.Bg = bg
 }

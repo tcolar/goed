@@ -3,13 +3,14 @@ package ui
 import (
 	"github.com/tcolar/goed"
 	"github.com/tcolar/goed/actions"
-	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/core/term"
 	"github.com/tcolar/goed/event"
+	"github.com/tcolar/goed/ui/style"
 	"github.com/tcolar/tcell"
 	"github.com/tcolar/tcell/encoding"
 )
 
-var _ core.Term = (*Tcell)(nil)
+var _ term.Term = (*Tcell)(nil)
 
 func Main() {
 	config := goed.Initialize()
@@ -45,7 +46,7 @@ func (t *Tcell) Init() error {
 	return nil
 }
 
-func (t *Tcell) Clear(fg, bg core.Style) {
+func (t *Tcell) Clear(fg, bg style.Style) {
 	st := t.toTcellStyle(fg, bg)
 	w, h := t.screen.Size()
 	for row := 0; row < h; row++ {
@@ -71,12 +72,12 @@ func (t *Tcell) SetCursor(y, x int) {
 	t.screen.ShowCursor(y, x)
 }
 
-func (t *Tcell) Char(y, x int, c rune, fg, bg core.Style) {
+func (t *Tcell) Char(y, x int, c rune, fg, bg style.Style) {
 	st := t.toTcellStyle(fg, bg)
 	t.screen.SetContent(x, y, c, nil, st)
 }
 
-func (t *Tcell) toTcellStyle(fg, bg core.Style) tcell.Style {
+func (t *Tcell) toTcellStyle(fg, bg style.Style) tcell.Style {
 	f := tcell.Color(fg.Color())
 	b := tcell.Color(bg.Color())
 	st := tcell.StyleDefault.Foreground(f).Background(b)

@@ -3,7 +3,7 @@ package widgets
 import (
 	"strings"
 
-	"github.com/tcolar/goed/core"
+	"github.com/tcolar/goed/ui/style"
 )
 
 // A sigle button, to be added to a ButtonSet
@@ -12,16 +12,16 @@ type Button struct {
 	Text          string
 	ShortcutIndex int
 	OnSelect      func() error
-	ShortcutBg    core.Style
-	ShortcutFg    core.Style
+	ShortcutBg    style.Style
+	ShortcutFg    style.Style
 	Active        bool
 }
 
 func NewButton(text string, shortcut rune, onSelect func() error) *Button {
 	bw := BaseWidget{}
 	bw.SetBounds(0, 0, 2, len(text)+4)
-	bw.Bg = core.NewStyle(0)
-	bw.Fg = core.NewStyle(0x0F)
+	bw.Bg = style.NewStyle(0)
+	bw.Fg = style.NewStyle(0x0F)
 	shortcutIndex := -1
 	if i := strings.Index(strings.ToLower(text), strings.ToLower(string(shortcut))); i >= 0 {
 		shortcutIndex = i
@@ -31,8 +31,8 @@ func NewButton(text string, shortcut rune, onSelect func() error) *Button {
 		Text:          text,
 		ShortcutIndex: shortcutIndex,
 		OnSelect:      onSelect,
-		ShortcutBg:    core.NewStyle(0x0F),
-		ShortcutFg:    core.NewStyle(0),
+		ShortcutBg:    style.NewStyle(0x0F),
+		ShortcutFg:    style.NewStyle(0),
 		Active:        false,
 	}
 }
@@ -53,7 +53,7 @@ func (w *Button) Render() {
 	}
 	for i := 0; i != len(w.Text); i++ {
 		if i == w.ShortcutIndex {
-			t.Char(y1+1, x1+i+2, rune(w.Text[i]), w.Fg.WithAttr(core.Bold), w.Bg)
+			t.Char(y1+1, x1+i+2, rune(w.Text[i]), w.Fg.WithAttr(style.Bold), w.Bg)
 		} else {
 			t.Char(y1+1, x1+i+2, rune(w.Text[i]), w.Fg, w.Bg)
 		}

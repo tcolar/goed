@@ -3,6 +3,7 @@ package ui
 import (
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/syntax"
+	"github.com/tcolar/goed/ui/style"
 )
 
 // CodeHighlighter is used to highlight(color) source code
@@ -17,11 +18,10 @@ func (h *CodeHighlighter) UpdateHighlights(v core.Viewable) {
 }
 
 func (h *CodeHighlighter) ApplyHighlight(v core.Viewable, lnOffset, ln, col int) {
-	style := h.highlights.StyleAt(ln, col)
 	e := core.Ed
 	t := e.Theme()
-	var s core.Style
-	switch style {
+	var s style.Style
+	switch h.highlights.StyleAt(ln, col) {
 	case syntax.StyleComment:
 		s = t.Comment
 	case syntax.StyleString:
