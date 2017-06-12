@@ -20,6 +20,7 @@ func init() {
 	initSyntax(&SyntaxMarkup)
 	initSyntax(&SyntaxJava)
 	initSyntax(&SyntaxJs)
+	initSyntax(&SyntaxLua)
 	initSyntax(&SyntaxMake)
 	initSyntax(&SyntaxMarkdown)
 	initSyntax(&SyntaxPerl)
