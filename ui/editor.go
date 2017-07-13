@@ -147,7 +147,7 @@ func (e *Editor) Start(locs []string) {
 }
 
 // Open opens a given location in the editor (in the given view)
-// or new view if viewId < 0
+// or new view if viewId <= 0
 func (e *Editor) Open(loc string, viewId int64, rel string, create bool) (int64, error) {
 	loc = strings.TrimSpace(loc)
 	rel = strings.TrimSpace(rel)
@@ -174,7 +174,13 @@ func (e *Editor) Open(loc string, viewId int64, rel string, create bool) (int64,
 	}
 	nv := false
 	var view core.Viewable
-	if viewId < 0 {
+	if viewId <= 0 { // if already have a view for that path, use it
+		views := e.ViewsByLoc(loc)
+		if len(views) > 0 {
+			viewId = views[0]
+		}
+	}
+	if viewId <= 0 {
 		view = e.NewFileView(loc)
 		nv = true
 	} else {
