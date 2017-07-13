@@ -120,6 +120,8 @@ func Start(term core.Term, config *core.Config) {
 	apiServer := api.Api{}
 	apiServer.Start()
 	core.Ed.Start(*locs)
+
+	go core.CleanupDotGoed()
 }
 
 func startupChecks() {
