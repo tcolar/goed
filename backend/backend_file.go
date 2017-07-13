@@ -34,7 +34,7 @@ type FileBackend struct {
 	offset           int64
 	lnCount          int
 	length           int64
-	lock sync.Mutex
+	lock             sync.Mutex
 }
 
 // NewFileBackend creates a backend from a copy of the file in the buffer dir.
@@ -526,3 +526,10 @@ func (b *FileBackend) SetVtCols(cols int) { // N/A
 func (b *FileBackend) SendBytes(data []byte) {}
 
 func (b *FileBackend) OnActivate() {}
+
+func (b *FileBackend) OffsetAt(ln, col int) int64 {
+	b.lock.Lock()
+	b.lock.Unlock()
+	b.seek(ln, col)
+	return b.offset
+}

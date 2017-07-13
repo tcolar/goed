@@ -47,7 +47,7 @@ func (a *ar) EdFileEvent(op core.FileOp, loc string) {
 
 // Open a file/dir(loc) in the editor
 // rel is optionally the path to loc
-// viewId is the viewId where to open into (or a new one if viewId<0)
+// viewId is the viewId where to open into (or a new one if viewId<=0)
 // create indicates whether the file/dir needs to be created if it does not exist.
 func (a *ar) EdOpen(loc string, viewId int64, rel string, create bool) int64 {
 	vid := make(chan (int64), 1)

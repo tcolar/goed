@@ -302,6 +302,8 @@ func (m *MemBackend) SendBytes(data []byte) {}
 
 func (m *MemBackend) OnActivate() {}
 
+func (b *MemBackend) OffsetAt(ln, col int) int64 { return int64(-1) }
+
 type color struct {
 	fg, bg core.Style
 }

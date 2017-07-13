@@ -47,6 +47,8 @@ type Backend interface {
 	//BufferMd5 or ts?
 	SetVtCols(cols int)
 	OnActivate()
+
+	OffsetAt(ln, col int) int64
 }
 
 type Rwsc interface {

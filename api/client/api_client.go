@@ -3,10 +3,7 @@
 package client
 
 import (
-	"fmt"
 	"net/rpc"
-	"os"
-	"path"
 
 	"github.com/tcolar/goed/api"
 	"github.com/tcolar/goed/core"
@@ -42,12 +39,4 @@ func getClient(id int64) *rpc.Client {
 		panic(err)
 	}
 	return c
-}
-
-func GoedSocket(id int64) string {
-	p := path.Join(core.GoedHome(), "instances", fmt.Sprintf("%d.sock", id))
-	if _, err := os.Stat(p); os.IsNotExist(err) {
-		p = path.Join(core.GoedHome()+"_test", "instances", fmt.Sprintf("%d.sock", id))
-	}
-	return p
 }

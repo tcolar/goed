@@ -39,7 +39,7 @@ func (a actionBus) Start() {
 			switch a := action.(type) {
 			case edRender:
 				time.Sleep(pause)
-				// If we have a bunch of render pending, only need to hoor the most recent.
+				// If we have a bunch of render pending, only need to honor the most recent.
 				if a.time == atomic.LoadInt64(&latestRenderAction) {
 					core.Ed.Render()
 				}

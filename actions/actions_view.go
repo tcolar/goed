@@ -25,6 +25,13 @@ func (a *ar) ViewBounds(viewId int64) (ln, col, ln2, col2 int) {
 	return <-answer, <-answer, <-answer, <-answer
 }
 
+// return the absolute path of the raw buffer backing the view
+func (a *ar) ViewBufferLoc(viewId int64) string {
+	answer := make(chan string, 1)
+	d(viewBufferLoc{viewId: viewId, answer: answer})
+	return <-answer
+}
+
 // remove all the view selections.
 func (a *ar) ViewClearSelections(viewId int64) {
 	d(viewClearSelections{viewId: viewId})
@@ -57,6 +64,13 @@ func (a *ar) ViewCursorCoords(viewId int64) (y, x int) {
 	answer := make(chan int, 2)
 	d(viewCursorCoords{viewId: viewId, answer: answer})
 	return <-answer, <-answer
+}
+
+// return the file offset at the current position in the backing buffer
+func (a *ar) ViewCursorFileOffset(viewId int64) int64 {
+	answer := make(chan int64, 1)
+	d(viewCursorFileOffset{viewId: viewId, answer: answer})
+	return <-answer
 }
 
 // return the current cursor text position in the view (1 indexed)
@@ -343,6 +357,20 @@ func (a viewBounds) Run() {
 	a.answer <- c2 + 1
 }
 
+type viewBufferLoc struct {
+	viewId int64
+	answer chan string
+}
+
+func (a viewBufferLoc) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Id() == 0 {
+		a.answer <- ""
+		return
+	}
+	a.answer <- v.Backend().BufferLoc()
+}
+
 type viewClearSelections struct {
 	viewId int64
 }
@@ -409,6 +437,22 @@ func (a viewCursorCoords) Run() {
 	}
 	a.answer <- v.CurLine() + 1
 	a.answer <- v.CurCol() + 1
+}
+
+type viewCursorFileOffset struct {
+	answer chan int64
+	viewId int64
+}
+
+func (a viewCursorFileOffset) Run() {
+	v := core.Ed.ViewById(a.viewId)
+	if v == nil || v.Backend() == nil {
+		a.answer <- int64(-1)
+		return
+	}
+	ln := v.CurLine()
+	col := v.LineRunesTo(v.Slice(), v.CurLine(), v.CurCol())
+	a.answer <- v.Backend().OffsetAt(ln, col)
 }
 
 type viewCursorPos struct {
