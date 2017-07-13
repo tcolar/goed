@@ -529,7 +529,7 @@ func (b *FileBackend) OnActivate() {}
 
 func (b *FileBackend) OffsetAt(ln, col int) int64 {
 	b.lock.Lock()
-	b.lock.Unlock()
+	defer b.lock.Unlock()
 	b.seek(ln, col)
 	return b.offset
 }
