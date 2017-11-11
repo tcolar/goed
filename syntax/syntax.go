@@ -30,6 +30,7 @@ func init() {
 	initSyntax(&SyntaxShell)
 	initSyntax(&SyntaxSql)
 	initSyntax(&SyntaxToml)
+	initSyntax(&SyntaxTypescript)
 }
 
 const (
