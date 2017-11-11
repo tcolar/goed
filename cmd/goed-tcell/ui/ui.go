@@ -1,12 +1,12 @@
 package ui
 
 import (
+	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/encoding"
 	"github.com/tcolar/goed"
 	"github.com/tcolar/goed/actions"
 	"github.com/tcolar/goed/core"
 	"github.com/tcolar/goed/event"
-	"github.com/tcolar/tcell"
-	"github.com/tcolar/tcell/encoding"
 )
 
 var _ core.Term = (*Tcell)(nil)
